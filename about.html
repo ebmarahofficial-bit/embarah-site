@@ -18,7 +18,6 @@
       line-height: 1.6;
     }
 
-    /* Header */
     header {
       position: fixed; inset: 0 0 auto 0;
       display: flex; justify-content: space-between; align-items: center;
@@ -35,7 +34,6 @@
     }
     nav a:hover { color: #00ffea; }
 
-    /* Background FX */
     .stars {
       position: fixed; width:200%; height:200%;
       background: transparent url('https://www.transparenttextures.com/patterns/stardust.png') repeat;
@@ -58,7 +56,6 @@
     }
     .gorilla img { max-width: 80%; height: auto; filter: drop-shadow(0 0 40px var(--neon)); }
 
-    /* About content */
     main {
       max-width: 800px;
       margin: 120px auto 60px auto;
@@ -113,5 +110,20 @@
     <p>Cody at heart is a creative character, with such lines as <em>"in my ass"</em> and <em>"I want to try it out"</em>. 
     With many years behind him in the EDM community and top-notch support from the homies, he continues to become a longstanding figure in the race for being cancelled in the electronic drama community.</p>
   </main>
+
+  <!-- Mascot -->
+  <script src="js/ebmarah-mascot.js"></script>
+  <script>
+    EbmarahMascot.init({
+      mode: 'passive',
+      position: 'bottom-right',
+      funnyLines: [
+        'welcome to the jungle 🌴',
+        'bananas > drama',
+        'bass life forever',
+        'gorilla certified 🔊'
+      ]
+    });
+  </script>
 </body>
 </html>
