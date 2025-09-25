@@ -83,11 +83,15 @@
     .bar { width: 0%; height: 100%; background: linear-gradient(90deg, var(--neon), #7affc7); box-shadow: 0 0 18px rgba(0,255,153,.6); transition: width .2s ease; }
     .pct { position: absolute; inset: auto 10px -26px auto; font: 600 12px monospace; color: rgba(230,255,230,.65); }
 
-    .skip { margin-top: 24px; padding: 10px 16px; border-radius: 999px;
-      border: 1px solid rgba(0,255,153,.5); color: var(--ink); background: transparent; cursor: pointer; }
     .scanlines { pointer-events: none; position: absolute; inset: 0;
       background: repeating-linear-gradient(0deg, rgba(255,255,255,.04), rgba(255,255,255,.04) 1px, transparent 1px, transparent 3px);
       mix-blend-mode: soft-light; opacity: .25; }
+
+    .tap-hint{
+      margin-top: 16px; font: 700 12px/1.4 ui-monospace, monospace; opacity:.7;
+      letter-spacing:.08em; text-transform: uppercase; display:none;
+    }
+
     .intro-out { animation: fadeOut .7s ease forwards, unblur .7s ease forwards; }
     @keyframes fadeOut { to { opacity: 0; } }
     @keyframes unblur { to { filter: blur(0); } }
@@ -99,7 +103,7 @@
   <div id="intro" aria-hidden="true">
     <div class="intro-wrap">
       <div class="logo" aria-label="EBMARAH">EBMARAH</div>
-      <div class="terminal">
+      <div class="terminal" role="status" aria-live="polite">
         <div class="line"><span class="caret"></span></div>
         <div class="line hidden" data-text="booting sequence..."></div>
         <div class="line hidden" data-text="authenticating user: guest"></div>
@@ -107,10 +111,10 @@
         <div class="line hidden" data-text="loading stage: RAVE_CORE"></div>
       </div>
       <div class="progress"><div class="bar"></div><div class="pct">0%</div></div>
-      <button id="skipIntro" class="skip">Skip ▷</button>
+      <div id="tapHint" class="tap-hint">click / tap / any key to enter</div>
     </div>
     <div class="scanlines"></div>
-    <audio id="introAudio" src="assets/intro.mp3" preload="auto"></audio>
+    <audio id="introAudio" src="assets/intro.mp3" preload="auto" playsinline></audio>
   </div>
 
   <!-- ===== Page Content ===== -->
@@ -178,15 +182,16 @@
   <!-- ===== Intro Script ===== -->
   <script>
   (function(){
-    const SEEN_KEY = "ebmarah_intro_seen_v1";
+    const SEEN_KEY = "ebmarah_intro_seen_v2"; // bump so you can test again
     const introEl = document.getElementById('intro');
     const pageEl  = document.getElementById('page');
     const bar     = introEl.querySelector('.bar');
     const pct     = introEl.querySelector('.pct');
-    const skipBtn = document.getElementById('skipIntro');
     const lines   = [...introEl.querySelectorAll('.terminal .line')];
     const audio   = document.getElementById('introAudio');
+    const tapHint = document.getElementById('tapHint');
 
+    // Skip intro if seen
     if (localStorage.getItem(SEEN_KEY)) {
       introEl.style.display = 'none';
       pageEl.classList.remove('page--hidden');
@@ -194,26 +199,45 @@
       return;
     }
 
-    const typeLine = (el, text, speed=18) => new Promise(res => {
-      let i=0; el.textContent = ''; el.style.visibility = 'visible';
-      (function tick(){ if(i<text.length){ el.textContent += text[i++]; setTimeout(tick, speed); } else res(); })();
-    });
+    let started = false;
 
-    (async function run(){
-      if (audio) { audio.currentTime = 0; audio.play().catch(()=>{}); }
+    async function beginIntro(withGesture=false){
+      if (started) return;
+      started = true;
 
-      const first = lines[0]; const caret = first.querySelector('.caret'); if (caret) caret.remove();
+      // Try audio (gesture usually allows it)
+      if (audio) {
+        try {
+          audio.currentTime = 0;
+          audio.volume = 1;
+          await audio.play();
+        } catch (e) {
+          // If still blocked, just run silent intro
+        }
+      }
+
+      // Remove caret, start typing
+      const typeLine = (el, text, speed=18) => new Promise(res => {
+        let i=0; el.textContent=''; el.style.visibility='visible';
+        (function tick(){ if(i<text.length){ el.textContent += text[i++]; setTimeout(tick, speed); } else res(); })();
+      });
+
+      const first = lines[0];
+      const caret = first.querySelector('.caret');
+      if (caret) caret.remove();
       await typeLine(first, '>> INIT EBS LOADER');
       for (let i=1;i<lines.length;i++){ await typeLine(lines[i], lines[i].dataset.text); }
 
+      // Progress to 100
       let p=0;
       (function step(){
         const inc = Math.max(1, Math.min(7, 20 * Math.random()));
         p = Math.min(100, p + inc);
         bar.style.width = p + '%'; pct.textContent = p + '%';
-        if (p < 100) setTimeout(step, 100 + Math.random()*160); else done();
+        if (p < 100) setTimeout(step, 100 + Math.random()*160);
+        else done();
       })();
-    })();
+    }
 
     function done(){
       localStorage.setItem(SEEN_KEY, '1');
@@ -224,8 +248,30 @@
       setTimeout(()=> { introEl.style.display = 'none'; }, 700);
     }
 
-    skipBtn.addEventListener('click', done);
-    window.addEventListener('keydown', (e)=>{ if (e.key === 'Escape') done(); });
+    // Try autoplay immediately. If blocked, show hint and wait for first gesture.
+    (async function tryAutoplayThenMaybeWait(){
+      if (!audio) { beginIntro(); return; }
+      try {
+        audio.currentTime = 0;
+        await audio.play();
+        // Autoplay worked! Pause immediately; we'll start clean when intro begins.
+        audio.pause(); audio.currentTime = 0;
+        beginIntro();
+      } catch (err) {
+        // Autoplay blocked – show subtle hint and start on first user gesture
+        tapHint.style.display = 'block';
+        const startOnGesture = () => { tapHint.style.display='none'; beginIntro(true); cleanup(); };
+        const cleanup = () => {
+          window.removeEventListener('pointerdown', startOnGesture);
+          window.removeEventListener('keydown', startOnGesture);
+        };
+        window.addEventListener('pointerdown', startOnGesture, { once:true });
+        window.addEventListener('keydown', startOnGesture, { once:true });
+      }
+    })();
+
+    // Allow ESC to skip intro if needed
+    window.addEventListener('keydown', (e)=>{ if (e.key === 'Escape') { if (!started) beginIntro(true); else done(); } });
   })();
   </script>
 </body>
