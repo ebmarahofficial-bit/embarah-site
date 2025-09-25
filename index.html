@@ -27,20 +27,23 @@
       to { transform: translate(25%, 25%) scale(1.2); }
     }
 
-    /* Gorilla glyph */
-    .gorilla {
-      position: fixed;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      opacity: 0.04;
-      font-size: 40vw;
-      color: #00ff99;
-      text-shadow: 0 0 60px #00ff99;
-      pointer-events: none;
-      animation: glitch 3s infinite;
-    }
+   /* Gorilla logo background */
+.gorilla {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.05;              /* faint ghost look */
+  pointer-events: none;       /* don’t block clicks */
+  z-index: 0;                 /* behind content */
+}
+.gorilla img {
+  max-width: 80%;
+  height: auto;
+  filter: drop-shadow(0 0 40px #00ff99); /* neon glow */
+}
+
     @keyframes glitch {
       0%, 100% { transform: translate(0,0); }
       20% { transform: translate(-5px, 3px); }
