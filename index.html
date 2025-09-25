@@ -15,7 +15,6 @@
       overflow-x: hidden;
     }
 
-    /* Floating mist animation */
     .mist {
       position: fixed;
       width: 200%;
@@ -29,22 +28,21 @@
       to { transform: translate(25%, 25%) scale(1.2); }
     }
 
-   /* Gorilla logo background */
-.gorilla {
-  position: fixed;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0.05;              /* faint ghost look */
-  pointer-events: none;       /* don’t block clicks */
-  z-index: 0;                 /* behind content */
-}
-.gorilla img {
-  max-width: 80%;
-  height: auto;
-  filter: drop-shadow(0 0 40px #00ff99); /* neon glow */
-}
+    .gorilla {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0.05;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .gorilla img {
+      max-width: 80%;
+      height: auto;
+      filter: drop-shadow(0 0 40px #00ff99);
+    }
 
     @keyframes glitch {
       0%, 100% { transform: translate(0,0); }
@@ -54,7 +52,6 @@
       80% { transform: translate(4px, 2px); }
     }
 
-    /* Parallax stars */
     .stars {
       position: fixed;
       width: 200%;
@@ -114,23 +111,22 @@
   <div class="stars"></div>
   <div class="mist"></div>
   <div class="gorilla">
-  <img src="logo-bg.png" alt="Ebmarah Gorilla Logo">
-</div>
+    <img src="logo-bg.png" alt="Ebmarah Gorilla Logo">
+  </div>
 
   <header>
-  <div class="logo">
-    <img src="favicon.png" alt="Ebmarah Logo" style="height:40px; vertical-align:middle;">
-    Ebmarah
-  </div>
-  <nav>
-    <a href="#">Home</a>
-    <a href="music.html">Music</a>
-    <a href="sample-packs.html">Sample Packs</a>
-    <a href="about.html">About</a>
-    <a href="contact.html">Contact</a>
-  </nav>
-</header>
-
+    <div class="logo">
+      <img src="favicon.png" alt="Ebmarah Logo" style="height:40px; vertical-align:middle;">
+      Ebmarah
+    </div>
+    <nav>
+      <a href="#">Home</a>
+      <a href="music.html">Music</a>
+      <a href="sample-packs.html">Sample Packs</a>
+      <a href="about.html">About</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+  </header>
 
   <section class="hero">
     <h1>Welcome to the Digital Gorilla Forest</h1>
@@ -147,5 +143,45 @@
       src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/ebmarah/enemy">
     </iframe>
   </section>
+
+  <!-- Mascot script + init (passive on this page) -->
+  <script src="js/ebmarah-mascot.js"></script>
+  <script>
+    EbmarahMascot.init({
+      mode: 'passive',
+      position: 'bottom-right',
+      // mascotImageUrl: 'assets/gorilla.png',
+      funnyLines: [
+        'BASS INCOMING',
+        'sub-bass handshake!',
+        'gorilla certified 🔊',
+        'who threw this banana?',
+        'i smell a DROP...'
+      ]
+    });
+  </script>
+
+  <!-- OPTIONAL: Fake reactive bananas using SoundCloud Widget timestamps -->
+  <script src="https://w.soundcloud.com/player/api.js"></script>
+  <script>
+    const scFrame = document.querySelector('.soundcloud-embed iframe');
+    const widget = SC.Widget(scFrame);
+    const dropMs = [30000, 65000, 130000]; // edit to your track’s drop times (ms)
+    const hitWindow = 900;
+    const triggered = new Set();
+
+    widget.bind(SC.Widget.Events.PLAY_PROGRESS, (e) => {
+      const t = Math.floor(e.currentPosition);
+      for (const d of dropMs) {
+        if (!triggered.has(d) && Math.abs(t - d) <= hitWindow) {
+          triggered.add(d);
+          EbmarahMascot.say('BASS INCOMING!', 3000);
+          EbmarahMascot.throwBananas(7);
+          EbmarahMascot.setMood('curious');
+          setTimeout(()=>EbmarahMascot.setMood('idle'), 600);
+        }
+      }
+    });
+  </script>
 </body>
 </html>
