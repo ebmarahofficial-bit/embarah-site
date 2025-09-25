@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Ebmarah – Music</title>
+  <link rel="icon" type="image/png" href="favicon.png" />
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&display=swap');
+    :root { --neon: #00ff99; }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      background: radial-gradient(circle at center, #020d07, #000);
+      font-family: 'Orbitron', sans-serif;
+      color: #e0ffe8;
+      overflow: hidden;
+    }
+
+    /* Header */
+    header {
+      position: fixed; inset: 0 0 auto 0;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 12px 24px;
+      backdrop-filter: blur(10px);
+      background: rgba(0,255,128,0.05);
+      border-bottom: 1px solid rgba(0,255,128,0.2);
+      z-index: 10;
+    }
+    .logo { display:flex; gap:10px; align-items:center; }
+    .logo img { height: 28px; }
+    nav a {
+      color: #76ffb2; text-decoration: none; margin-left: 22px; font-weight: 700;
+    }
+    nav a:hover { color: #00ffea; }
+
+    /* Background FX (subtle, like home) */
+    .stars {
+      position: fixed; width:200%; height:200%;
+      background: transparent url('https://www.transparenttextures.com/patterns/stardust.png') repeat;
+      animation: moveStars 200s linear infinite;
+      opacity: 0.18; pointer-events:none;
+    }
+    @keyframes moveStars { from {transform:translate(0,0)} to {transform:translate(-200px,-200px)} }
+
+    .mist {
+      position: fixed; width: 200%; height: 200%;
+      background: radial-gradient(circle, rgba(0,255,128,0.08), transparent 70%);
+      animation: drift 40s linear infinite; mix-blend-mode: screen; pointer-events:none;
+    }
+    @keyframes drift { from{transform:translate(-25%,-25%) scale(1)} to{transform:translate(25%,25%) scale(1.2)} }
+
+    /* Gorilla watermark (optional – uses same logo) */
+    .gorilla {
+      position: fixed; inset: 0;
+      display:flex; align-items:center; justify-content:center;
+      opacity: .05; pointer-events:none; z-index:0;
+    }
+    .gorilla img { max-width: 80%; height: auto; filter: drop-shadow(0 0 40px var(--neon)); }
+
+    /* SoundCloud full-page frame */
+    .frame-wrap {
+      position: absolute; top: 64px; /* header height */
+      left: 0; right: 0; bottom: 0;
+      padding: 18px;
+    }
+    .frame {
+      width: 100%; height: 100%;
+      border: 2px solid rgba(0,255,128,0.25);
+      border-radius: 12px; overflow: hidden;
+      box-shadow: 0 0 30px rgba(0,255,128,0.2);
+      background: rgba(0,0,0,0.25);
+    }
+    iframe { width:100%; height:100%; border:0; }
+  </style>
+</head>
+<body>
+  <div class="stars"></div>
+  <div class="mist"></div>
+  <div class="gorilla"><img src="logo-bg.png" alt="Ebmarah Gorilla Logo" /></div>
+
+  <header>
+    <div class="logo">
+      <img src="favicon.png" alt="Ebmarah">
+      <a href="index.html" style="color:#e0ffe8; text-decoration:none; font-weight:700;">Ebmarah</a>
+    </div>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="music.html">Music</a>
+      <a href="#">Sample Packs</a>
+      <a href="#">About</a>
+      <a href="#">Contact</a>
+    </nav>
+  </header>
+
+  <div class="frame-wrap">
+    <!-- Full SoundCloud profile embed -->
+    <div class="frame">
+      <iframe
+        allow="autoplay"
+        src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/ebmarah&color=%2300ff99&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true"
+        title="Ebmarah on SoundCloud">
+      </iframe>
+    </div>
+  </div>
+</body>
+</html>
