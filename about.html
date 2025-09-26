@@ -3,258 +3,161 @@
 <head>
   <meta charset="UTF-8" />
   <title>Ebmarah – About</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="icon" type="image/png" href="assets/favicon.png" />
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&display=swap');
-    :root { --neon:#00ff99; --ink:#e0ffe8; --bg:#020d07; }
-
-    * { box-sizing: border-box; }
     html, body {
-      height:100%;
-      margin:0;
-      font-family:'Orbitron', sans-serif;
-      color:var(--ink);
-      overflow-x:hidden;
-      background:var(--bg);
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: 'Orbitron', sans-serif;
+      background: #020d07;
+      color: #e0ffe8;
+      overflow-x: hidden;
+      perspective: 1000px;
     }
 
-    #parallax-scene {
-      position: fixed; inset: 0;
-      perspective: 1200px;
-      overflow: hidden;
-      z-index: -3;
-    }
-    #parallax-scene .layer {
-      position: absolute; inset: -6%;
+    .layer {
+      position: fixed;
+      inset: 0;
       will-change: transform;
-      transform-style: preserve-3d;
-      backface-visibility: hidden;
+      background-size: cover;
+      background-position: center;
+      z-index: -1;
     }
+
     .layer-deep {
-      background: url("assets/bg.png") center / cover no-repeat;
-      filter: saturate(1.05) contrast(1.05);
+      background-image: url("assets/bg.png");
       transform: translateZ(-200px) scale(1.2);
     }
+
     .layer-mid {
-      background: url("assets/bg.png") center / cover no-repeat;
-      filter: blur(1.2px) brightness(.98);
-      opacity: .95;
+      background-image: url("assets/bg.png");
       transform: translateZ(-100px) scale(1.1);
-    }
-    .layer-stars {
-      background: url('https://www.transparenttextures.com/patterns/stardust.png') repeat;
-      opacity: .18;
-      transform: translateZ(-60px) scale(1.05);
-      animation: moveStars 200s linear infinite;
-    }
-    @keyframes moveStars {
-      from { transform: translateZ(-60px) translate(0,0); }
-      to   { transform: translateZ(-60px) translate(-200px,-200px); }
-    }
-    .layer-mist {
-      background: radial-gradient(circle, rgba(0,255,128,0.08), transparent 70%);
-      mix-blend-mode: screen;
-      transform: translateZ(0px);
-      animation: drift 40s linear infinite;
-    }
-    @keyframes drift {
-      from { transform: translate(-25%, -25%) scale(1); }
-      to   { transform: translate(25%, 25%) scale(1.2); }
+      opacity: 0.3;
     }
 
     header {
-      position: fixed; top: 0; left: 0; right: 0;
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 14px 24px;
-      background: rgba(2,13,7,.75);
-      border-bottom: 1px solid rgba(0,255,128,.2);
-      box-shadow: 0 6px 24px rgba(0,0,0,.35);
-      z-index: 1000;
-    }
-    .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; }
-    .brand img { height: 40px; width: auto; }
-    nav { display: flex; gap: 22px; }
-    nav a {
+      padding: 20px;
+      text-align: center;
+      font-size: 2em;
       color: #76ffb2;
-      text-decoration: none;
-      font-weight: 700;
-      font-size: clamp(12px,1.6vw,14px);
+      z-index: 1;
+      position: relative;
     }
-    nav a:hover { color: #00ffea; }
-
-    .menu-btn {
-      display: none;
-      background: none;
-      border: 0;
-      color: #b9ffdf;
-      font-size: 18px;
-      font-weight: 700;
-      padding: 6px 10px;
-      border: 1px solid rgba(0,255,128,.35);
-      border-radius: 8px;
-    }
-    .menu { display: flex; }
-
-    .spacer { height: 72px; }
 
     main {
-      max-width: 900px;
-      margin: 0 auto 60px auto;
-      padding: 22px;
-    }
-    .card {
-      background: rgba(0,0,0,0.6);
-      border: 2px solid rgba(0,255,128,0.25);
+      padding: 40px 20px;
+      max-width: 800px;
+      margin: 0 auto;
+      background-color: rgba(0,0,0,0.5);
       border-radius: 12px;
-      box-shadow: 0 0 30px rgba(0,255,128,0.2);
-      padding: clamp(22px, 3.2vw, 34px);
-    }
-    h1 {
-      text-align: center;
-      font-size: clamp(26px, 5vw, 42px);
-      color: var(--neon);
-      text-shadow: 0 0 20px var(--neon);
-    }
-    p {
-      font-size: clamp(14px, 2.2vw, 16px);
-      color: #c8fadc;
+      z-index: 1;
+      position: relative;
     }
 
-    @media (max-width: 1024px) {
-      header { padding: 12px 18px; }
-      .brand img { height: 36px; }
-      nav { gap: 16px; }
-      .spacer { height: 64px; }
+    #audio-controls {
+      position: fixed;
+      bottom: 16px;
+      right: 16px;
+      z-index: 9999;
     }
-    @media (max-width: 720px) {
-      .brand img { height: 30px; }
-      .menu-btn { display: inline-flex; }
-      .menu {
-        display: none;
-        position: fixed;
-        top: 64px; right: 12px;
-        flex-direction: column; gap: 10px;
-        background: rgba(2,13,7,.92);
-        border: 1px solid rgba(0,255,128,.25);
-        border-radius: 10px;
-        padding: 12px;
-        box-shadow: 0 14px 40px rgba(0,0,0,.45);
-        z-index: 1001;
+
+    #audio-controls button {
+      padding: 8px 12px;
+      font-weight: bold;
+      background: #000;
+      color: #00ff99;
+      border: 2px solid #00ff99;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    #audio-controls input[type="range"] {
+      vertical-align: middle;
+      margin-left: 8px;
+    }
+
+    @media (max-width: 600px) {
+      header {
+        font-size: 1.4em;
       }
-      .menu.open { display: flex; }
+      main {
+        padding: 20px 14px;
+      }
     }
-
-    #bg-music { display: none; }
   </style>
 </head>
 <body>
-  <!-- Parallax Background -->
-  <div id="parallax-scene">
-    <div class="layer layer-deep"></div>
-    <div class="layer layer-mid"></div>
-    <div class="layer layer-stars"></div>
-    <div class="layer layer-mist"></div>
+
+  <!-- Parallax Layers -->
+  <div class="layer layer-deep"></div>
+  <div class="layer layer-mid"></div>
+
+  <!-- Audio Player -->
+  <audio id="bg-music" src="assets/about.mp3" preload="auto" loop playsinline></audio>
+  <div id="audio-controls">
+    <button id="muteToggle">Mute</button>
+    <input id="volumeSlider" type="range" min="0" max="1" step="0.01" value="1" />
   </div>
 
-  <!-- Header -->
-  <header>
-    <div class="brand">
-      <img src="assets/favicon.png" alt="Ebmarah">
-      <span style="font-size:clamp(16px,2.6vw,22px)">Ebmarah</span>
-    </div>
-    <button class="menu-btn" id="menuBtn">Menu</button>
-    <nav class="menu" id="menu">
-      <a href="index.html">Home</a>
-      <a href="music.html">Music</a>
-      <a href="sample-packs.html">Sample Packs</a>
-      <a href="about.html">About</a>
-      <a href="contact.html">Contact</a>
-    </nav>
-  </header>
+  <header>About Ebmarah</header>
 
-  <div class="spacer"></div>
-
-  <!-- Main Content -->
   <main>
-    <div class="card">
-      <h1>About Ebmarah</h1>
-      <p><strong>Ebmarah A.K.A. Cody</strong> is a fictional character in the EDM artist scene pronounced: <em>ehb-mar-uh</em>. 
-      The artist name is actually "Harambe" backwards. Harambe (May 27, 1999 – May 28, 2016) was a western lowland gorilla who lived at the Cincinnati Zoo from 2014 to 2016.</p>
-
-      <p>Due to the unfortunate nature of how much Marijuana is consumed by the artist at hand, comedy and hilarity are the two attractive features with obnoxious vocals and gut-wrenching bass design.</p>
-
-      <p>Cody at heart is a creative character, with such lines as <em>"in my ass"</em> and <em>"I want to try it out"</em>. 
-      With many years behind him in the EDM community and top-notch support from the homies, he continues to become a longstanding figure in the race for being cancelled in the electronic drama community.</p>
-    </div>
+    <p>
+      Ebmarah A.K.A. Cody is a fictional character in the EDM artist scene pronounced: <strong>ehb-mar-uh</strong>.
+      The artist name is actually <em>"Harambe"</em> spelled backwards.
+    </p>
+    <p>
+      Harambe (May 27, 1999 – May 28, 2016) was a western lowland gorilla who lived at the Cincinnati Zoo from 2014 to 2016.
+    </p>
+    <p>
+      Due to the unfortunate nature of how much Marijuana is consumed by the artist at hand,
+      comedy and hilarity are the two attractive features with obnoxious vocals and gut-wrenching bass design.
+    </p>
+    <p>
+      Cody at heart is a creative character, with such lines as <strong>"in my ass"</strong> and <strong>"I’m not here for fun, I’m here for bass"</strong>.
+    </p>
   </main>
 
-  <!-- Mascot -->
-  <script src="js/ebmarah-mascot.js"></script>
-  <script>
-    EbmarahMascot.init({
-      mode: 'passive',
-      position: 'bottom-right',
-      funnyLines: [
-        'welcome to the jungle 🌴',
-        'bananas > drama',
-        'bass life forever',
-        'gorilla certified 🔊'
-      ]
-    });
-  </script>
-
-  <!-- Background Music -->
-  <audio id="bg-music" src="assets/about.mp3" autoplay loop playsinline></audio>
   <script>
     const bgMusic = document.getElementById('bg-music');
+    const muteToggle = document.getElementById('muteToggle');
+    const volumeSlider = document.getElementById('volumeSlider');
+
+    // Enable music on user interaction (mobile-safe)
     window.addEventListener('click', () => {
-      if(bgMusic.paused) bgMusic.play().catch(()=>{});
+      if (bgMusic.paused) {
+        bgMusic.play().catch(() => {});
+      }
     }, { once: true });
+
+    muteToggle.addEventListener('click', () => {
+      bgMusic.muted = !bgMusic.muted;
+      muteToggle.textContent = bgMusic.muted ? 'Unmute' : 'Mute';
+    });
+
+    volumeSlider.addEventListener('input', (e) => {
+      bgMusic.volume = parseFloat(e.target.value);
+      bgMusic.muted = (bgMusic.volume === 0);
+      muteToggle.textContent = bgMusic.muted ? 'Unmute' : 'Mute';
+    });
+
+    // Optional: Animate background layers on mouse move for depth
+    (function animateParallax() {
+      const deep = document.querySelector('.layer-deep');
+      const mid  = document.querySelector('.layer-mid');
+      let rid = 0;
+
+      window.addEventListener('mousemove', e => {
+        const x = (e.clientX / window.innerWidth - 0.5) * 2;
+        const y = (e.clientY / window.innerHeight - 0.5) * 2;
+
+        deep.style.transform = `translateZ(-200px) scale(1.2) translate(${x * 10}px, ${y * 10}px)`;
+        mid.style.transform  = `translateZ(-100px) scale(1.1) translate(${x * 20}px, ${y * 20}px)`;
+      });
+    })();
   </script>
 
-  <!-- Menu Toggle -->
-  <script>
-    const btn = document.getElementById('menuBtn');
-    const menu = document.getElementById('menu');
-    btn.addEventListener('click', () => menu.classList.toggle('open'));
-  </script>
-
-  <!-- Parallax Movement -->
-  <script>
-  (function(){
-    const scene = document.getElementById('parallax-scene');
-    const deep  = scene.querySelector('.layer-deep');
-    const mid   = scene.querySelector('.layer-mid');
-    const stars = scene.querySelector('.layer-stars');
-    const mist  = scene.querySelector('.layer-mist');
-
-    let mx=0, my=0, tx=0, ty=0;
-
-    function onPointerMove(e){
-      const p = e.touches ? e.touches[0] : e;
-      const x = p.clientX / window.innerWidth;
-      const y = p.clientY / window.innerHeight;
-      mx = (x - 0.5) * 2;
-      my = (y - 0.5) * 2;
-    }
-
-    function animate(){
-      tx += (mx - tx) * 0.06;
-      ty += (my - ty) * 0.06;
-      const dx = tx * 12, dy = ty * 8;
-      deep.style.transform  = `translateZ(-200px) translate(${dx}px,${dy}px) scale(1.2)`;
-      mid.style.transform   = `translateZ(-100px) translate(${dx*1.6}px,${dy*1.2}px) scale(1.1)`;
-      stars.style.transform = `translateZ(-60px)  translate(${dx*2}px,${dy*1.6}px)`;
-      mist.style.transform  = `translateZ(0px)    translate(${dx*2.5}px,${dy*2.2}px)`;
-      requestAnimationFrame(animate);
-    }
-
-    window.addEventListener('mousemove', onPointerMove, { passive: true });
-    window.addEventListener('touchmove', onPointerMove, { passive: true });
-    animate();
-  })();
-  </script>
 </body>
 </html>
-
