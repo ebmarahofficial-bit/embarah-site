@@ -24,10 +24,10 @@
       position: fixed; inset: 0;
       perspective: 1200px;
       overflow: hidden;
-      z-index: -3; /* behind everything */
+      z-index: -3;
     }
     #parallax-scene .layer{
-      position: absolute; inset: -6%; /* bleed for movement */
+      position: absolute; inset: -6%;
       will-change: transform;
       transform-style: preserve-3d;
       backface-visibility: hidden;
@@ -69,7 +69,7 @@
       #parallax-scene .layer { animation: none !important; transform: none !important; }
     }
 
-    /* Header (no blur, responsive) */
+    /* Header */
     header{
       position:fixed; top:0; left:0; right:0;
       display:flex; align-items:center; justify-content:space-between;
@@ -84,48 +84,35 @@
     nav{display:flex; align-items:center; gap:22px}
     nav a{color:#76ffb2; text-decoration:none; font-weight:700; font-size:clamp(12px,1.6vw,14px)}
     nav a:hover{color:#00ffea}
-
-    /* Mobile menu toggle */
     .menu-btn{display:none; background:none; border:0; color:#b9ffdf; font-size:18px; font-weight:700; padding:6px 10px; border:1px solid rgba(0,255,128,.35); border-radius:8px}
     .menu{display:flex}
 
     /* Hero + content */
-    .spacer{height:72px} /* pushes page below fixed header */
-    .hero{
-      text-align:center;
-      padding: clamp(64px, 12vw, 128px) 16px 32px;
-      background:linear-gradient(180deg, rgba(0,255,128,.05), transparent);
-    }
+    .spacer{height:72px}
+    .hero{text-align:center; padding: clamp(64px, 12vw, 128px) 16px 32px; background:linear-gradient(180deg, rgba(0,255,128,.05), transparent);}
     .hero h1{font-size:clamp(28px, 6.5vw, 64px); margin:0 0 8px; text-shadow:0 0 20px var(--neon)}
     .hero p{font-size:clamp(12px, 2.3vw, 16px); opacity:.9; margin:0}
-
-    .soundcloud-embed{
-      width:min(940px, 92vw);
-      margin: 24px auto 64px;
-      border:2px solid rgba(0,255,128,.3);
-      border-radius:12px; overflow:hidden;
-      box-shadow:0 0 30px rgba(0,255,128,.2);
-      background:rgba(0,0,0,.25);
-    }
+    .soundcloud-embed{width:min(940px, 92vw); margin: 24px auto 64px; border:2px solid rgba(0,255,128,.3); border-radius:12px; overflow:hidden; box-shadow:0 0 30px rgba(0,255,128,.2); background:rgba(0,0,0,.25);}
     .soundcloud-embed iframe{display:block; width:100%; height:166px; border:0}
 
-    /* Page reveal */
+    /* Reveal animations */
     .page--hidden{opacity:0; filter:blur(8px); transition:opacity .6s ease, filter .6s ease}
     .intro-out{animation:fadeOut .7s ease forwards, unblur .7s ease forwards}
     @keyframes fadeOut{to{opacity:0}} @keyframes unblur{to{filter:blur(0)}}
 
-    /* Intro video overlay */
-    #intro{
-      position:fixed; inset:0; z-index:9999;
-      display:flex; justify-content:center; align-items:center;
-      background:#000; overflow:hidden;
+    /* Intro video */
+    #intro{position:fixed; inset:0; z-index:9999; display:flex; justify-content:center; align-items:center; background:#000; overflow:hidden;}
+    #intro video{width:100%; height:100%; object-fit:cover;}
+    #tapToPlay{
+      position:absolute; inset:0; display:none; justify-content:center; align-items:center;
+      background:rgba(0,0,0,.7); color:#00ff99; font-family:'Orbitron',sans-serif;
+      font-size:20px; font-weight:700; letter-spacing:2px; cursor:pointer;
     }
-    #intro video{ width:100%; height:100%; object-fit:cover; }
   </style>
 </head>
 <body>
 
-  <!-- Parallax Background Scene -->
+  <!-- Parallax Background -->
   <div id="parallax-scene" aria-hidden="true">
     <div class="layer layer-deep"></div>
     <div class="layer layer-mid"></div>
@@ -133,19 +120,19 @@
     <div class="layer layer-mist"></div>
   </div>
 
-  <!-- Intro Overlay (VIDEO ONLY) -->
+  <!-- Intro Video -->
   <div id="intro" aria-hidden="true">
-    <video id="introVideo" src="video/intro.mp4" autoplay muted playsinline></video>
+    <video id="introVideo" src="video/intro.mp4" autoplay playsinline></video>
+    <div id="tapToPlay">Tap to start intro</div>
   </div>
 
-  <!-- Page Content -->
+  <!-- Main Page -->
   <div id="page" class="page--hidden">
     <header>
       <div class="brand">
         <img src="assets/favicon.png" alt="Ebmarah">
         <span style="font-size:clamp(16px,2.6vw,22px)">Ebmarah</span>
       </div>
-
       <button class="menu-btn" id="menuBtn">Menu</button>
       <nav class="menu" id="menu">
         <a href="index.html">Home</a>
@@ -157,239 +144,115 @@
     </header>
 
     <div class="spacer"></div>
-
     <section class="hero">
       <h1>Welcome to the Digital Gorilla Forest</h1>
       <p>Stream my latest dubstep tracks & explore the digital jungle.</p>
     </section>
-
     <section class="soundcloud-embed">
-      <iframe
-        title="Enemy – Ebmarah"
-        scrolling="no"
-        allow="autoplay"
-        src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/ebmarah/enemy">
-      </iframe>
+      <iframe title="Enemy – Ebmarah" scrolling="no" allow="autoplay"
+        src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/ebmarah/enemy"></iframe>
     </section>
 
     <!-- Mascot -->
     <script src="js/ebmarah-mascot.js"></script>
     <script>
-      EbmarahMascot.init({
-        mode:'passive',
-        position:'bottom-right',
-        funnyLines:[
-          'BASS INCOMING','sub-bass handshake!','gorilla certified 🔊',
-          'who threw this banana?','i smell a DROP...'
-        ]
-      });
-    </script>
-
-    <!-- SoundCloud widget trigger example -->
-    <script src="https://w.soundcloud.com/player/api.js"></script>
-    <script>
-      const scFrame=document.querySelector('.soundcloud-embed iframe');
-      const widget=SC.Widget(scFrame);
-      const dropMs=[30000,65000,130000], hitWindow=900, fired=new Set();
-      widget.bind(SC.Widget.Events.PLAY_PROGRESS, e=>{
-        const t=Math.floor(e.currentPosition);
-        for(const d of dropMs){
-          if(!fired.has(d) && Math.abs(t-d)<=hitWindow){
-            fired.add(d);
-            EbmarahMascot.say('BASS INCOMING!',3000);
-            EbmarahMascot.throwBananas(7);
-            EbmarahMascot.setMood('curious');
-            setTimeout(()=>EbmarahMascot.setMood('idle'),600);
-          }
-        }
-      });
+      EbmarahMascot.init({mode:'passive',position:'bottom-right',
+        funnyLines:['BASS INCOMING','sub-bass handshake!','gorilla certified 🔊','who threw this banana?','i smell a DROP...']});
     </script>
   </div>
 
-  <!-- Intro Video Script -->
+  <!-- Intro Script -->
   <script>
   (function(){
     const intro = document.getElementById('intro');
     const video = document.getElementById('introVideo');
+    const tap   = document.getElementById('tapToPlay');
     const page  = document.getElementById('page');
 
     function endIntro(){
       intro.classList.add('intro-out');
       page.classList.remove('page--hidden');
       page.style.opacity='1';
-      // tell the rest of the page that the intro is done
       window.dispatchEvent(new Event('intro-finished'));
-      setTimeout(()=>{ intro.style.display='none'; },700);
+      setTimeout(()=> intro.style.display='none',700);
     }
 
-    // unlock after video ends, or on user click to skip
-    video.addEventListener('ended', endIntro, { once:true });
-    intro.addEventListener('click', endIntro, { once:true });
+    // try autoplay with sound
+    video.play().catch(()=>{ tap.style.display='flex'; });
 
-    // Mobile menu toggle (page)
+    tap.addEventListener('click',()=>{ tap.style.display='none'; video.play(); });
+    video.addEventListener('ended',endIntro,{once:true});
+    intro.addEventListener('click',e=>{ if(e.target===intro) endIntro(); });
+
     const btn=document.getElementById('menuBtn'), menu=document.getElementById('menu');
-    if(btn && menu){ btn.addEventListener('click', ()=> menu.classList.toggle('open')); }
+    if(btn&&menu){ btn.addEventListener('click',()=> menu.classList.toggle('open')); }
   })();
   </script>
 
   <!-- Parallax Script -->
   <script>
   (function(){
-    const scene = document.getElementById('parallax-scene');
+    const scene=document.getElementById('parallax-scene');
     if(!scene) return;
-
-    const deep  = scene.querySelector('.layer-deep');
-    const mid   = scene.querySelector('.layer-mid');
-    const stars = scene.querySelector('.layer-stars');
-    const mist  = scene.querySelector('.layer-mist');
-
-    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if(prefersReduced) return;
-
-    let mx = 0, my = 0, tx = 0, ty = 0;
-
-    function onPointerMove(e){
-      const p = e.touches ? e.touches[0] : e;
-      const x = p.clientX / (window.innerWidth  || 1);
-      const y = p.clientY / (window.innerHeight || 1);
-      mx = (x - 0.5) * 2;   // -1 .. 1
-      my = (y - 0.5) * 2;
-    }
-
-    function frame(){
-      tx += (mx - tx) * 0.06;
-      ty += (my - ty) * 0.06;
-
-      const dx = tx * 12,  dy = ty * 8;
-      if(deep)  deep .style.transform = `translateZ(-200px) translate3d(${dx}px,${dy}px,0) scale(1.2)`;
-      if(mid)   mid  .style.transform = `translateZ(-100px) translate3d(${dx*1.6}px,${dy*1.2}px,0) scale(1.1)`;
-      if(stars) stars.style.transform = `translateZ(-60px)  translate3d(${dx*2.2}px,${dy*1.8}px,0)`;
-      if(mist)  mist .style.transform = `translateZ(0px)   translate3d(${dx*3}px,${dy*2.2}px,0)`;
-      requestAnimationFrame(frame);
-    }
-
-    window.addEventListener('mousemove', onPointerMove, { passive: true });
-    window.addEventListener('touchmove', onPointerMove, { passive: true });
-    window.addEventListener('scroll', () => {
-      const s = window.scrollY * 0.02;
-      scene.style.transform = `translateY(${s}px)`;
-    }, { passive: true });
-
+    const deep=scene.querySelector('.layer-deep'), mid=scene.querySelector('.layer-mid'),
+          stars=scene.querySelector('.layer-stars'), mist=scene.querySelector('.layer-mist');
+    if(window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    let mx=0,my=0,tx=0,ty=0;
+    function onPointerMove(e){const p=e.touches?e.touches[0]:e; const x=p.clientX/(innerWidth||1); const y=p.clientY/(innerHeight||1); mx=(x-0.5)*2; my=(y-0.5)*2;}
+    function frame(){tx+=(mx-tx)*0.06; ty+=(my-ty)*0.06; const dx=tx*12,dy=ty*8;
+      if(deep) deep.style.transform=`translateZ(-200px) translate3d(${dx}px,${dy}px,0) scale(1.2)`;
+      if(mid)  mid .style.transform=`translateZ(-100px) translate3d(${dx*1.6}px,${dy*1.2}px,0) scale(1.1)`;
+      if(stars)stars.style.transform=`translateZ(-60px) translate3d(${dx*2.2}px,${dy*1.8}px,0)`;
+      if(mist) mist .style.transform=`translateZ(0px) translate3d(${dx*3}px,${dy*2.2}px,0)`;
+      requestAnimationFrame(frame);}
+    addEventListener('mousemove',onPointerMove,{passive:true});
+    addEventListener('touchmove',onPointerMove,{passive:true});
+    addEventListener('scroll',()=>{scene.style.transform=`translateY(${scrollY*0.02}px)`;},{passive:true});
     frame();
   })();
   </script>
 
-  <!-- Background music (Enemy) – starts AFTER intro video finishes -->
+  <!-- Background Music -->
   <audio id="bgm" src="music/Enemy.mp3" preload="auto" loop playsinline></audio>
-
   <script>
-  (() => {
-    /* styles for centered audio widget (injected) */
-    const css = `
-      .ebm-audio {
-        position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%);
-        z-index: 1100;
-        display: flex; align-items: center; gap: 10px;
-        background: rgba(0,0,0,.55);
-        border: 1px solid rgba(0,255,128,.35);
-        border-radius: 12px;
-        padding: 8px 12px;
-        font-family: 'Orbitron', system-ui, sans-serif;
-        box-shadow: 0 8px 24px rgba(0,0,0,.35);
-        -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
-      }
-      .ebm-audio button {
-        appearance: none; border: 1px solid rgba(0,255,128,.45);
-        background: transparent; color: #b9ffdf; font-weight: 700;
-        padding: 6px 10px; border-radius: 10px; cursor: pointer;
-      }
-      .ebm-audio button:hover { color: #00ffea; border-color: #00ffea; }
-      .ebm-audio input[type="range"] { width: 140px; accent-color: #00ff99; }
-      .ebm-audio .status { color: #76ffb2; font-size: 12px; letter-spacing: .02em; opacity: .9; }
-      .ebm-audio .dot { display:inline-block; width:6px; height:6px; border-radius:50%;
-        background:#ff5c5c; margin-left:6px; box-shadow:0 0 8px #ff5c5c; vertical-align: middle; }
-      .ebm-audio.playing .dot { background:#00ffa0; box-shadow:0 0 8px #00ffa0; }
-      @media (max-width: 520px){ .ebm-audio input[type="range"]{ width: 100px; } }
-    `;
-    const style = document.createElement('style');
-    style.textContent = css;
-    document.head.appendChild(style);
-
-    /* widget markup */
-    const wrap = document.createElement('div');
-    wrap.className = 'ebm-audio';
-    wrap.innerHTML = `
-      <button id="ebmPlay" disabled>Play</button>
-      <button id="ebmMute" disabled>Mute</button>
+  (()=>{const css=`
+    .ebm-audio{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);
+      z-index:1100;display:flex;align-items:center;gap:10px;
+      background:rgba(0,0,0,.55);border:1px solid rgba(0,255,128,.35);
+      border-radius:12px;padding:8px 12px;font-family:'Orbitron',sans-serif;
+      box-shadow:0 8px 24px rgba(0,0,0,.35);}
+    .ebm-audio button{border:1px solid rgba(0,255,128,.45);background:transparent;
+      color:#b9ffdf;font-weight:700;padding:6px 10px;border-radius:10px;cursor:pointer;}
+    .ebm-audio button:hover{color:#00ffea;border-color:#00ffea}
+    .ebm-audio input[type="range"]{width:140px;accent-color:#00ff99}
+    .ebm-audio .status{color:#76ffb2;font-size:12px;letter-spacing:.02em;opacity:.9}
+    .ebm-audio .dot{display:inline-block;width:6px;height:6px;border-radius:50%;
+      background:#ff5c5c;margin-left:6px;box-shadow:0 0 8px #ff5c5c}
+    .ebm-audio.playing .dot{background:#00ffa0;box-shadow:0 0 8px #00ffa0}
+    @media(max-width:520px){.ebm-audio input[type="range"]{width:100px}}`;
+    const s=document.createElement('style');s.textContent=css;document.head.appendChild(s);
+    const wrap=document.createElement('div');wrap.className='ebm-audio';
+    wrap.innerHTML=`<button id="ebmPlay" disabled>Play</button><button id="ebmMute" disabled>Mute</button>
       <input id="ebmVol" type="range" min="0" max="1" step="0.01" disabled />
-      <span class="status" id="ebmStatus">waiting for intro<span class="dot" aria-hidden="true"></span></span>
-    `;
+      <span class="status" id="ebmStatus">waiting for intro<span class="dot"></span></span>`;
     document.body.appendChild(wrap);
-
-    const audio = document.getElementById('bgm');
-    const playBtn = wrap.querySelector('#ebmPlay');
-    const muteBtn = wrap.querySelector('#ebmMute');
-    const vol = wrap.querySelector('#ebmVol');
-    const status = wrap.querySelector('#ebmStatus');
-
-    // load saved prefs
-    const keyVol = 'ebm_enemy_vol', keyMute = 'ebm_enemy_mute';
-    const savedVol = parseFloat(localStorage.getItem(keyVol));
-    const savedMute = localStorage.getItem(keyMute) === 'true';
-    audio.volume = Number.isFinite(savedVol) ? savedVol : 0.4;
-    audio.muted = savedMute;
-    vol.value = audio.volume;
-
-    function setControls(on){
-      playBtn.disabled = !on;
-      muteBtn.disabled = !on;
-      vol.disabled = !on;
-    }
-    function updateUI(){
-      playBtn.textContent = audio.paused ? 'Play' : 'Pause';
-      muteBtn.textContent = audio.muted ? 'Unmute' : 'Mute';
-      status.textContent = audio.paused ? 'paused' : 'playing';
-      wrap.classList.toggle('playing', !audio.paused);
-      status.insertAdjacentHTML('beforeend','<span class="dot" aria-hidden="true"></span>');
-    }
-
-    async function startBGM(){
-      setControls(true);
-      try { await audio.play(); }
-      catch {
-        status.textContent = 'tap to play';
-        status.insertAdjacentHTML('beforeend','<span class="dot" aria-hidden="true"></span>');
-      }
-      updateUI();
-    }
-
-    // start after the intro video signals it's done
-    window.addEventListener('intro-finished', startBGM, { once:true });
-
-    // controls
-    playBtn.addEventListener('click', async () => {
-      if (audio.paused) { await audio.play().catch(()=>{}); }
-      else { audio.pause(); }
-      updateUI();
-    });
-    muteBtn.addEventListener('click', () => {
-      audio.muted = !audio.muted;
-      localStorage.setItem(keyMute, String(audio.muted));
-      updateUI();
-    });
-    vol.addEventListener('input', () => {
-      audio.volume = Number(vol.value);
-      localStorage.setItem(keyVol, String(audio.volume));
-      if (audio.volume > 0 && audio.muted) {
-        audio.muted = false;
-        localStorage.setItem(keyMute, 'false');
-      }
-      updateUI();
-    });
-
-    audio.addEventListener('play', updateUI);
-    audio.addEventListener('pause', updateUI);
-    audio.addEventListener('volumechange', updateUI);
+    const audio=document.getElementById('bgm'),playBtn=wrap.querySelector('#ebmPlay'),
+    muteBtn=wrap.querySelector('#ebmMute'),vol=wrap.querySelector('#ebmVol'),status=wrap.querySelector('#ebmStatus');
+    const keyVol='ebm_enemy_vol',keyMute='ebm_enemy_mute';
+    const savedVol=parseFloat(localStorage.getItem(keyVol));const savedMute=localStorage.getItem(keyMute)==='true';
+    audio.volume=Number.isFinite(savedVol)?savedVol:0.4;audio.muted=savedMute;vol.value=audio.volume;
+    function setControls(on){playBtn.disabled=!on;muteBtn.disabled=!on;vol.disabled=!on}
+    function updateUI(){playBtn.textContent=audio.paused?'Play':'Pause';muteBtn.textContent=audio.muted?'Unmute':'Mute';
+      status.textContent=audio.paused?'paused':'playing';wrap.classList.toggle('playing',!audio.paused);
+      status.insertAdjacentHTML('beforeend','<span class="dot"></span>');}
+    async function startBGM(){setControls(true);try{await audio.play();}catch{status.textContent='tap to play';
+      status.insertAdjacentHTML('beforeend','<span class="dot"></span>');}updateUI();}
+    addEventListener('intro-finished',startBGM,{once:true});
+    playBtn.addEventListener('click',async()=>{if(audio.paused){await audio.play().catch(()=>{});}else audio.pause();updateUI()});
+    muteBtn.addEventListener('click',()=>{audio.muted=!audio.muted;localStorage.setItem(keyMute,String(audio.muted));updateUI()});
+    vol.addEventListener('input',()=>{audio.volume=Number(vol.value);localStorage.setItem(keyVol,String(audio.volume));
+      if(audio.volume>0&&audio.muted){audio.muted=false;localStorage.setItem(keyMute,'false')}updateUI()});
+    audio.addEventListener('play',updateUI);audio.addEventListener('pause',updateUI);audio.addEventListener('volumechange',updateUI);
   })();
   </script>
 </body>
