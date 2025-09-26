@@ -9,64 +9,26 @@
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&display=swap');
     :root { --neon:#00ff99; --bg:#020d07; --ink:#e0ffe8; }
 
-    /* Base */
     *{box-sizing:border-box}
     body{
       margin:0;
       font-family:'Orbitron',sans-serif;
       color:var(--ink);
-      background:#020d07; /* fallback */
+      background:#020d07;
       overflow-x:hidden;
     }
 
-    /* === Parallax Background === */
-    #parallax-scene{
-      position: fixed; inset: 0;
-      perspective: 1200px;
+    /* ==== Video Background ==== */
+    .video-bg {
+      position: fixed;
+      inset: 0;
+      z-index: -3; /* behind everything */
       overflow: hidden;
-      z-index: -3;
     }
-    #parallax-scene .layer{
-      position: absolute; inset: -6%;
-      will-change: transform;
-      transform-style: preserve-3d;
-      backface-visibility: hidden;
-    }
-    .layer-deep{
-      background: url("assets/bg.png") center / cover no-repeat;
-      filter: saturate(1.05) contrast(1.05);
-      transform: translateZ(-200px) scale(1.2);
-    }
-    .layer-mid{
-      background: url("assets/bg.png") center / cover no-repeat;
-      filter: blur(1.2px) brightness(.98);
-      opacity: .95;
-      transform: translateZ(-100px) scale(1.1);
-      mix-blend-mode: normal;
-    }
-    .layer-stars{
-      background: transparent url('https://www.transparenttextures.com/patterns/stardust.png') repeat;
-      opacity: .18;
-      transform: translateZ(-60px) scale(1.05);
-      animation: moveStars 200s linear infinite;
-    }
-    @keyframes moveStars {
-      from { transform: translateZ(-60px) translate(0,0) }
-      to   { transform: translateZ(-60px) translate(-200px,-200px) }
-    }
-    .layer-mist{
-      background: radial-gradient(circle, rgba(0,255,128,0.08), transparent 70%);
-      mix-blend-mode: screen;
-      transform: translateZ(0px);
-      animation: drift 40s linear infinite;
-      opacity: 1;
-    }
-    @keyframes drift {
-      from { transform: translateZ(0px) translate(-25%, -25%) scale(1) }
-      to   { transform: translateZ(0px) translate( 25%,  25%) scale(1.2) }
-    }
-    @media (prefers-reduced-motion: reduce) {
-      #parallax-scene .layer { animation: none !important; transform: none !important; }
+    .video-bg video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
     }
 
     /* Header */
@@ -112,12 +74,11 @@
 </head>
 <body>
 
-  <!-- Parallax Background -->
-  <div id="parallax-scene" aria-hidden="true">
-    <div class="layer layer-deep"></div>
-    <div class="layer layer-mid"></div>
-    <div class="layer layer-stars"></div>
-    <div class="layer layer-mist"></div>
+  <!-- Video Background -->
+  <div class="video-bg" aria-hidden="true">
+    <video id="bgVideo" autoplay loop muted playsinline>
+      <source src="video/bg.mp4" type="video/mp4">
+    </video>
   </div>
 
   <!-- Intro Video -->
@@ -153,24 +114,18 @@
         src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/ebmarah/enemy"></iframe>
     </section>
 
-   <!-- Mascot -->
-<script src="js/ebmarah-mascot.js"></script>
-<script>
-  // Initialize the mascot only AFTER the intro video is done
-  window.addEventListener('intro-finished', () => {
-    EbmarahMascot.init({
-      mode: 'passive',
-      position: 'bottom-right',
-      funnyLines: [
-        'BASS INCOMING',
-        'sub-bass handshake!',
-        'gorilla certified 🔊',
-        'who threw this banana?',
-        'i smell a DROP...'
-      ]
-    });
-  }, { once: true });
-</script>
+    <!-- Mascot -->
+    <script src="js/ebmarah-mascot.js"></script>
+    <script>
+      // Init mascot only after intro finishes
+      window.addEventListener('intro-finished', () => {
+        EbmarahMascot.init({
+          mode:'passive',
+          position:'bottom-right',
+          funnyLines:['BASS INCOMING','sub-bass handshake!','gorilla certified 🔊','who threw this banana?','i smell a DROP...']
+        });
+      }, { once: true });
+    </script>
   </div>
 
   <!-- Intro Script -->
@@ -189,38 +144,13 @@
       setTimeout(()=> intro.style.display='none',700);
     }
 
-    // try autoplay with sound
     video.play().catch(()=>{ tap.style.display='flex'; });
-
     tap.addEventListener('click',()=>{ tap.style.display='none'; video.play(); });
     video.addEventListener('ended',endIntro,{once:true});
     intro.addEventListener('click',e=>{ if(e.target===intro) endIntro(); });
 
     const btn=document.getElementById('menuBtn'), menu=document.getElementById('menu');
     if(btn&&menu){ btn.addEventListener('click',()=> menu.classList.toggle('open')); }
-  })();
-  </script>
-
-  <!-- Parallax Script -->
-  <script>
-  (function(){
-    const scene=document.getElementById('parallax-scene');
-    if(!scene) return;
-    const deep=scene.querySelector('.layer-deep'), mid=scene.querySelector('.layer-mid'),
-          stars=scene.querySelector('.layer-stars'), mist=scene.querySelector('.layer-mist');
-    if(window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    let mx=0,my=0,tx=0,ty=0;
-    function onPointerMove(e){const p=e.touches?e.touches[0]:e; const x=p.clientX/(innerWidth||1); const y=p.clientY/(innerHeight||1); mx=(x-0.5)*2; my=(y-0.5)*2;}
-    function frame(){tx+=(mx-tx)*0.06; ty+=(my-ty)*0.06; const dx=tx*12,dy=ty*8;
-      if(deep) deep.style.transform=`translateZ(-200px) translate3d(${dx}px,${dy}px,0) scale(1.2)`;
-      if(mid)  mid .style.transform=`translateZ(-100px) translate3d(${dx*1.6}px,${dy*1.2}px,0) scale(1.1)`;
-      if(stars)stars.style.transform=`translateZ(-60px) translate3d(${dx*2.2}px,${dy*1.8}px,0)`;
-      if(mist) mist .style.transform=`translateZ(0px) translate3d(${dx*3}px,${dy*2.2}px,0)`;
-      requestAnimationFrame(frame);}
-    addEventListener('mousemove',onPointerMove,{passive:true});
-    addEventListener('touchmove',onPointerMove,{passive:true});
-    addEventListener('scroll',()=>{scene.style.transform=`translateY(${scrollY*0.02}px)`;},{passive:true});
-    frame();
   })();
   </script>
 
