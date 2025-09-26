@@ -3,84 +3,104 @@
 <head>
   <meta charset="UTF-8" />
   <title>Ebmarah – Music</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="icon" type="image/png" href="assets/favicon.png" />
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&display=swap');
-    :root { --neon: #00ff99; }
-    * { box-sizing: border-box; }
-    html, body { height: 100%; }
-    body {
-      margin: 0;
-      font-family: 'Orbitron', sans-serif;
-      color: #e0ffe8;
-      overflow: hidden;
-      background:#020d07; /* fallback */
+    :root { --neon:#00ff99; --ink:#e0ffe8; --bg:#020d07; }
+
+    *{box-sizing:border-box;}
+    html,body{height:100%;}
+    body{
+      margin:0;
+      font-family:'Orbitron',sans-serif;
+      color:var(--ink);
+      overflow-x:hidden;
+      background:var(--bg);
     }
 
     /* Background layers */
-    .background {
-      position:fixed; inset:0;
-      background:url("assets/bg.png") center center / cover no-repeat;
-      z-index:-3;
-    }
-    .stars {
-      position: fixed; inset:0;
-      background: transparent url('https://www.transparenttextures.com/patterns/stardust.png') repeat;
-      animation: moveStars 200s linear infinite;
-      opacity: 0.18; pointer-events:none; z-index:-2;
-    }
-    @keyframes moveStars { from {transform:translate(0,0)} to {transform:translate(-200px,-200px)} }
+    .background{position:fixed; inset:0; background:url("assets/bg.png") center/cover no-repeat; z-index:-3}
+    .stars{position:fixed; inset:0; background:transparent url('https://www.transparenttextures.com/patterns/stardust.png') repeat; animation:moveStars 200s linear infinite; opacity:.18; z-index:-2}
+    @keyframes moveStars{from{transform:translate(0,0)} to{transform:translate(-200px,-200px)}}
+    .mist{position:fixed; inset:0; background:radial-gradient(circle, rgba(0,255,128,.08), transparent 70%); animation:drift 40s linear infinite; mix-blend-mode:screen; z-index:-1}
+    @keyframes drift{from{transform:translate(-25%,-25%) scale(1)} to{transform:translate(25%,25%) scale(1.2)}}
 
-    .mist {
-      position: fixed; inset:0;
-      background: radial-gradient(circle, rgba(0,255,128,0.08), transparent 70%);
-      animation: drift 40s linear infinite; mix-blend-mode: screen; pointer-events:none; z-index:-1;
+    /* Header */
+    header{
+      position:fixed; inset:0 0 auto 0;
+      display:flex; justify-content:space-between; align-items:center;
+      padding:14px 24px;
+      background:rgba(2,13,7,.75);
+      border-bottom:1px solid rgba(0,255,128,.2);
+      box-shadow:0 6px 24px rgba(0,0,0,.35);
+      z-index:1000;
     }
-    @keyframes drift { from{transform:translate(-25%,-25%) scale(1)} to{transform:translate(25%,25%) scale(1.2)} }
+    .brand{display:flex; gap:10px; align-items:center; font-weight:800; letter-spacing:.02em;}
+    .brand img{height:40px; width:auto;}
+    nav{display:flex; align-items:center; gap:22px;}
+    nav a{color:#76ffb2; text-decoration:none; font-weight:700; font-size:clamp(12px,1.6vw,14px);}
+    nav a:hover{color:#00ffea;}
 
-    header {
-      position: fixed; inset: 0 0 auto 0;
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 12px 24px;
-      backdrop-filter: blur(10px);
-      background: rgba(0,255,128,0.05);
-      border-bottom: 1px solid rgba(0,255,128,0.2);
-      z-index: 10;
-    }
-    .logo { display:flex; gap:10px; align-items:center; }
-    .logo img { height: 28px; }
-    nav a {
-      color: #76ffb2; text-decoration: none; margin-left: 22px; font-weight: 700;
-    }
-    nav a:hover { color: #00ffea; }
+    /* Mobile menu toggle */
+    .menu-btn{display:none; background:none; border:0; color:#b9ffdf; font-size:18px; font-weight:700; padding:6px 10px; border:1px solid rgba(0,255,128,.35); border-radius:8px}
+    .menu{display:flex}
 
-    .frame-wrap {
-      position: absolute; top: 64px;
-      left: 0; right: 0; bottom: 0;
-      padding: 18px;
+    /* Content */
+    .spacer{height:72px;}
+    .frame-wrap{
+      position:relative;
+      margin:20px auto;
+      width:100%;
+      max-width:1100px;
+      padding:0 16px;
+      z-index:1;
     }
-    .frame {
-      width: 100%; height: 100%;
-      border: 2px solid rgba(0,255,128,0.25);
-      border-radius: 12px; overflow: hidden;
-      box-shadow: 0 0 30px rgba(0,255,128,0.2);
-      background: rgba(0,0,0,0.25);
+    .frame{
+      width:100%;
+      height: clamp(500px, 70vh, 900px);
+      border:2px solid rgba(0,255,128,0.25);
+      border-radius:12px;
+      overflow:hidden;
+      box-shadow:0 0 30px rgba(0,255,128,0.2);
+      background:rgba(0,0,0,0.25);
     }
-    iframe { width:100%; height:100%; border:0; }
+    iframe{width:100%; height:100%; border:0;}
+
+    /* Breakpoints */
+    @media(max-width:1024px){
+      header{padding:12px 18px;}
+      .brand img{height:36px;}
+      nav{gap:16px;}
+      .spacer{height:64px;}
+    }
+    @media(max-width:720px){
+      .brand img{height:30px;}
+      .menu-btn{display:inline-flex;}
+      .menu{display:none; position:fixed; top:64px; right:12px; flex-direction:column; gap:10px;
+            background:rgba(2,13,7,.92); border:1px solid rgba(0,255,128,.25); border-radius:10px;
+            padding:12px; box-shadow:0 14px 40px rgba(0,0,0,.45); z-index:1001;}
+      .menu.open{display:flex;}
+    }
+    @media(max-width:380px){
+      nav a{font-size:13px;}
+    }
   </style>
 </head>
 <body>
-  <!-- Background layers -->
+  <!-- Background -->
   <div class="background"></div>
   <div class="stars"></div>
   <div class="mist"></div>
 
   <header>
-    <div class="logo">
+    <div class="brand">
       <img src="assets/favicon.png" alt="Ebmarah">
-      <a href="index.html" style="color:#e0ffe8; text-decoration:none; font-weight:700;">Ebmarah</a>
+      <span style="font-size:clamp(16px,2.6vw,22px)">Ebmarah</span>
     </div>
-    <nav>
+
+    <button class="menu-btn" id="menuBtn">Menu</button>
+    <nav class="menu" id="menu">
       <a href="index.html">Home</a>
       <a href="music.html">Music</a>
       <a href="sample-packs.html">Sample Packs</a>
@@ -88,6 +108,8 @@
       <a href="contact.html">Contact</a>
     </nav>
   </header>
+
+  <div class="spacer"></div>
 
   <div class="frame-wrap">
     <div class="frame">
@@ -100,45 +122,46 @@
     </div>
   </div>
 
-  <!-- Mascot + fake reactive bananas -->
+  <!-- Mascot -->
   <script src="js/ebmarah-mascot.js"></script>
   <script>
     EbmarahMascot.init({
-      mode: 'passive',
-      position: 'bottom-right',
-      funnyLines: [
+      mode:'passive',
+      position:'bottom-right',
+      funnyLines:[
         'BASS INCOMING',
         'sub-bass handshake!',
         'gorilla certified 🔊',
         'who threw this banana?',
-        'i smell a DROP...'
+        'i smell a DROP...',
+        'shut up justin'
       ]
     });
   </script>
 
-  <!-- SoundCloud Widget API -->
+  <!-- SC Widget API -->
   <script src="https://w.soundcloud.com/player/api.js"></script>
   <script>
-    const scFrame = document.querySelector('.sc-player');
-    const widget = SC.Widget(scFrame);
-
-    // Example drop times (ms) – edit for your tracks
-    const dropMs = [30000, 65000, 130000]; 
-    const hitWindow = 1000;
-    const triggered = new Set();
-
-    widget.bind(SC.Widget.Events.PLAY_PROGRESS, (e) => {
-      const t = Math.floor(e.currentPosition);
-      for (const d of dropMs) {
-        if (!triggered.has(d) && Math.abs(t - d) <= hitWindow) {
+    const scFrame=document.querySelector('.sc-player');
+    const widget=SC.Widget(scFrame);
+    const dropMs=[30000,65000,130000], hitWindow=1000, triggered=new Set();
+    widget.bind(SC.Widget.Events.PLAY_PROGRESS, e=>{
+      const t=Math.floor(e.currentPosition);
+      for(const d of dropMs){
+        if(!triggered.has(d) && Math.abs(t-d)<=hitWindow){
           triggered.add(d);
-          EbmarahMascot.say('BASS INCOMING!', 3000);
+          EbmarahMascot.say('BASS INCOMING!',3000);
           EbmarahMascot.throwBananas(7);
           EbmarahMascot.setMood('curious');
-          setTimeout(()=>EbmarahMascot.setMood('idle'), 600);
+          setTimeout(()=>EbmarahMascot.setMood('idle'),600);
         }
       }
     });
+
+    // Mobile menu toggle
+    const btn=document.getElementById('menuBtn'), menu=document.getElementById('menu');
+    if(btn && menu){ btn.addEventListener('click', ()=> menu.classList.toggle('open')); }
   </script>
 </body>
 </html>
+
