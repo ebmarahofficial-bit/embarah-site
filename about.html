@@ -5,57 +5,167 @@
   <title>Ebmarah – About</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="icon" type="image/png" href="assets/favicon.png" />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&display=swap" rel="stylesheet" />
   <style>
+    :root {
+      --neon: #00ff99;
+      --bg: #020d07;
+      --ink: #e0ffe8;
+    }
+
+    * { box-sizing: border-box; }
+
     html, body {
       margin: 0;
       padding: 0;
       height: 100%;
       font-family: 'Orbitron', sans-serif;
-      background: #020d07;
-      color: #e0ffe8;
+      background: var(--bg);
+      color: var(--ink);
       overflow-x: hidden;
-      perspective: 1000px;
     }
 
-    .layer {
+    /* Background */
+    .background {
       position: fixed;
       inset: 0;
-      will-change: transform;
-      background-size: cover;
-      background-position: center;
+      background: url("assets/bg.png") center/cover no-repeat;
+      z-index: -3;
+    }
+
+    .stars {
+      position: fixed;
+      inset: 0;
+      background: transparent url('https://www.transparenttextures.com/patterns/stardust.png') repeat;
+      animation: moveStars 200s linear infinite;
+      opacity: 0.2;
+      z-index: -2;
+    }
+
+    @keyframes moveStars {
+      from { transform: translate(0,0); }
+      to { transform: translate(-200px,-200px); }
+    }
+
+    .mist {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle, rgba(0,255,128,0.08), transparent 70%);
+      animation: drift 40s linear infinite;
+      mix-blend-mode: screen;
       z-index: -1;
     }
 
-    .layer-deep {
-      background-image: url("assets/bg.png");
-      transform: translateZ(-200px) scale(1.2);
+    @keyframes drift {
+      from { transform: translate(-25%, -25%) scale(1); }
+      to { transform: translate(25%, 25%) scale(1.2); }
     }
 
-    .layer-mid {
-      background-image: url("assets/bg.png");
-      transform: translateZ(-100px) scale(1.1);
-      opacity: 0.3;
-    }
-
+    /* Header + Nav */
     header {
-      padding: 20px;
-      text-align: center;
-      font-size: 2em;
-      color: #76ffb2;
-      z-index: 1;
-      position: relative;
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 24px;
+      background: rgba(0, 255, 128, 0.05);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(0, 255, 128, 0.1);
+      z-index: 1000;
     }
 
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+    }
+
+    .brand img {
+      height: 40px;
+      width: auto;
+    }
+
+    nav {
+      display: flex;
+      align-items: center;
+      gap: 22px;
+    }
+
+    nav a {
+      color: #76ffb2;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: clamp(12px, 1.6vw, 14px);
+    }
+
+    nav a:hover {
+      color: #00ffea;
+    }
+
+    .menu-btn {
+      display: none;
+      background: none;
+      border: 0;
+      color: #b9ffdf;
+      font-size: 18px;
+      font-weight: 700;
+      padding: 6px 10px;
+      border: 1px solid rgba(0,255,128,.35);
+      border-radius: 8px;
+    }
+
+    .menu { display: flex; }
+
+    @media (max-width: 720px) {
+      .menu-btn { display: inline-flex; }
+      .menu {
+        display: none;
+        position: fixed;
+        top: 64px;
+        right: 12px;
+        flex-direction: column;
+        gap: 10px;
+        background: rgba(2,13,7,.92);
+        border: 1px solid rgba(0,255,128,.25);
+        border-radius: 10px;
+        padding: 12px;
+        box-shadow: 0 14px 40px rgba(0,0,0,.45);
+      }
+      .menu.open { display: flex; }
+    }
+
+    .spacer {
+      height: 80px;
+    }
+
+    /* Main Content */
     main {
-      padding: 40px 20px;
       max-width: 800px;
       margin: 0 auto;
-      background-color: rgba(0,0,0,0.5);
+      padding: 40px 20px;
+      background: rgba(0, 0, 0, 0.4);
       border-radius: 12px;
-      z-index: 1;
-      position: relative;
+      box-shadow: 0 0 20px rgba(0,255,128,0.1);
     }
 
+    h1 {
+      font-size: clamp(28px, 6vw, 48px);
+      text-align: center;
+      margin-bottom: 24px;
+      color: var(--neon);
+      text-shadow: 0 0 16px var(--neon);
+    }
+
+    p {
+      line-height: 1.6;
+      font-size: clamp(14px, 2.4vw, 18px);
+      margin-bottom: 16px;
+    }
+
+    /* Audio Controls */
     #audio-controls {
       position: fixed;
       bottom: 16px;
@@ -77,55 +187,65 @@
       vertical-align: middle;
       margin-left: 8px;
     }
-
-    @media (max-width: 600px) {
-      header {
-        font-size: 1.4em;
-      }
-      main {
-        padding: 20px 14px;
-      }
-    }
   </style>
 </head>
 <body>
 
-  <!-- Parallax Layers -->
-  <div class="layer layer-deep"></div>
-  <div class="layer layer-mid"></div>
+  <!-- Background Layers -->
+  <div class="background"></div>
+  <div class="stars"></div>
+  <div class="mist"></div>
 
-  <!-- Audio Player -->
+  <!-- Header -->
+  <header>
+    <div class="brand">
+      <img src="assets/favicon.png" alt="Ebmarah" />
+      <span style="font-size: clamp(16px, 2.6vw, 22px);">Ebmarah</span>
+    </div>
+    <button class="menu-btn" id="menuBtn">Menu</button>
+    <nav class="menu" id="menu">
+      <a href="index.html">Home</a>
+      <a href="music.html">Music</a>
+      <a href="sample-packs.html">Sample Packs</a>
+      <a href="about.html">About</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+  </header>
+
+  <!-- Spacer -->
+  <div class="spacer"></div>
+
+  <!-- Main Content -->
+  <main>
+    <h1>About Ebmarah</h1>
+    <p>Ebmarah A.K.A. Cody is a fictional character in the EDM artist scene pronounced: <strong>ehb-mar-uh</strong>. The artist name is actually <em>"Harambe"</em> spelled backwards.</p>
+    <p>Harambe (May 27, 1999 – May 28, 2016) was a western lowland gorilla who lived at the Cincinnati Zoo from 2014 to 2016.</p>
+    <p>Due to the unfortunate nature of how much Marijuana is consumed by the artist at hand, comedy and hilarity are the two attractive features with obnoxious vocals and gut-wrenching bass design.</p>
+    <p>Cody at heart is a creative character, with such lines as <strong>"in my ass"</strong> and <strong>"I’m not here for fun, I’m here for bass"</strong>.</p>
+  </main>
+
+  <!-- Audio -->
   <audio id="bg-music" src="assets/about.mp3" preload="auto" loop playsinline></audio>
   <div id="audio-controls">
     <button id="muteToggle">Mute</button>
     <input id="volumeSlider" type="range" min="0" max="1" step="0.01" value="1" />
   </div>
 
-  <header>About Ebmarah</header>
-
-  <main>
-    <p>
-      Ebmarah A.K.A. Cody is a fictional character in the EDM artist scene pronounced: <strong>ehb-mar-uh</strong>.
-      The artist name is actually <em>"Harambe"</em> spelled backwards.
-    </p>
-    <p>
-      Harambe (May 27, 1999 – May 28, 2016) was a western lowland gorilla who lived at the Cincinnati Zoo from 2014 to 2016.
-    </p>
-    <p>
-      Due to the unfortunate nature of how much Marijuana is consumed by the artist at hand,
-      comedy and hilarity are the two attractive features with obnoxious vocals and gut-wrenching bass design.
-    </p>
-    <p>
-      Cody at heart is a creative character, with such lines as <strong>"in my ass"</strong> and <strong>"I’m not here for fun, I’m here for bass"</strong>.
-    </p>
-  </main>
-
+  <!-- Scripts -->
   <script>
+    // Mobile menu toggle
+    const btn = document.getElementById('menuBtn'),
+          menu = document.getElementById('menu');
+    if (btn && menu) {
+      btn.addEventListener('click', () => menu.classList.toggle('open'));
+    }
+
+    // Audio controls
     const bgMusic = document.getElementById('bg-music');
     const muteToggle = document.getElementById('muteToggle');
     const volumeSlider = document.getElementById('volumeSlider');
 
-    // Enable music on user interaction (mobile-safe)
+    // Start audio on user interaction (mobile-safe)
     window.addEventListener('click', () => {
       if (bgMusic.paused) {
         bgMusic.play().catch(() => {});
@@ -142,22 +262,6 @@
       bgMusic.muted = (bgMusic.volume === 0);
       muteToggle.textContent = bgMusic.muted ? 'Unmute' : 'Mute';
     });
-
-    // Optional: Animate background layers on mouse move for depth
-    (function animateParallax() {
-      const deep = document.querySelector('.layer-deep');
-      const mid  = document.querySelector('.layer-mid');
-      let rid = 0;
-
-      window.addEventListener('mousemove', e => {
-        const x = (e.clientX / window.innerWidth - 0.5) * 2;
-        const y = (e.clientY / window.innerHeight - 0.5) * 2;
-
-        deep.style.transform = `translateZ(-200px) scale(1.2) translate(${x * 10}px, ${y * 10}px)`;
-        mid.style.transform  = `translateZ(-100px) scale(1.1) translate(${x * 20}px, ${y * 20}px)`;
-      });
-    })();
   </script>
-
 </body>
 </html>
