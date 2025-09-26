@@ -16,11 +16,11 @@
       background:#020d07; overflow-x:hidden;
     }
 
-    /* ===== Video Background ===== */
+    /* ===== Video Background (bg2.mp4) ===== */
     .video-bg{ position:fixed; inset:0; z-index:-3; overflow:hidden }
     .video-bg video{ width:100%; height:100%; object-fit:cover; object-position:center; }
 
-    /* ===== Header / Menu (from index) ===== */
+    /* ===== Header (matches index) ===== */
     header{
       position:fixed; inset:0 0 auto 0;
       display:flex; align-items:center; justify-content:space-between;
@@ -33,21 +33,27 @@
     .brand img{height:40px; width:auto}
     .brand span{font-size:clamp(16px,2.6vw,22px)}
 
+    /* Desktop nav */
     nav.site-nav{display:flex; align-items:center; gap:22px}
-    nav.site-nav a{ color:#76ffb2; text-decoration:none; font-weight:700; font-size:clamp(13px,1.6vw,14px) }
+    nav.site-nav a{
+      color:#76ffb2; text-decoration:none; font-weight:700; font-size:clamp(13px,1.6vw,14px)
+    }
     nav.site-nav a:hover{ color:#00ffea }
 
-    .menu-btn{ display:none; background:none; border:1px solid rgba(0,255,128,.35);
-      color:#b9ffdf; font-size:16px; font-weight:700; padding:8px 12px; border-radius:10px }
+    /* Mobile trigger */
+    .menu-btn{
+      display:none; background:none; border:1px solid rgba(0,255,128,.35);
+      color:#b9ffdf; font-size:16px; font-weight:700; padding:8px 12px; border-radius:10px
+    }
 
+    /* ===== Offcanvas Drawer (matches index) ===== */
     .drawer-overlay{
-      position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:999;
-      opacity:0; pointer-events:none; transition:.25s;
+      position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:999; opacity:0; pointer-events:none; transition:.25s;
     }
     .drawer{
       position:fixed; top:0; right:-320px; width:min(80vw,320px); height:100%;
       background:#03140c; border-left:1px solid rgba(0,255,128,.25);
-      box-shadow:-12px 0 40px rgba(0,0,0,.45); z-index:1000; transition: right .25s ease;
+      box-shadow:-12px 0 40px rgba(0,0,0,.45); z-index:1000; transition:right .25s ease;
       display:flex; flex-direction:column; padding:18px;
     }
     .drawer header{ all:unset; display:flex; align-items:center; justify-content:space-between; margin-bottom:8px }
@@ -56,28 +62,33 @@
       background:none; border:1px solid rgba(0,255,128,.35); color:#b9ffdf; padding:6px 10px; border-radius:10px
     }
     .drawer nav{ display:flex; flex-direction:column; margin-top:12px }
-    .drawer nav a{ padding:14px 10px; border-bottom:1px solid rgba(0,255,128,.15); color:#b9ffdf; text-decoration:none; font-weight:800; font-size:16px; }
+    .drawer nav a{
+      padding:14px 10px; border-bottom:1px solid rgba(0,255,128,.15);
+      color:#b9ffdf; text-decoration:none; font-weight:800; letter-spacing:.02em; font-size:16px;
+    }
     .drawer nav a:last-child{ border-bottom:0 }
+    .drawer nav a:active{ background:rgba(0,255,128,.08) }
+
     .drawer-open .drawer{ right:0 }
     .drawer-open .drawer-overlay{ opacity:1; pointer-events:auto }
 
-    /* ===== Layout ===== */
+    /* ===== Page layout ===== */
     .spacer{ height:70px }
     .wrap{ padding: clamp(12px,2vw,24px); display:grid; place-items:center; }
     .card{ width:min(1400px,98vw); padding:16px; text-align:center; }
-
     h1{ margin:6px 0 16px; letter-spacing:.04em; color:var(--neon); text-shadow:0 0 12px rgba(0,255,153,.6); }
 
     .grid{ display:grid; gap:16px; grid-template-columns:1fr; }
     @media (min-width:980px){ .grid{ grid-template-columns:2fr 1fr; align-items:start } }
 
     .player, .chat-embed{ border-radius:12px; overflow:hidden; }
+    .player{ aspect-ratio:16/9; position:relative; }
+    .chat-embed{ min-height:420px; position:relative; }
+
+    /* Transparent iframes so bg video shows through edges */
     .player iframe, .chat-embed iframe{
-      width:100%; height:100%; border:0; display:block;
-      background:transparent !important;
+      width:100%; height:100%; border:0; display:block; background:transparent !important;
     }
-    .player{ aspect-ratio:16/9; }
-    .chat-embed{ min-height:420px; }
 
     .badge{
       position:absolute; top:10px; left:10px; padding:6px 10px; font-size:.85rem;
@@ -87,6 +98,15 @@
     .badge.offline{ color:#ff7070; }
 
     footer.site{ margin:20px auto 6px; width:min(1400px,98vw); text-align:center; opacity:.75; font-size:.85rem; }
+
+    /* Responsive: show hamburger under 960px like index */
+    @media (max-width: 960px){
+      nav.site-nav{ display:none }
+      .menu-btn{ display:inline-flex }
+    }
+
+    /* iOS hides native controls for bg video */
+    video::-webkit-media-controls{ display:none !important; }
   </style>
 </head>
 <body>
@@ -98,34 +118,38 @@
     </video>
   </div>
 
-  <!-- Header -->
+  <!-- Top bar (same as index) -->
   <header>
     <div class="brand">
       <img src="assets/favicon.png" alt="Ebmarah" />
       <span>Ebmarah</span>
     </div>
-    <nav class="site-nav">
+
+    <!-- Desktop nav -->
+    <nav class="site-nav" aria-label="Primary">
       <a href="index.html">Home</a>
       <a href="music.html">Music</a>
-      <a href="live.html" class="nav-link">Live</a>
+      <a class="nav-link" href="live.html">Live</a>
       <a href="sample-packs.html">Sample Packs</a>
       <a href="about.html">About</a>
       <a href="contact.html">Contact</a>
     </nav>
-    <button class="menu-btn" id="menuBtn">Menu</button>
+
+    <!-- Mobile trigger -->
+    <button class="menu-btn" id="menuBtn" aria-haspopup="true" aria-expanded="false" aria-controls="drawer">Menu</button>
   </header>
 
-  <!-- Mobile drawer -->
+  <!-- Offcanvas drawer (mobile/tablet) -->
   <div class="drawer-overlay" id="drawerOverlay"></div>
-  <aside class="drawer" id="drawer">
+  <aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-label="Site menu">
     <header>
       <h2>Menu</h2>
-      <button class="close" id="drawerClose">Close</button>
+      <button class="close" id="drawerClose" aria-label="Close menu">Close</button>
     </header>
-    <nav>
+    <nav aria-label="Mobile">
       <a href="index.html">Home</a>
       <a href="music.html">Music</a>
-      <a href="live.html">Live</a>
+      <a class="nav-link" href="live.html">Live</a>
       <a href="sample-packs.html">Sample Packs</a>
       <a href="about.html">About</a>
       <a href="contact.html">Contact</a>
@@ -138,9 +162,10 @@
   <div class="wrap">
     <div class="card">
       <h1>LIVE: Digital Gorilla Forest</h1>
+
+      <!-- Standby swaps to Live automatically -->
       <div class="grid" id="liveGrid">
-        <!-- Standby shown by default -->
-        <section class="player" id="standby">
+        <section class="player" aria-label="Standby" id="standby">
           <div class="badge offline">○ Standby</div>
           <div style="display:grid;place-items:center;height:100%;text-align:center;padding:20px;">
             <h2 style="color:var(--neon);font-size:1.6rem;">Standby — Stream Offline</h2>
@@ -154,45 +179,69 @@
   <footer class="site">© <span id="year"></span> Ebmarah — Digital Gorilla Forest</footer>
 
   <script>
-    const STREAM_ID = "YOUR_STREAM_ID"; // replace once with your persistent stream ID
+    const STREAM_ID = "YOUR_STREAM_ID"; // persistent ID recommended
     const domain = location.hostname;
-    const grid = document.getElementById('liveGrid');
-    const yearEl = document.getElementById('year'); yearEl.textContent=new Date().getFullYear();
+    const liveGrid = document.getElementById('liveGrid');
+    document.getElementById('year').textContent = new Date().getFullYear();
 
-    // Drawer menu
-    const root=document.documentElement, btn=document.getElementById('menuBtn');
-    const drawer=document.getElementById('drawer'), overlay=document.getElementById('drawerOverlay'), close=document.getElementById('drawerClose');
-    const open=()=>{ root.classList.add('drawer-open'); btn.setAttribute('aria-expanded','true'); };
-    const close=()=>{ root.classList.remove('drawer-open'); btn.setAttribute('aria-expanded','false'); };
-    btn.addEventListener('click',open); close.addEventListener('click',close); overlay.addEventListener('click',close);
+    /* ===== Drawer behavior (exactly like index) ===== */
+    const root = document.documentElement;
+    const menuBtn = document.getElementById('menuBtn');
+    const drawer = document.getElementById('drawer');
+    const overlay = document.getElementById('drawerOverlay');
+    const closeBtn = document.getElementById('drawerClose');
 
+    const firstLink = () => drawer.querySelector('a');
+
+    const openDrawer = () => {
+      root.classList.add('drawer-open');
+      menuBtn.setAttribute('aria-expanded','true');
+      firstLink()?.focus();
+    };
+    const closeDrawer = () => {
+      root.classList.remove('drawer-open');
+      menuBtn.setAttribute('aria-expanded','false');
+      menuBtn.focus();
+    };
+
+    menuBtn.addEventListener('click', openDrawer);
+    closeBtn.addEventListener('click', closeDrawer);
+    overlay.addEventListener('click', closeDrawer);
+    window.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
+
+    /* ===== Live / Standby swap ===== */
     function renderLive(){
-      grid.innerHTML=`
-        <section class="player">
+      liveGrid.innerHTML = `
+        <section class="player" aria-label="Live video">
           <div class="badge">● Live</div>
-          <iframe src="https://www.youtube.com/embed/${STREAM_ID}?autoplay=1&mute=1&modestbranding=1&rel=0&wmode=transparent&enablejsapi=1"
+          <iframe
+            src="https://www.youtube.com/embed/${STREAM_ID}?autoplay=1&mute=1&modestbranding=1&rel=0&wmode=transparent&enablejsapi=1"
+            title="YouTube Live Player"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
             allowfullscreen style="background:transparent;"></iframe>
         </section>
-        <aside class="chat">
+        <aside class="chat" aria-label="Live chat">
           <div class="chat-embed">
-            <iframe src="https://www.youtube.com/live_chat?v=${STREAM_ID}&embed_domain=${domain}" style="background:transparent;"></iframe>
+            <iframe
+              src="https://www.youtube.com/live_chat?v=${STREAM_ID}&embed_domain=${domain}"
+              title="YouTube Live Chat"
+              style="background:transparent;"></iframe>
           </div>
         </aside>`;
     }
 
     async function isLive(){
       try{
-        const res=await fetch(`https://www.youtube.com/oembed?url=https://youtube.com/watch?v=${STREAM_ID}&format=json`,{cache:'no-store'});
+        const res = await fetch(`https://www.youtube.com/oembed?url=https://youtube.com/watch?v=${STREAM_ID}&format=json`, { cache:'no-store' });
         return res.ok;
-      }catch{return false;}
+      } catch { return false; }
     }
 
     async function updateState(){
-      if(await isLive()) renderLive();
+      if (await isLive()) renderLive();
     }
-    updateState(); setInterval(updateState,60000);
+    updateState();
+    setInterval(updateState, 60000);
   </script>
 </body>
 </html>
-
