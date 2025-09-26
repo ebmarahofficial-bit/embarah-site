@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>Ebmarah – About</title>
-   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="icon" type="image/png" href="assets/favicon.png" />
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&display=swap');
@@ -27,18 +27,16 @@
       z-index: -3; /* behind everything */
     }
     #parallax-scene .layer{
-      position: absolute; inset: -6%; /* bleed for movement */
+      position: absolute; inset: -6%;
       will-change: transform;
       transform-style: preserve-3d;
       backface-visibility: hidden;
     }
-    /* Deep jungle layer (base image, slowest) */
     .layer-deep{
       background: url("assets/bg.png") center / cover no-repeat;
       filter: saturate(1.05) contrast(1.05);
       transform: translateZ(-200px) scale(1.2);
     }
-    /* Mid jungle layer (same image, slightly blurred & darker) */
     .layer-mid{
       background: url("assets/bg.png") center / cover no-repeat;
       filter: blur(1.2px) brightness(.98);
@@ -46,7 +44,6 @@
       transform: translateZ(-100px) scale(1.1);
       mix-blend-mode: normal;
     }
-    /* Stars layer */
     .layer-stars{
       background: transparent url('https://www.transparenttextures.com/patterns/stardust.png') repeat;
       opacity: .18;
@@ -57,7 +54,6 @@
       from { transform: translateZ(-60px) translate(0,0) }
       to   { transform: translateZ(-60px) translate(-200px,-200px) }
     }
-    /* Mist layer */
     .layer-mist{
       background: radial-gradient(circle, rgba(0,255,128,0.08), transparent 70%);
       mix-blend-mode: screen;
@@ -69,15 +65,11 @@
       from { transform: translateZ(0px) translate(-25%, -25%) scale(1) }
       to   { transform: translateZ(0px) translate( 25%,  25%) scale(1.2) }
     }
-    /* Reduced motion: keep layered look but no movement */
     @media (prefers-reduced-motion: reduce) {
-      #parallax-scene .layer {
-        animation: none !important;
-        transform: none !important;
-      }
+      #parallax-scene .layer { animation: none !important; transform: none !important; }
     }
 
-    /* ---------- Header (no blur, responsive) ---------- */
+    /* ---------- Header ---------- */
     header{
       position:fixed; inset:0 0 auto 0;
       display:flex; justify-content:space-between; align-items:center;
@@ -93,12 +85,11 @@
     nav a{ color:#76ffb2; text-decoration:none; font-weight:700; font-size:clamp(12px,1.6vw,14px); }
     nav a:hover{ color:#00ffea; }
 
-    /* Mobile menu toggle */
     .menu-btn{display:none; background:none; border:0; color:#b9ffdf; font-size:18px; font-weight:700; padding:6px 10px; border:1px solid rgba(0,255,128,.35); border-radius:8px}
     .menu{display:flex}
 
     /* ---------- Page Content ---------- */
-    .spacer{ height:72px; } /* pushes content below fixed header */
+    .spacer{ height:72px; }
     main{
       position:relative; z-index:1;
       max-width:1100px; margin:0 auto 40px auto; padding:22px;
@@ -128,7 +119,6 @@
     }
     .email a:hover{ color:#00ffea; }
 
-    /* Google Form frame (responsive height) */
     .frame{
       width:100%;
       height: clamp(720px, 80vh, 1100px);
@@ -138,8 +128,35 @@
       display:block;
     }
 
+    /* ---------- Audio Widget ---------- */
+    .audio-widget{
+      display:flex; align-items:center; gap:10px;
+      background:rgba(0,0,0,.55);
+      border:1px solid rgba(0,255,128,.35);
+      border-radius:12px;
+      padding:8px 12px;
+      box-shadow:0 8px 24px rgba(0,0,0,.35);
+    }
+    .audio-widget button{
+      appearance:none; border:1px solid rgba(0,255,128,.45);
+      background:transparent; color:#b9ffdf; font-weight:700;
+      padding:6px 10px; border-radius:10px; cursor:pointer;
+    }
+    .audio-widget button:hover{ color:#00ffea; border-color:#00ffea; }
+    .audio-widget .status{
+      color:#76ffb2; font-size:12px; letter-spacing:.02em;
+      opacity:.9;
+    }
+    .audio-widget input[type="range"]{
+      width:140px; accent-color: var(--neon);
+    }
+    .audio-widget .dot{
+      display:inline-block; width:6px; height:6px; border-radius:50%;
+      background:#ff5c5c; margin-left:6px; box-shadow:0 0 8px #ff5c5c;
+    }
+    .audio-widget.playing .dot{ background:#00ffa0; box-shadow:0 0 8px #00ffa0; }
+
     /* ---------- Breakpoints ---------- */
-    /* Tablet */
     @media (max-width: 1024px){
       header{ padding:12px 18px; }
       .brand img{ height:36px; }
@@ -147,21 +164,18 @@
       .spacer{ height:64px; }
       main{ padding:18px; }
     }
-
-    /* Phone */
     @media (max-width: 720px){
       .brand img{ height:30px; }
       .menu-btn{ display:inline-flex; }
-      /* turn nav into a dropdown panel */
       .menu{ display:none; position:fixed; top:64px; right:12px; flex-direction:column; gap:10px;
              background:rgba(2,13,7,.92); border:1px solid rgba(0,255,128,.25); border-radius:10px;
              padding:12px; box-shadow:0 14px 40px rgba(0,0,0,.45); z-index:1001; }
       .menu.open{ display:flex; }
+      .audio-widget input[type="range"]{ width:110px; }
     }
-
-    /* Tiny phones */
     @media (max-width: 380px){
       nav a{ font-size:13px; }
+      .audio-widget{ padding:6px 8px; gap:8px; }
     }
   </style>
 </head>
@@ -179,6 +193,14 @@
     <div class="brand">
       <img src="assets/favicon.png" alt="Ebmarah">
       <span style="font-size:clamp(16px,2.6vw,22px)">Ebmarah</span>
+    </div>
+
+    <!-- AUDIO CONTROL WIDGET -->
+    <div id="audioWidget" class="audio-widget" role="group" aria-label="Background music controls">
+      <button id="playPauseBtn" aria-label="Play or pause">Play</button>
+      <button id="muteBtn" aria-label="Mute or unmute">Mute</button>
+      <input id="volSlider" type="range" min="0" max="1" step="0.01" aria-label="Volume">
+      <span class="status" id="audioStatus">loading<span class="dot" aria-hidden="true"></span></span>
     </div>
 
     <button class="menu-btn" id="menuBtn">Menu</button>
@@ -206,7 +228,10 @@
     </div>
   </main>
 
-   <!-- Mascot -->
+  <!-- Hidden audio element -->
+  <audio id="bgm" src="music/ebmarahabout.mp3" preload="auto" loop></audio>
+
+  <!-- Mascot -->
   <script src="js/ebmarah-mascot.js"></script>
   <script>
     EbmarahMascot.init({
@@ -257,7 +282,6 @@
     }
 
     function frame(){
-      // ease toward target
       tx += (mx - tx) * 0.06;
       ty += (my - ty) * 0.06;
 
@@ -268,20 +292,100 @@
       if(stars) stars.style.transform = `translateZ(-60px)  translate3d(${dx*2.2}px,${dy*1.8}px,0)`;
       if(mist)  mist .style.transform = `translateZ(0px)   translate3d(${dx*3}px,${dy*2.2}px,0)`;
 
-      rafId = requestAnimationFrame(frame);
+      requestAnimationFrame(frame);
     }
 
-    // Pointer parallax
     window.addEventListener('mousemove', onPointerMove, { passive: true });
     window.addEventListener('touchmove', onPointerMove, { passive: true });
-
-    // Tiny scroll parallax to accent depth
     window.addEventListener('scroll', () => {
       const s = window.scrollY * 0.02;
       scene.style.transform = `translateY(${s}px)`;
     }, { passive: true });
 
     frame();
+  })();
+  </script>
+
+  <!-- Audio control logic -->
+  <script>
+  (function(){
+    const audio = document.getElementById('bgm');
+    const widget = document.getElementById('audioWidget');
+    const playPauseBtn = document.getElementById('playPauseBtn');
+    const muteBtn = document.getElementById('muteBtn');
+    const volSlider = document.getElementById('volSlider');
+    const status = document.getElementById('audioStatus');
+
+    // Load saved settings
+    const savedVol  = parseFloat(localStorage.getItem('ebm_vol'));
+    const savedMute = localStorage.getItem('ebm_mute') === 'true';
+
+    audio.volume = Number.isFinite(savedVol) ? savedVol : 0.4;
+    audio.muted = savedMute;
+    volSlider.value = audio.volume;
+
+    function updateUI(){
+      playPauseBtn.textContent = audio.paused ? 'Play' : 'Pause';
+      muteBtn.textContent = audio.muted ? 'Unmute' : 'Mute';
+      status.textContent = audio.paused ? 'paused' : 'playing';
+      widget.classList.toggle('playing', !audio.paused);
+      // add the dot back in
+      status.insertAdjacentHTML('beforeend', '<span class="dot" aria-hidden="true"></span>');
+    }
+
+    // Try to autoplay (many browsers require a gesture if not muted)
+    const tryPlay = async () => {
+      try {
+        await audio.play();
+      } catch (e) {
+        // Show gentle hint
+        status.textContent = 'tap to play';
+        status.insertAdjacentHTML('beforeend', '<span class="dot" aria-hidden="true"></span>');
+        // First interaction anywhere will start it
+        const resume = async () => {
+          try { await audio.play(); updateUI(); }
+          finally {
+            window.removeEventListener('pointerdown', resume);
+            window.removeEventListener('keydown', resume);
+          }
+        };
+        window.addEventListener('pointerdown', resume, { once:true });
+        window.addEventListener('keydown', resume, { once:true });
+      } finally {
+        updateUI();
+      }
+    };
+
+    // Start loop immediately; autoplay attempt
+    audio.setAttribute('loop', '');
+    tryPlay();
+
+    // Controls
+    playPauseBtn.addEventListener('click', async () => {
+      if(audio.paused){ await audio.play(); } else { audio.pause(); }
+      updateUI();
+    });
+
+    muteBtn.addEventListener('click', () => {
+      audio.muted = !audio.muted;
+      localStorage.setItem('ebm_mute', String(audio.muted));
+      updateUI();
+    });
+
+    volSlider.addEventListener('input', () => {
+      audio.volume = Number(volSlider.value);
+      localStorage.setItem('ebm_vol', String(audio.volume));
+      // If volume > 0, unmute automatically for convenience
+      if(audio.volume > 0 && audio.muted){
+        audio.muted = false;
+        localStorage.setItem('ebm_mute', 'false');
+      }
+      updateUI();
+    });
+
+    audio.addEventListener('play', updateUI);
+    audio.addEventListener('pause', updateUI);
+    audio.addEventListener('volumechange', updateUI);
   })();
   </script>
 </body>
