@@ -13,19 +13,20 @@
       --ink: #e0ffe8;
     }
 
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+    }
 
     html, body {
       margin: 0;
       padding: 0;
-      height: 100%;
       font-family: 'Orbitron', sans-serif;
       background: var(--bg);
       color: var(--ink);
       overflow-x: hidden;
     }
 
-    /* Background */
+    /* Background layers */
     .background {
       position: fixed;
       inset: 0;
@@ -61,7 +62,7 @@
       to { transform: translate(25%, 25%) scale(1.2); }
     }
 
-    /* Header + Nav */
+    /* Header & Nav */
     header {
       position: fixed;
       top: 0; left: 0; right: 0;
@@ -191,7 +192,7 @@
 </head>
 <body>
 
-  <!-- Background Layers -->
+  <!-- Background layers -->
   <div class="background"></div>
   <div class="stars"></div>
   <div class="mist"></div>
@@ -215,7 +216,7 @@
   <!-- Spacer -->
   <div class="spacer"></div>
 
-  <!-- Main Content -->
+  <!-- Main content -->
   <main>
     <h1>About Ebmarah</h1>
     <p>Ebmarah A.K.A. Cody is a fictional character in the EDM artist scene pronounced: <strong>ehb-mar-uh</strong>. The artist name is actually <em>"Harambe"</em> spelled backwards.</p>
@@ -234,8 +235,8 @@
   <!-- Scripts -->
   <script>
     // Mobile menu toggle
-    const btn = document.getElementById('menuBtn'),
-          menu = document.getElementById('menu');
+    const btn = document.getElementById('menuBtn');
+    const menu = document.getElementById('menu');
     if (btn && menu) {
       btn.addEventListener('click', () => menu.classList.toggle('open'));
     }
@@ -245,7 +246,6 @@
     const muteToggle = document.getElementById('muteToggle');
     const volumeSlider = document.getElementById('volumeSlider');
 
-    // Start audio on user interaction (mobile-safe)
     window.addEventListener('click', () => {
       if (bgMusic.paused) {
         bgMusic.play().catch(() => {});
