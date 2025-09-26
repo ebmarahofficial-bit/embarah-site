@@ -72,26 +72,50 @@
     .drawer-open .drawer{right:0;}
     .drawer-open .drawer-overlay{opacity:1; pointer-events:auto;}
 
-    /* ===== Content ===== */
+    /* ===== Page spacer ===== */
     .spacer{height:70px;}
-    .frame-wrap{
-      position:relative; margin:20px auto; width:100%;
-      max-width:1100px; padding:0 16px; z-index:1;
-    }
-    .frame{
-      width:100%;
-      height: clamp(500px, 70vh, 900px);
-      border:2px solid rgba(0,255,128,0.25);
-      border-radius:12px;
-      overflow:hidden;
-      box-shadow:0 0 30px rgba(0,255,128,0.2);
-      background:transparent;
-    }
-    iframe{width:100%; height:100%; border:0; background:transparent !important;}
 
-    @media(max-width:960px){
-      nav.site-nav{display:none;}
-      .menu-btn{display:inline-flex;}
+    /* ===== Hidden SoundCloud iframe (driver) ===== */
+    .sc-driver{
+      position:absolute; width:1px; height:1px; opacity:0; pointer-events:none; left:-9999px; top:auto; border:0;
+    }
+
+    /* ===== Minimal bottom-center player ===== */
+    .mini-player{
+      position:fixed; left:50%; bottom:16px; transform:translateX(-50%);
+      z-index:1100;
+      display:flex; align-items:center; gap:12px;
+      padding:8px 12px;
+      border:1px solid rgba(0,255,128,.35);
+      border-radius:12px;
+      background:rgba(0,0,0,.30); /* transparent look so BG stays visible */
+      box-shadow:0 8px 24px rgba(0,0,0,.35);
+      backdrop-filter:saturate(110%) blur(2px);
+    }
+    .mini-player button{
+      border:1px solid rgba(0,255,128,.45);
+      background:transparent;
+      color:#b9ffdf;
+      font-weight:800;
+      padding:6px 10px;
+      border-radius:10px;
+      cursor:pointer;
+    }
+    .mini-player button:hover{ color:#00ffea; border-color:#00ffea; }
+    .mini-player .title{
+      max-width:min(56vw,560px);
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+      font-size:12px; letter-spacing:.02em; color:#76ffb2;
+    }
+    .mini-player .dot{
+      width:6px; height:6px; border-radius:50%; margin-left:4px;
+      background:#ff5c5c; box-shadow:0 0 8px #ff5c5c; display:inline-block;
+    }
+    .mini-player.playing .dot{
+      background:#00ffa0; box-shadow:0 0 8px #00ffa0;
+    }
+    @media(max-width:520px){
+      .mini-player .title{ max-width:60vw; }
     }
   </style>
 </head>
@@ -144,16 +168,19 @@
 
   <div class="spacer"></div>
 
-  <!-- SoundCloud embed -->
-  <div class="frame-wrap">
-    <div class="frame">
-      <iframe
-        class="sc-player"
-        allow="autoplay"
-        src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/ebmarah&color=%2300ff99&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true&visual=true&show_artwork=true&theme_color=transparent"
-        title="Ebmarah on SoundCloud">
-      </iframe>
-    </div>
+  <!-- Hidden SoundCloud driver iframe (no visual UI) -->
+  <iframe
+    class="sc-driver"
+    allow="autoplay"
+    src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/ebmarah&visual=false&show_artwork=false&show_user=false&show_comments=false&sharing=false&buying=false&download=false&liking=false&auto_play=false&hide_related=true&single_active=true&color=%2300ff99&theme_color=transparent"
+    title="Ebmarah on SoundCloud (driver)"
+  ></iframe>
+
+  <!-- Minimal bottom-center controls -->
+  <div class="mini-player" id="miniPlayer" aria-live="polite">
+    <button id="scToggle" aria-label="Play/Pause">Play</button>
+    <span class="title" id="scTitle">Loading…</span>
+    <span class="dot" aria-hidden="true"></span>
   </div>
 
   <!-- Mascot -->
@@ -172,24 +199,65 @@
     });
   </script>
 
-  <!-- SoundCloud API for mascot events -->
+  <!-- SoundCloud API -->
   <script src="https://w.soundcloud.com/player/api.js"></script>
+
+  <!-- Player wiring -->
   <script>
-    const scFrame=document.querySelector('.sc-player');
-    const widget=SC.Widget(scFrame);
-    const dropMs=[30000,65000,130000], hitWindow=1000, triggered=new Set();
-    widget.bind(SC.Widget.Events.PLAY_PROGRESS, e=>{
-      const t=Math.floor(e.currentPosition);
-      for(const d of dropMs){
-        if(!triggered.has(d) && Math.abs(t-d)<=hitWindow){
-          triggered.add(d);
-          EbmarahMascot.say('BASS INCOMING!',3000);
-          EbmarahMascot.throwBananas(7);
-          EbmarahMascot.setMood('curious');
-          setTimeout(()=>EbmarahMascot.setMood('idle'),600);
-        }
+    (function(){
+      const frame = document.querySelector('.sc-driver');
+      const widget = SC.Widget(frame);
+      const btn = document.getElementById('scToggle');
+      const titleEl = document.getElementById('scTitle');
+      const bar = document.getElementById('miniPlayer');
+
+      let ready = false;
+      let isPlaying = false;
+
+      function updateTitle(){
+        widget.getCurrentSound(function(s){
+          if(s && s.title){
+            titleEl.textContent = s.title;
+          } else {
+            titleEl.textContent = 'Ready';
+          }
+        });
       }
-    });
+
+      function updateState(playing){
+        isPlaying = playing;
+        btn.textContent = playing ? 'Pause' : 'Play';
+        bar.classList.toggle('playing', playing);
+      }
+
+      widget.bind(SC.Widget.Events.READY, function(){
+        ready = true;
+        btn.disabled = false;
+        updateTitle();
+      });
+
+      widget.bind(SC.Widget.Events.PLAY, function(){
+        updateState(true);
+        updateTitle();
+      });
+      widget.bind(SC.Widget.Events.PAUSE, function(){
+        updateState(false);
+      });
+      widget.bind(SC.Widget.Events.FINISH, function(){
+        updateState(false);
+      });
+
+      // If track changes (e.g., user’s stream/playlist advances)
+      widget.bind(SC.Widget.Events.PLAY_PROGRESS, function(e){
+        // Just keep title fresh occasionally
+        if(e.currentPosition < 1200){ updateTitle(); }
+      });
+
+      btn.addEventListener('click', function(){
+        if(!ready) return;
+        if(isPlaying){ widget.pause(); } else { widget.play(); }
+      });
+    })();
   </script>
 
   <!-- Drawer logic -->
