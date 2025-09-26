@@ -32,13 +32,11 @@
       transform-style: preserve-3d;
       backface-visibility: hidden;
     }
-    /* Deep jungle layer (base image, slowest) */
     .layer-deep{
       background: url("assets/bg.png") center / cover no-repeat;
       filter: saturate(1.05) contrast(1.05);
       transform: translateZ(-200px) scale(1.2);
     }
-    /* Mid jungle layer (same image, slightly blurred & darker) */
     .layer-mid{
       background: url("assets/bg.png") center / cover no-repeat;
       filter: blur(1.2px) brightness(.98);
@@ -46,7 +44,6 @@
       transform: translateZ(-100px) scale(1.1);
       mix-blend-mode: normal;
     }
-    /* Stars layer */
     .layer-stars{
       background: transparent url('https://www.transparenttextures.com/patterns/stardust.png') repeat;
       opacity: .18;
@@ -57,7 +54,6 @@
       from { transform: translateZ(-60px) translate(0,0) }
       to   { transform: translateZ(-60px) translate(-200px,-200px) }
     }
-    /* Mist layer */
     .layer-mist{
       background: radial-gradient(circle, rgba(0,255,128,0.08), transparent 70%);
       mix-blend-mode: screen;
@@ -69,12 +65,8 @@
       from { transform: translateZ(0px) translate(-25%, -25%) scale(1) }
       to   { transform: translateZ(0px) translate( 25%,  25%) scale(1.2) }
     }
-    /* Reduced motion: keep layered look but no movement */
     @media (prefers-reduced-motion: reduce) {
-      #parallax-scene .layer {
-        animation: none !important;
-        transform: none !important;
-      }
+      #parallax-scene .layer { animation: none !important; transform: none !important; }
     }
 
     /* Header (no blur, responsive) */
@@ -117,72 +109,18 @@
     }
     .soundcloud-embed iframe{display:block; width:100%; height:166px; border:0}
 
-    /* ---- Breakpoints ---- */
-    @media (max-width: 1024px){
-      header{padding:12px 18px}
-      .brand img{height:36px}
-      nav{gap:16px}
-    }
-    @media (max-width: 720px){
-      .brand img{height:30px}
-      .menu-btn{display:inline-flex}
-      .menu{display:none; position:fixed; top:64px; right:12px; flex-direction:column; gap:10px;
-             background:rgba(2,13,7,.92); border:1px solid rgba(0,255,128,.25); border-radius:10px; padding:12px; box-shadow:0 14px 40px rgba(0,0,0,.45)}
-      .menu.open{display:flex}
-      nav a{font-size:14px}
-      .spacer{height:64px}
-      .hero{padding:72px 16px 24px}
-      .soundcloud-embed{margin:18px auto 48px}
-      .soundcloud-embed iframe{height:148px}
-    }
-    @media (max-width: 380px){
-      nav a{font-size:13px}
-      .soundcloud-embed iframe{height:140px}
-    }
-
-    /* Intro overlay */
-    #intro{
-      position:fixed; inset:0; display:grid; place-items:center;
-      background:radial-gradient(80% 60% at 50% 40%, #03150e 0%, #010503 70%);
-      z-index:9999; color:var(--ink); overflow:hidden;
-    }
-    .intro-wrap{width:min(900px, 92vw); text-align:center; position:relative}
-    .logo{font-size:clamp(42px,10vw,96px); font-weight:800; letter-spacing:.08em; color:var(--neon);
-      text-shadow:0 0 12px rgba(0,255,153,.6), 0 0 30px rgba(0,255,153,.25); position:relative; animation:glow 2.2s ease-in-out infinite alternate; user-select:none}
-    .logo::before,.logo::after{content:attr(aria-label); position:absolute; inset:0; mix-blend-mode:screen}
-    .logo::before{color:#00f6ff; transform:translateX(-2px); filter:blur(.6px); opacity:.6}
-    .logo::after{color:#ff3b6e; transform:translateX(2px); filter:blur(.6px); opacity:.6}
-    @keyframes glow{from{text-shadow:0 0 6px rgba(0,255,153,.4)} to{text-shadow:0 0 16px rgba(0,255,153,.9)}}
-
-    .terminal{font-family:monospace; background:rgba(0,0,0,.35); border:1px solid rgba(0,255,153,.25);
-      box-shadow:0 0 0 1px rgba(0,255,153,.08) inset, 0 6px 40px rgba(0,255,153,.12);
-      border-radius:12px; margin:18px auto 16px; padding:16px 18px; text-align:left; max-height:40vh}
-    .line{opacity:.92; margin:6px 0; white-space:nowrap}
-    .line.hidden{visibility:hidden}
-    .caret{display:inline-block; width:10px; height:1.2em; border-left:2px solid var(--neon); animation:blink .9s steps(1,end) infinite; margin-left:2px}
-    @keyframes blink{50%{opacity:0}}
-
-    .progress{height:10px; border-radius:999px; overflow:hidden; border:1px solid rgba(0,255,153,.35);
-      background:linear-gradient(90deg, rgba(0,255,153,.06), rgba(0,255,153,.02)); position:relative; margin:10px auto 0; max-width:560px}
-    .bar{width:0%; height:100%; background:linear-gradient(90deg, var(--neon), #7affc7); box-shadow:0 0 18px rgba(0,255,153,.6); transition:width .12s linear}
-    .pct{position:absolute; right:10px; bottom:-26px; font:600 12px monospace; color:rgba(230,255,230,.65)}
-
-    .scanlines{pointer-events:none; position:absolute; inset:0; background:repeating-linear-gradient(0deg, rgba(255,255,255,.04), rgba(255,255,255,.04) 1px, transparent 1px, transparent 3px); mix-blend-mode:soft-light; opacity:.25}
-
-    .tap-hint{
-      margin-top:16px; font:700 12px/1.4 ui-monospace,monospace; opacity:.9;
-      letter-spacing:.08em; text-transform:uppercase; display:none;
-    }
-    .tap-actions{margin-top:10px}
-    .tap-actions button{
-      padding:.5rem .8rem; border:1px solid rgba(0,255,153,.35);
-      border-radius:10px; background:transparent; color:#ccffe8; font-weight:800;
-    }
-
     /* Page reveal */
     .page--hidden{opacity:0; filter:blur(8px); transition:opacity .6s ease, filter .6s ease}
     .intro-out{animation:fadeOut .7s ease forwards, unblur .7s ease forwards}
     @keyframes fadeOut{to{opacity:0}} @keyframes unblur{to{filter:blur(0)}}
+
+    /* Intro video overlay */
+    #intro{
+      position:fixed; inset:0; z-index:9999;
+      display:flex; justify-content:center; align-items:center;
+      background:#000; overflow:hidden;
+    }
+    #intro video{ width:100%; height:100%; object-fit:cover; }
   </style>
 </head>
 <body>
@@ -195,29 +133,9 @@
     <div class="layer layer-mist"></div>
   </div>
 
-  <!-- Intro Overlay -->
+  <!-- Intro Overlay (VIDEO ONLY) -->
   <div id="intro" aria-hidden="true">
-    <div class="intro-wrap">
-      <div class="logo" aria-label="EBMARAH">EBMARAH</div>
-      <div class="terminal" role="status" aria-live="polite">
-        <div class="line"><span class="caret"></span></div>
-        <div class="line hidden" data-text="booting sequence..."></div>
-        <div class="line hidden" data-text="authenticating user: guest"></div>
-        <div class="line hidden" data-text="mounting /public/assets ..."></div>
-        <div class="line hidden" data-text="loading stage: RAVE_CORE"></div>
-      </div>
-      <div class="progress"><div class="bar"></div><div class="pct">0%</div></div>
-
-      <div id="tapHint" class="tap-hint">
-        tap to start audio
-        <div class="tap-actions">
-          <button id="tapBtn" type="button">Play</button>
-        </div>
-      </div>
-    </div>
-    <div class="scanlines"></div>
-    <!-- playsinline is critical for mobile -->
-    <audio id="introAudio" src="assets/intro.mp3" preload="auto" playsinline></audio>
+    <video id="introVideo" src="video/intro.mp4" autoplay muted playsinline></video>
   </div>
 
   <!-- Page Content -->
@@ -288,135 +206,25 @@
     </script>
   </div>
 
-  <!-- Intro Script -->
+  <!-- Intro Video Script -->
   <script>
   (function(){
-    // Always gate entry behind the audio finishing (every visit).
-    const intro=document.getElementById('intro');
-    const page=document.getElementById('page');
-    const bar=intro.querySelector('.bar');
-    const pct=intro.querySelector('.pct');
-    const lines=[...intro.querySelectorAll('.terminal .line')];
-    const audio=document.getElementById('introAudio');
-    const tap=document.getElementById('tapHint');
-    const tapBtn=document.getElementById('tapBtn');
+    const intro = document.getElementById('intro');
+    const video = document.getElementById('introVideo');
+    const page  = document.getElementById('page');
 
-    let started=false, raf=0, duration=0;
-
-    function setProgress(p){
-      const val=Math.max(0, Math.min(100, p|0));
-      bar.style.width=val+'%';
-      pct.textContent=val+'%';
-    }
-
-    const type=(el,txt,s=18)=>new Promise(res=>{
-      let i=0; el.textContent=''; el.style.visibility='visible';
-      (function tick(){ if(i<txt.length){ el.textContent+=txt[i++]; setTimeout(tick,s);} else res(); })();
-    });
-
-    async function showBootText(){
-      const first=lines[0];
-      const caret=first.querySelector('.caret'); if(caret) caret.remove();
-      await type(first,'>> INIT EBS LOADER');
-      for(let i=1;i<lines.length;i++){ await type(lines[i], lines[i].dataset.text); }
-    }
-
-    function trackProgress(){
-      cancelAnimationFrame(raf);
-      raf=requestAnimationFrame(function loop(){
-        if(duration>0){
-          const pctNow=(audio.currentTime/duration)*100;
-          setProgress(pctNow);
-        }else{
-          setProgress(0);
-        }
-        raf=requestAnimationFrame(loop);
-      });
-    }
-
-    function unlock(){
+    function endIntro(){
       intro.classList.add('intro-out');
       page.classList.remove('page--hidden');
       page.style.opacity='1';
-      try{ audio.pause(); }catch(e){}
-      cancelAnimationFrame(raf);
+      // tell the rest of the page that the intro is done
+      window.dispatchEvent(new Event('intro-finished'));
       setTimeout(()=>{ intro.style.display='none'; },700);
     }
 
-    async function startAudio(){
-      if(started) return;
-      started=true;
-      tap.style.display='none';
-      await showBootText();
-
-      try{
-        // ensure metadata is available for accurate duration
-        if(audio.readyState < 1){
-          await audio.play().catch(()=>{});
-          audio.pause();
-        }
-        await new Promise(res=>{
-          if(audio.readyState >= 1) res();
-          else audio.addEventListener('loadedmetadata', res, { once:true });
-        });
-        duration = isFinite(audio.duration) ? audio.duration : 0;
-
-        audio.currentTime = 0;
-        await audio.play();
-        trackProgress();
-        audio.addEventListener('ended', unlock, { once:true });
-      }catch(err){
-        // If something goes wrong, allow retry
-        started=false;
-        tap.style.display='block';
-      }
-    }
-
-    function isMobile(){
-      return (('ontouchstart' in window) || navigator.maxTouchPoints>0) &&
-             /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    }
-
-    // Behavior:
-    // - On mobile: ALWAYS require tap (no autoplay attempt).
-    // - On desktop: try autoplay; if blocked, show tap.
-    if(isMobile()){
-      tap.style.display='block';
-    }else{
-      // Try autoplay on desktop
-      (async () => {
-        try{
-          await showBootText();
-
-          if(audio.readyState < 1){
-            await audio.play().catch(()=>{});
-            audio.pause();
-          }
-          await new Promise(res=>{
-            if(audio.readyState >= 1) res();
-            else audio.addEventListener('loadedmetadata', res, { once:true });
-          });
-          duration = isFinite(audio.duration) ? audio.duration : 0;
-
-          audio.currentTime = 0;
-          await audio.play();
-          started=true;
-          trackProgress();
-          audio.addEventListener('ended', unlock, { once:true });
-        }catch(err){
-          tap.style.display='block';
-          started=false;
-        }
-      })();
-    }
-
-    // Tap to begin (works for both mobile and desktop fallback)
-    const go = ()=> startAudio();
-    tapBtn.addEventListener('click', go);
-    // Also start on first pointerdown anywhere in the overlay
-    intro.addEventListener('pointerdown', (e)=>{
-      if(!started && (e.target===intro || e.target.closest('#tapHint'))) startAudio();
-    });
+    // unlock after video ends, or on user click to skip
+    video.addEventListener('ended', endIntro, { once:true });
+    intro.addEventListener('click', endIntro, { once:true });
 
     // Mobile menu toggle (page)
     const btn=document.getElementById('menuBtn'), menu=document.getElementById('menu');
@@ -438,7 +246,7 @@
     const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if(prefersReduced) return;
 
-    let mx = 0, my = 0, tx = 0, ty = 0, rafId = 0;
+    let mx = 0, my = 0, tx = 0, ty = 0;
 
     function onPointerMove(e){
       const p = e.touches ? e.touches[0] : e;
@@ -449,25 +257,19 @@
     }
 
     function frame(){
-      // ease toward target
       tx += (mx - tx) * 0.06;
       ty += (my - ty) * 0.06;
 
       const dx = tx * 12,  dy = ty * 8;
-
       if(deep)  deep .style.transform = `translateZ(-200px) translate3d(${dx}px,${dy}px,0) scale(1.2)`;
       if(mid)   mid  .style.transform = `translateZ(-100px) translate3d(${dx*1.6}px,${dy*1.2}px,0) scale(1.1)`;
       if(stars) stars.style.transform = `translateZ(-60px)  translate3d(${dx*2.2}px,${dy*1.8}px,0)`;
       if(mist)  mist .style.transform = `translateZ(0px)   translate3d(${dx*3}px,${dy*2.2}px,0)`;
-
-      rafId = requestAnimationFrame(frame);
+      requestAnimationFrame(frame);
     }
 
-    // Pointer parallax
     window.addEventListener('mousemove', onPointerMove, { passive: true });
     window.addEventListener('touchmove', onPointerMove, { passive: true });
-
-    // Tiny scroll parallax to accent depth
     window.addEventListener('scroll', () => {
       const s = window.scrollY * 0.02;
       scene.style.transform = `translateY(${s}px)`;
@@ -476,126 +278,119 @@
     frame();
   })();
   </script>
- <!-- Background music (Enemy) – starts AFTER intro finishes -->
-<audio id="bgm" src="music/Enemy.mp3" preload="auto" loop playsinline></audio>
 
-<script>
-(() => {
-  // ----- styles (injected so we don't edit <head>) -----
-  const css = `
-    .ebm-audio {
-      position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%);
-      z-index: 1100;
-      display: flex; align-items: center; gap: 10px;
-      background: rgba(0,0,0,.55);
-      border: 1px solid rgba(0,255,128,.35);
-      border-radius: 12px;
-      padding: 8px 12px;
-      font-family: 'Orbitron', system-ui, sans-serif;
-      box-shadow: 0 8px 24px rgba(0,0,0,.35);
-      -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+  <!-- Background music (Enemy) – starts AFTER intro video finishes -->
+  <audio id="bgm" src="music/Enemy.mp3" preload="auto" loop playsinline></audio>
+
+  <script>
+  (() => {
+    /* styles for centered audio widget (injected) */
+    const css = `
+      .ebm-audio {
+        position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%);
+        z-index: 1100;
+        display: flex; align-items: center; gap: 10px;
+        background: rgba(0,0,0,.55);
+        border: 1px solid rgba(0,255,128,.35);
+        border-radius: 12px;
+        padding: 8px 12px;
+        font-family: 'Orbitron', system-ui, sans-serif;
+        box-shadow: 0 8px 24px rgba(0,0,0,.35);
+        -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+      }
+      .ebm-audio button {
+        appearance: none; border: 1px solid rgba(0,255,128,.45);
+        background: transparent; color: #b9ffdf; font-weight: 700;
+        padding: 6px 10px; border-radius: 10px; cursor: pointer;
+      }
+      .ebm-audio button:hover { color: #00ffea; border-color: #00ffea; }
+      .ebm-audio input[type="range"] { width: 140px; accent-color: #00ff99; }
+      .ebm-audio .status { color: #76ffb2; font-size: 12px; letter-spacing: .02em; opacity: .9; }
+      .ebm-audio .dot { display:inline-block; width:6px; height:6px; border-radius:50%;
+        background:#ff5c5c; margin-left:6px; box-shadow:0 0 8px #ff5c5c; vertical-align: middle; }
+      .ebm-audio.playing .dot { background:#00ffa0; box-shadow:0 0 8px #00ffa0; }
+      @media (max-width: 520px){ .ebm-audio input[type="range"]{ width: 100px; } }
+    `;
+    const style = document.createElement('style');
+    style.textContent = css;
+    document.head.appendChild(style);
+
+    /* widget markup */
+    const wrap = document.createElement('div');
+    wrap.className = 'ebm-audio';
+    wrap.innerHTML = `
+      <button id="ebmPlay" disabled>Play</button>
+      <button id="ebmMute" disabled>Mute</button>
+      <input id="ebmVol" type="range" min="0" max="1" step="0.01" disabled />
+      <span class="status" id="ebmStatus">waiting for intro<span class="dot" aria-hidden="true"></span></span>
+    `;
+    document.body.appendChild(wrap);
+
+    const audio = document.getElementById('bgm');
+    const playBtn = wrap.querySelector('#ebmPlay');
+    const muteBtn = wrap.querySelector('#ebmMute');
+    const vol = wrap.querySelector('#ebmVol');
+    const status = wrap.querySelector('#ebmStatus');
+
+    // load saved prefs
+    const keyVol = 'ebm_enemy_vol', keyMute = 'ebm_enemy_mute';
+    const savedVol = parseFloat(localStorage.getItem(keyVol));
+    const savedMute = localStorage.getItem(keyMute) === 'true';
+    audio.volume = Number.isFinite(savedVol) ? savedVol : 0.4;
+    audio.muted = savedMute;
+    vol.value = audio.volume;
+
+    function setControls(on){
+      playBtn.disabled = !on;
+      muteBtn.disabled = !on;
+      vol.disabled = !on;
     }
-    .ebm-audio button {
-      appearance: none; border: 1px solid rgba(0,255,128,.45);
-      background: transparent; color: #b9ffdf; font-weight: 700;
-      padding: 6px 10px; border-radius: 10px; cursor: pointer;
-    }
-    .ebm-audio button:hover { color: #00ffea; border-color: #00ffea; }
-    .ebm-audio input[type="range"] { width: 140px; accent-color: #00ff99; }
-    .ebm-audio .status { color: #76ffb2; font-size: 12px; letter-spacing: .02em; opacity: .9; }
-    .ebm-audio .dot { display:inline-block; width:6px; height:6px; border-radius:50%;
-      background:#ff5c5c; margin-left:6px; box-shadow:0 0 8px #ff5c5c; vertical-align: middle; }
-    .ebm-audio.playing .dot { background:#00ffa0; box-shadow:0 0 8px #00ffa0; }
-    @media (max-width: 520px){ .ebm-audio input[type="range"]{ width: 100px; } }
-  `;
-  const style = document.createElement('style');
-  style.textContent = css;
-  document.head.appendChild(style);
-
-  // ----- build the widget (no edits to header) -----
-  const wrap = document.createElement('div');
-  wrap.className = 'ebm-audio';
-  wrap.innerHTML = `
-    <button id="ebmPlay" disabled>Play</button>
-    <button id="ebmMute" disabled>Mute</button>
-    <input id="ebmVol" type="range" min="0" max="1" step="0.01" disabled />
-    <span class="status" id="ebmStatus">waiting for intro<span class="dot" aria-hidden="true"></span></span>
-  `;
-  document.body.appendChild(wrap);
-
-  const audio = document.getElementById('bgm');
-  const playBtn = wrap.querySelector('#ebmPlay');
-  const muteBtn = wrap.querySelector('#ebmMute');
-  const vol = wrap.querySelector('#ebmVol');
-  const status = wrap.querySelector('#ebmStatus');
-
-  // load saved prefs
-  const keyVol = 'ebm_enemy_vol', keyMute = 'ebm_enemy_mute';
-  const savedVol = parseFloat(localStorage.getItem(keyVol));
-  const savedMute = localStorage.getItem(keyMute) === 'true';
-  audio.volume = Number.isFinite(savedVol) ? savedVol : 0.4;
-  audio.muted = savedMute;
-  vol.value = audio.volume;
-
-  function setControlsEnabled(on){
-    playBtn.disabled = !on;
-    muteBtn.disabled = !on;
-    vol.disabled = !on;
-  }
-  function updateUI(){
-    playBtn.textContent = audio.paused ? 'Play' : 'Pause';
-    muteBtn.textContent = audio.muted ? 'Unmute' : 'Mute';
-    status.textContent = audio.paused ? 'paused' : 'playing';
-    wrap.classList.toggle('playing', !audio.paused);
-    status.insertAdjacentHTML('beforeend','<span class="dot" aria-hidden="true"></span>');
-  }
-
-  // Start ONLY after intro finishes
-  const introAudio = document.getElementById('introAudio');
-  async function startBGM(){
-    setControlsEnabled(true);
-    // try to play; if blocked, user can press Play
-    try { await audio.play(); }
-    catch {
-      status.textContent = 'tap to play';
+    function updateUI(){
+      playBtn.textContent = audio.paused ? 'Play' : 'Pause';
+      muteBtn.textContent = audio.muted ? 'Unmute' : 'Mute';
+      status.textContent = audio.paused ? 'paused' : 'playing';
+      wrap.classList.toggle('playing', !audio.paused);
       status.insertAdjacentHTML('beforeend','<span class="dot" aria-hidden="true"></span>');
     }
-    updateUI();
-  }
 
-  if (introAudio) {
-    // normal path: after intro audio ends
-    introAudio.addEventListener('ended', startBGM, { once: true });
-  } else {
-    // safety fallback (if intro removed in future)
-    window.addEventListener('load', () => setControlsEnabled(true));
-  }
-
-  // controls
-  playBtn.addEventListener('click', async () => {
-    if (audio.paused) { await audio.play().catch(()=>{}); }
-    else { audio.pause(); }
-    updateUI();
-  });
-  muteBtn.addEventListener('click', () => {
-    audio.muted = !audio.muted;
-    localStorage.setItem(keyMute, String(audio.muted));
-    updateUI();
-  });
-  vol.addEventListener('input', () => {
-    audio.volume = Number(vol.value);
-    localStorage.setItem(keyVol, String(audio.volume));
-    if (audio.volume > 0 && audio.muted) {
-      audio.muted = false;
-      localStorage.setItem(keyMute, 'false');
+    async function startBGM(){
+      setControls(true);
+      try { await audio.play(); }
+      catch {
+        status.textContent = 'tap to play';
+        status.insertAdjacentHTML('beforeend','<span class="dot" aria-hidden="true"></span>');
+      }
+      updateUI();
     }
-    updateUI();
-  });
 
-  audio.addEventListener('play', updateUI);
-  audio.addEventListener('pause', updateUI);
-  audio.addEventListener('volumechange', updateUI);
-})();
-</script>
+    // start after the intro video signals it's done
+    window.addEventListener('intro-finished', startBGM, { once:true });
+
+    // controls
+    playBtn.addEventListener('click', async () => {
+      if (audio.paused) { await audio.play().catch(()=>{}); }
+      else { audio.pause(); }
+      updateUI();
+    });
+    muteBtn.addEventListener('click', () => {
+      audio.muted = !audio.muted;
+      localStorage.setItem(keyMute, String(audio.muted));
+      updateUI();
+    });
+    vol.addEventListener('input', () => {
+      audio.volume = Number(vol.value);
+      localStorage.setItem(keyVol, String(audio.volume));
+      if (audio.volume > 0 && audio.muted) {
+        audio.muted = false;
+        localStorage.setItem(keyMute, 'false');
+      }
+      updateUI();
+    });
+
+    audio.addEventListener('play', updateUI);
+    audio.addEventListener('pause', updateUI);
+    audio.addEventListener('volumechange', updateUI);
+  })();
+  </script>
 </body>
 </html>
