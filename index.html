@@ -109,19 +109,15 @@
       <h1>Welcome to the Digital Gorilla Forest</h1>
       <p>Stream my latest dubstep tracks & explore the digital jungle.</p>
     </section>
-    <section class="soundcloud-embed">
-      <iframe title="Enemy – Ebmarah" scrolling="no" allow="autoplay"
-        src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/ebmarah/enemy"></iframe>
-    </section>
 
     <!-- Mascot -->
     <script src="js/ebmarah-mascot.js"></script>
     <script>
-      // Init mascot only after intro finishes
+      // Init mascot only after intro finishes, positioned on the LEFT
       window.addEventListener('intro-finished', () => {
         EbmarahMascot.init({
           mode:'passive',
-          position:'bottom-right',
+          position:'bottom-left',
           funnyLines:['BASS INCOMING','sub-bass handshake!','gorilla certified 🔊','who threw this banana?','i smell a DROP...']
         });
       }, { once: true });
