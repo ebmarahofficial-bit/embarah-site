@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <title>Ebmarah – Sample Packs</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="icon" type="image/png" href="favicon.png" />
+  <link rel="icon" type="image/png" href="assets/favicon.png" />
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&display=swap');
     :root { --neon:#00ff99; }
@@ -12,11 +12,31 @@
     html, body { height:100%; }
     body {
       margin:0;
-      background: radial-gradient(circle at center, #020d07, #000);
       font-family:'Orbitron', sans-serif;
       color:#e0ffe8;
       overflow-x:hidden;
+      background:#020d07; /* fallback */
     }
+
+    /* Background layers */
+    .background {
+      position:fixed; inset:0;
+      background:url("assets/bg.png") center center / cover no-repeat;
+      z-index:-3;
+    }
+    .stars{
+      position:fixed; inset:0;
+      background: transparent url('https://www.transparenttextures.com/patterns/stardust.png') repeat;
+      animation: moveStars 200s linear infinite;
+      opacity:.18; pointer-events:none; z-index:-2;
+    }
+    @keyframes moveStars{ from{transform:translate(0,0)} to{transform:translate(-200px,-200px)} }
+    .mist{
+      position:fixed; inset:0;
+      background: radial-gradient(circle, rgba(0,255,128,0.08), transparent 70%);
+      animation: drift 40s linear infinite; mix-blend-mode:screen; pointer-events:none; z-index:-1;
+    }
+    @keyframes drift{ from{transform:translate(-25%,-25%) scale(1)} to{transform:translate(25%,25%) scale(1.2)} }
 
     /* Header */
     header{
@@ -32,26 +52,6 @@
     .logo img{ height:28px; }
     nav a{ color:#76ffb2; text-decoration:none; margin-left:22px; font-weight:700; }
     nav a:hover{ color:#00ffea; }
-
-    /* Background FX */
-    .stars{
-      position:fixed; width:200%; height:200%;
-      background: transparent url('https://www.transparenttextures.com/patterns/stardust.png') repeat;
-      animation: moveStars 200s linear infinite;
-      opacity:.18; pointer-events:none;
-    }
-    @keyframes moveStars{ from{transform:translate(0,0)} to{transform:translate(-200px,-200px)} }
-    .mist{
-      position:fixed; width:200%; height:200%;
-      background: radial-gradient(circle, rgba(0,255,128,0.08), transparent 70%);
-      animation: drift 40s linear infinite; mix-blend-mode:screen; pointer-events:none;
-    }
-    @keyframes drift{ from{transform:translate(-25%,-25%) scale(1)} to{transform:translate(25%,25%) scale(1.2)} }
-    .gorilla{
-      position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
-      opacity:.05; pointer-events:none; z-index:0;
-    }
-    .gorilla img{ max-width:80%; height:auto; filter: drop-shadow(0 0 40px var(--neon)); }
 
     /* Content */
     main{
@@ -77,13 +77,14 @@
   </style>
 </head>
 <body>
+  <!-- Background layers -->
+  <div class="background"></div>
   <div class="stars"></div>
   <div class="mist"></div>
-  <div class="gorilla"><img src="logo-bg.png" alt="Ebmarah Gorilla Logo"/></div>
 
   <header>
     <div class="logo">
-      <img src="favicon.png" alt="Ebmarah">
+      <img src="assets/favicon.png" alt="Ebmarah">
       <a href="index.html" style="color:#e0ffe8; text-decoration:none; font-weight:700;">Ebmarah</a>
     </div>
     <nav>
