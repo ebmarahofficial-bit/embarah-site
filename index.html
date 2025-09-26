@@ -7,229 +7,217 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&display=swap');
-    :root { --neon:#00ff99; --bg:#020d07; --ink:#e0ffe8; }
-
-    /* Base */
-    *{box-sizing:border-box}
-    body{
-      margin:0;
-      font-family:'Orbitron',sans-serif;
-      color:var(--ink);
-      background:#020d07; /* fallback */
-      overflow-x:hidden;
+    :root {
+      --neon: #00ff99;
+      --bg: #020d07;
+      --ink: #e0ffe8;
     }
 
-    /* === Parallax Background === */
-    #parallax-scene{
-      position: fixed; inset: 0;
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Orbitron', sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+      overflow-x: hidden;
+    }
+
+    #parallax-scene {
+      position: fixed;
+      inset: 0;
       perspective: 1200px;
       overflow: hidden;
-      z-index: -3; /* behind everything */
+      z-index: -3;
     }
-    #parallax-scene .layer{
-      position: absolute; inset: -6%; /* bleed for movement */
+    .layer {
+      position: absolute;
+      inset: -6%;
       will-change: transform;
       transform-style: preserve-3d;
       backface-visibility: hidden;
     }
-    /* Deep jungle layer (base image, slowest) */
-    .layer-deep{
+    .layer-deep {
       background: url("assets/bg.png") center / cover no-repeat;
-      filter: saturate(1.05) contrast(1.05);
       transform: translateZ(-200px) scale(1.2);
     }
-    /* Mid jungle layer (same image, slightly blurred & darker) */
-    .layer-mid{
+    .layer-mid {
       background: url("assets/bg.png") center / cover no-repeat;
-      filter: blur(1.2px) brightness(.98);
-      opacity: .95;
+      opacity: .92;
+      filter: blur(1.2px);
       transform: translateZ(-100px) scale(1.1);
-      mix-blend-mode: normal;
     }
-    /* Stars layer */
-    .layer-stars{
-      background: transparent url('https://www.transparenttextures.com/patterns/stardust.png') repeat;
-      opacity: .18;
-      transform: translateZ(-60px) scale(1.05);
-      animation: moveStars 200s linear infinite;
+    .layer-stars {
+      background: url('https://www.transparenttextures.com/patterns/stardust.png');
+      opacity: .12;
+      animation: moveStars 120s linear infinite;
     }
-    @keyframes moveStars {
-      from { transform: translateZ(-60px) translate(0,0) }
-      to   { transform: translateZ(-60px) translate(-200px,-200px) }
-    }
-    /* Mist layer */
-    .layer-mist{
+    .layer-mist {
       background: radial-gradient(circle, rgba(0,255,128,0.08), transparent 70%);
       mix-blend-mode: screen;
-      transform: translateZ(0px);
-      animation: drift 40s linear infinite;
-      opacity: 1;
+      animation: drift 60s linear infinite;
+    }
+
+    @keyframes moveStars {
+      from { transform: translate(0,0); }
+      to { transform: translate(-200px, -200px); }
     }
     @keyframes drift {
-      from { transform: translateZ(0px) translate(-25%, -25%) scale(1) }
-      to   { transform: translateZ(0px) translate( 25%,  25%) scale(1.2) }
-    }
-    /* Reduced motion: keep layered look but no movement */
-    @media (prefers-reduced-motion: reduce) {
-      #parallax-scene .layer {
-        animation: none !important;
-        transform: none !important;
-      }
+      from { transform: translate(-25%, -25%) scale(1); }
+      to   { transform: translate(25%, 25%) scale(1.2); }
     }
 
-    /* Header (no blur, responsive) */
-    header{
-      position:fixed; top:0; left:0; right:0;
-      display:flex; align-items:center; justify-content:space-between;
-      padding:14px 24px;
-      background:rgba(2,13,7,.75);
-      border-bottom:1px solid rgba(0,255,128,.2);
-      box-shadow:0 6px 24px rgba(0,0,0,.35);
-      z-index:1000;
+    header {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 24px;
+      background: rgba(2,13,7,0.75);
+      border-bottom: 1px solid rgba(0,255,128,0.2);
+      z-index: 999;
     }
-    .brand{display:flex; align-items:center; gap:10px; font-weight:800; letter-spacing:.02em}
-    .brand img{height:40px; width:auto}
-    nav{display:flex; align-items:center; gap:22px}
-    nav a{color:#76ffb2; text-decoration:none; font-weight:700; font-size:clamp(12px,1.6vw,14px)}
-    nav a:hover{color:#00ffea}
-
-    /* Mobile menu toggle */
-    .menu-btn{display:none; background:none; border:0; color:#b9ffdf; font-size:18px; font-weight:700; padding:6px 10px; border:1px solid rgba(0,255,128,.35); border-radius:8px}
-    .menu{display:flex}
-
-    /* Hero + content */
-    .spacer{height:72px} /* pushes page below fixed header */
-    .hero{
-      text-align:center;
-      padding: clamp(64px, 12vw, 128px) 16px 32px;
-      background:linear-gradient(180deg, rgba(0,255,128,.05), transparent);
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }
-    .hero h1{font-size:clamp(28px, 6.5vw, 64px); margin:0 0 8px; text-shadow:0 0 20px var(--neon)}
-    .hero p{font-size:clamp(12px, 2.3vw, 16px); opacity:.9; margin:0}
-
-    .soundcloud-embed{
-      width:min(940px, 92vw);
-      margin: 24px auto 64px;
-      border:2px solid rgba(0,255,128,.3);
-      border-radius:12px; overflow:hidden;
-      box-shadow:0 0 30px rgba(0,255,128,.2);
-      background:rgba(0,0,0,.25);
+    .brand img {
+      height: 40px;
     }
-    .soundcloud-embed iframe{display:block; width:100%; height:166px; border:0}
-
-    /* ---- Breakpoints ---- */
-    @media (max-width: 1024px){
-      header{padding:12px 18px}
-      .brand img{height:36px}
-      nav{gap:16px}
+    nav {
+      display: flex;
+      gap: 20px;
     }
-    @media (max-width: 720px){
-      .brand img{height:30px}
-      .menu-btn{display:inline-flex}
-      .menu{display:none; position:fixed; top:64px; right:12px; flex-direction:column; gap:10px;
-             background:rgba(2,13,7,.92); border:1px solid rgba(0,255,128,.25); border-radius:10px; padding:12px; box-shadow:0 14px 40px rgba(0,0,0,.45)}
-      .menu.open{display:flex}
-      nav a{font-size:14px}
-      .spacer{height:64px}
-      .hero{padding:72px 16px 24px}
-      .soundcloud-embed{margin:18px auto 48px}
-      .soundcloud-embed iframe{height:148px}
+    nav a {
+      color: #76ffb2;
+      text-decoration: none;
+      font-weight: 700;
     }
-    @media (max-width: 380px){
-      nav a{font-size:13px}
-      .soundcloud-embed iframe{height:140px}
+    nav a:hover {
+      color: #00ffea;
     }
 
-    /* Intro overlay */
-    #intro{
-      position:fixed; inset:0; display:grid; place-items:center;
-      background:radial-gradient(80% 60% at 50% 40%, #03150e 0%, #010503 70%);
-      z-index:9999; color:var(--ink); overflow:hidden;
+    .spacer { height: 72px; }
+
+    .hero {
+      text-align: center;
+      padding: 100px 20px 40px;
     }
-    .intro-wrap{width:min(900px, 92vw); text-align:center; position:relative}
-    .logo{font-size:clamp(42px,10vw,96px); font-weight:800; letter-spacing:.08em; color:var(--neon);
-      text-shadow:0 0 12px rgba(0,255,153,.6), 0 0 30px rgba(0,255,153,.25); position:relative; animation:glow 2.2s ease-in-out infinite alternate; user-select:none}
-    .logo::before,.logo::after{content:attr(aria-label); position:absolute; inset:0; mix-blend-mode:screen}
-    .logo::before{color:#00f6ff; transform:translateX(-2px); filter:blur(.6px); opacity:.6}
-    .logo::after{color:#ff3b6e; transform:translateX(2px); filter:blur(.6px); opacity:.6}
-    @keyframes glow{from{text-shadow:0 0 6px rgba(0,255,153,.4)} to{text-shadow:0 0 16px rgba(0,255,153,.9)}}
-
-    .terminal{font-family:monospace; background:rgba(0,0,0,.35); border:1px solid rgba(0,255,153,.25);
-      box-shadow:0 0 0 1px rgba(0,255,153,.08) inset, 0 6px 40px rgba(0,255,153,.12);
-      border-radius:12px; margin:18px auto 16px; padding:16px 18px; text-align:left; max-height:40vh}
-    .line{opacity:.92; margin:6px 0; white-space:nowrap}
-    .line.hidden{visibility:hidden}
-    .caret{display:inline-block; width:10px; height:1.2em; border-left:2px solid var(--neon); animation:blink .9s steps(1,end) infinite; margin-left:2px}
-    @keyframes blink{50%{opacity:0}}
-
-    .progress{height:10px; border-radius:999px; overflow:hidden; border:1px solid rgba(0,255,153,.35);
-      background:linear-gradient(90deg, rgba(0,255,153,.06), rgba(0,255,153,.02)); position:relative; margin:10px auto 0; max-width:560px}
-    .bar{width:0%; height:100%; background:linear-gradient(90deg, var(--neon), #7affc7); box-shadow:0 0 18px rgba(0,255,153,.6); transition:width .12s linear}
-    .pct{position:absolute; right:10px; bottom:-26px; font:600 12px monospace; color:rgba(230,255,230,.65)}
-
-    .scanlines{pointer-events:none; position:absolute; inset:0; background:repeating-linear-gradient(0deg, rgba(255,255,255,.04), rgba(255,255,255,.04) 1px, transparent 1px, transparent 3px); mix-blend-mode:soft-light; opacity:.25}
-
-    .tap-hint{
-      margin-top:16px; font:700 12px/1.4 ui-monospace,monospace; opacity:.9;
-      letter-spacing:.08em; text-transform:uppercase; display:none;
+    .hero h1 {
+      font-size: clamp(28px, 6.5vw, 64px);
+      text-shadow: 0 0 20px var(--neon);
     }
-    .tap-actions{margin-top:10px}
-    .tap-actions button{
-      padding:.5rem .8rem; border:1px solid rgba(0,255,153,.35);
-      border-radius:10px; background:transparent; color:#ccffe8; font-weight:800;
+    .hero p {
+      font-size: clamp(14px, 2vw, 18px);
+      opacity: 0.9;
     }
 
-    /* Page reveal */
-    .page--hidden{opacity:0; filter:blur(8px); transition:opacity .6s ease, filter .6s ease}
-    .intro-out{animation:fadeOut .7s ease forwards, unblur .7s ease forwards}
-    @keyframes fadeOut{to{opacity:0}} @keyframes unblur{to{filter:blur(0)}}
+    .volume-controls {
+      position: fixed;
+      bottom: 16px;
+      left: 16px;
+      background: rgba(0,0,0,0.4);
+      border: 1px solid rgba(0,255,153,0.3);
+      padding: 10px 14px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      z-index: 1000;
+    }
+    .volume-controls input[type="range"] {
+      width: 100px;
+    }
+    .volume-controls button {
+      background: none;
+      border: none;
+      color: var(--ink);
+      font-size: 18px;
+      cursor: pointer;
+    }
+
+    #intro {
+      position: fixed;
+      inset: 0;
+      background: #010503;
+      display: grid;
+      place-items: center;
+      z-index: 9999;
+    }
+    .intro-wrap {
+      text-align: center;
+    }
+    .logo {
+      font-size: 48px;
+      color: var(--neon);
+      text-shadow: 0 0 12px rgba(0,255,153,0.6), 0 0 30px rgba(0,255,153,0.25);
+    }
+    .terminal {
+      font-family: monospace;
+      margin: 20px auto;
+      color: var(--ink);
+    }
+    .line { margin: 6px 0; white-space: nowrap; }
+    .line.hidden { visibility: hidden; }
+    .caret {
+      display: inline-block;
+      width: 10px;
+      height: 1.2em;
+      border-left: 2px solid var(--neon);
+      animation: blink 0.9s steps(1,end) infinite;
+      margin-left: 2px;
+    }
+    @keyframes blink { 50% { opacity: 0; } }
+    .tap-hint {
+      margin-top: 14px;
+      font-size: 14px;
+      opacity: 0.85;
+    }
+
+    .page--hidden {
+      opacity: 0;
+      filter: blur(6px);
+      transition: all 0.6s ease;
+    }
+    .intro-out {
+      animation: fadeOut 0.7s ease forwards, unblur 0.7s ease forwards;
+    }
+    @keyframes fadeOut { to { opacity: 0; } }
+    @keyframes unblur { to { filter: blur(0); } }
   </style>
 </head>
 <body>
 
-  <!-- Parallax Background Scene -->
-  <div id="parallax-scene" aria-hidden="true">
+  <!-- Parallax Background -->
+  <div id="parallax-scene">
     <div class="layer layer-deep"></div>
     <div class="layer layer-mid"></div>
     <div class="layer layer-stars"></div>
     <div class="layer layer-mist"></div>
   </div>
 
-  <!-- Intro Overlay -->
-  <div id="intro" aria-hidden="true">
+  <!-- Intro Screen -->
+  <div id="intro">
     <div class="intro-wrap">
-      <div class="logo" aria-label="EBMARAH">EBMARAH</div>
-      <div class="terminal" role="status" aria-live="polite">
+      <div class="logo">EBMARAH</div>
+      <div class="terminal">
         <div class="line"><span class="caret"></span></div>
         <div class="line hidden" data-text="booting sequence..."></div>
         <div class="line hidden" data-text="authenticating user: guest"></div>
-        <div class="line hidden" data-text="mounting /public/assets ..."></div>
-        <div class="line hidden" data-text="loading stage: RAVE_CORE"></div>
+        <div class="line hidden" data-text="loading: enemy.mp3"></div>
+        <div class="line hidden" data-text="launching Digital Jungle..."></div>
       </div>
-      <div class="progress"><div class="bar"></div><div class="pct">0%</div></div>
-
-      <div id="tapHint" class="tap-hint">
-        tap to start audio
-        <div class="tap-actions">
-          <button id="tapBtn" type="button">Play</button>
-        </div>
-      </div>
+      <div class="tap-hint" id="tapHint">Tap to start audio<br><button id="tapBtn">▶️ Start</button></div>
     </div>
-    <div class="scanlines"></div>
-    <!-- playsinline is critical for mobile -->
     <audio id="introAudio" src="assets/intro.mp3" preload="auto" playsinline></audio>
   </div>
 
-  <!-- Page Content -->
+  <!-- Main Content -->
   <div id="page" class="page--hidden">
     <header>
-      <div class="brand">
-        <img src="assets/favicon.png" alt="Ebmarah">
-        <span style="font-size:clamp(16px,2.6vw,22px)">Ebmarah</span>
-      </div>
-
-      <button class="menu-btn" id="menuBtn">Menu</button>
-      <nav class="menu" id="menu">
+      <div class="brand"><img src="assets/favicon.png"><span>Ebmarah</span></div>
+      <nav>
         <a href="index.html">Home</a>
         <a href="music.html">Music</a>
         <a href="sample-packs.html">Sample Packs</a>
@@ -245,236 +233,114 @@
       <p>Stream my latest dubstep tracks & explore the digital jungle.</p>
     </section>
 
-    <section class="soundcloud-embed">
-      <iframe
-        title="Enemy – Ebmarah"
-        scrolling="no"
-        allow="autoplay"
-        src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/ebmarah/enemy">
-      </iframe>
-    </section>
-
-    <!-- Mascot -->
-    <script src="js/ebmarah-mascot.js"></script>
-    <script>
-      EbmarahMascot.init({
-        mode:'passive',
-        position:'bottom-right',
-        funnyLines:[
-          'BASS INCOMING','sub-bass handshake!','gorilla certified 🔊',
-          'who threw this banana?','i smell a DROP...'
-        ]
-      });
-    </script>
-
-    <!-- SoundCloud widget trigger example -->
-    <script src="https://w.soundcloud.com/player/api.js"></script>
-    <script>
-      const scFrame=document.querySelector('.soundcloud-embed iframe');
-      const widget=SC.Widget(scFrame);
-      const dropMs=[30000,65000,130000], hitWindow=900, fired=new Set();
-      widget.bind(SC.Widget.Events.PLAY_PROGRESS, e=>{
-        const t=Math.floor(e.currentPosition);
-        for(const d of dropMs){
-          if(!fired.has(d) && Math.abs(t-d)<=hitWindow){
-            fired.add(d);
-            EbmarahMascot.say('BASS INCOMING!',3000);
-            EbmarahMascot.throwBananas(7);
-            EbmarahMascot.setMood('curious');
-            setTimeout(()=>EbmarahMascot.setMood('idle'),600);
-          }
-        }
-      });
-    </script>
+    <!-- Audio Player -->
+    <audio id="bgMusic" src="music/enemy.mp3" preload="auto" loop></audio>
+    <div class="volume-controls" id="volumeBox" style="display:none">
+      <button id="muteBtn">🔊</button>
+      <input type="range" id="volumeSlider" min="0" max="1" step="0.01" value="1">
+    </div>
   </div>
 
-  <!-- Intro Script -->
+  <!-- Scripts -->
   <script>
-  (function(){
-    // Always gate entry behind the audio finishing (every visit).
-    const intro=document.getElementById('intro');
-    const page=document.getElementById('page');
-    const bar=intro.querySelector('.bar');
-    const pct=intro.querySelector('.pct');
-    const lines=[...intro.querySelectorAll('.terminal .line')];
-    const audio=document.getElementById('introAudio');
-    const tap=document.getElementById('tapHint');
-    const tapBtn=document.getElementById('tapBtn');
+    const intro = document.getElementById('intro');
+    const page = document.getElementById('page');
+    const audio = document.getElementById('introAudio');
+    const bgMusic = document.getElementById('bgMusic');
+    const lines = [...intro.querySelectorAll('.line')];
+    const tapHint = document.getElementById('tapHint');
+    const tapBtn = document.getElementById('tapBtn');
+    const muteBtn = document.getElementById('muteBtn');
+    const volumeSlider = document.getElementById('volumeSlider');
+    const volumeBox = document.getElementById('volumeBox');
+    let started = false;
 
-    let started=false, raf=0, duration=0;
-
-    function setProgress(p){
-      const val=Math.max(0, Math.min(100, p|0));
-      bar.style.width=val+'%';
-      pct.textContent=val+'%';
-    }
-
-    const type=(el,txt,s=18)=>new Promise(res=>{
-      let i=0; el.textContent=''; el.style.visibility='visible';
-      (function tick(){ if(i<txt.length){ el.textContent+=txt[i++]; setTimeout(tick,s);} else res(); })();
+    const type = (el, txt, speed = 20) => new Promise(res => {
+      let i = 0;
+      el.textContent = '';
+      el.style.visibility = 'visible';
+      (function tick() {
+        if (i < txt.length) {
+          el.textContent += txt[i++];
+          setTimeout(tick, speed);
+        } else res();
+      })();
     });
 
-    async function showBootText(){
-      const first=lines[0];
-      const caret=first.querySelector('.caret'); if(caret) caret.remove();
-      await type(first,'>> INIT EBS LOADER');
-      for(let i=1;i<lines.length;i++){ await type(lines[i], lines[i].dataset.text); }
-    }
-
-    function trackProgress(){
-      cancelAnimationFrame(raf);
-      raf=requestAnimationFrame(function loop(){
-        if(duration>0){
-          const pctNow=(audio.currentTime/duration)*100;
-          setProgress(pctNow);
-        }else{
-          setProgress(0);
-        }
-        raf=requestAnimationFrame(loop);
-      });
-    }
-
-    function unlock(){
-      intro.classList.add('intro-out');
-      page.classList.remove('page--hidden');
-      page.style.opacity='1';
-      try{ audio.pause(); }catch(e){}
-      cancelAnimationFrame(raf);
-      setTimeout(()=>{ intro.style.display='none'; },700);
-    }
-
-    async function startAudio(){
-      if(started) return;
-      started=true;
-      tap.style.display='none';
-      await showBootText();
-
-      try{
-        // ensure metadata is available for accurate duration
-        if(audio.readyState < 1){
-          await audio.play().catch(()=>{});
-          audio.pause();
-        }
-        await new Promise(res=>{
-          if(audio.readyState >= 1) res();
-          else audio.addEventListener('loadedmetadata', res, { once:true });
-        });
-        duration = isFinite(audio.duration) ? audio.duration : 0;
-
-        audio.currentTime = 0;
-        await audio.play();
-        trackProgress();
-        audio.addEventListener('ended', unlock, { once:true });
-      }catch(err){
-        // If something goes wrong, allow retry
-        started=false;
-        tap.style.display='block';
+    async function showBootText() {
+      const first = lines[0];
+      const caret = first.querySelector('.caret'); if (caret) caret.remove();
+      await type(first, '>> INIT EBS LOADER');
+      for (let i = 1; i < lines.length; i++) {
+        await type(lines[i], lines[i].dataset.text);
       }
     }
 
-    function isMobile(){
-      return (('ontouchstart' in window) || navigator.maxTouchPoints>0) &&
-             /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    function unlock() {
+      intro.classList.add('intro-out');
+      page.classList.remove('page--hidden');
+      page.style.opacity = '1';
+      volumeBox.style.display = 'flex';
+      setTimeout(() => intro.style.display = 'none', 700);
+      bgMusic.play().catch(() => {});
     }
 
-    // Behavior:
-    // - On mobile: ALWAYS require tap (no autoplay attempt).
-    // - On desktop: try autoplay; if blocked, show tap.
-    if(isMobile()){
-      tap.style.display='block';
-    }else{
-      // Try autoplay on desktop
-      (async () => {
-        try{
-          await showBootText();
-
-          if(audio.readyState < 1){
-            await audio.play().catch(()=>{});
-            audio.pause();
-          }
-          await new Promise(res=>{
-            if(audio.readyState >= 1) res();
-            else audio.addEventListener('loadedmetadata', res, { once:true });
-          });
-          duration = isFinite(audio.duration) ? audio.duration : 0;
-
-          audio.currentTime = 0;
-          await audio.play();
-          started=true;
-          trackProgress();
-          audio.addEventListener('ended', unlock, { once:true });
-        }catch(err){
-          tap.style.display='block';
-          started=false;
-        }
-      })();
+    async function startAudio() {
+      if (started) return;
+      started = true;
+      tapHint.style.display = 'none';
+      await showBootText();
+      try {
+        await audio.play();
+        audio.addEventListener('ended', unlock, { once: true });
+      } catch (err) {
+        unlock();
+      }
     }
 
-    // Tap to begin (works for both mobile and desktop fallback)
-    const go = ()=> startAudio();
-    tapBtn.addEventListener('click', go);
-    // Also start on first pointerdown anywhere in the overlay
-    intro.addEventListener('pointerdown', (e)=>{
-      if(!started && (e.target===intro || e.target.closest('#tapHint'))) startAudio();
+    // Volume + mute
+    muteBtn.addEventListener('click', () => {
+      bgMusic.muted = !bgMusic.muted;
+      muteBtn.textContent = bgMusic.muted ? '🔇' : '🔊';
+    });
+    volumeSlider.addEventListener('input', e => {
+      bgMusic.volume = parseFloat(e.target.value);
+      if (bgMusic.volume === 0) {
+        bgMusic.muted = true;
+        muteBtn.textContent = '🔇';
+      } else {
+        bgMusic.muted = false;
+        muteBtn.textContent = '🔊';
+      }
     });
 
-    // Mobile menu toggle (page)
-    const btn=document.getElementById('menuBtn'), menu=document.getElementById('menu');
-    if(btn && menu){ btn.addEventListener('click', ()=> menu.classList.toggle('open')); }
-  })();
-  </script>
+    tapBtn.addEventListener('click', startAudio);
+    intro.addEventListener('pointerdown', e => {
+      if (!started && (e.target === intro || e.target.closest('#tapHint'))) startAudio();
+    });
 
-  <!-- Parallax Script -->
-  <script>
-  (function(){
-    const scene = document.getElementById('parallax-scene');
-    if(!scene) return;
-
-    const deep  = scene.querySelector('.layer-deep');
-    const mid   = scene.querySelector('.layer-mid');
-    const stars = scene.querySelector('.layer-stars');
-    const mist  = scene.querySelector('.layer-mist');
-
-    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if(prefersReduced) return;
-
-    let mx = 0, my = 0, tx = 0, ty = 0, rafId = 0;
-
-    function onPointerMove(e){
-      const p = e.touches ? e.touches[0] : e;
-      const x = p.clientX / (window.innerWidth  || 1);
-      const y = p.clientY / (window.innerHeight || 1);
-      mx = (x - 0.5) * 2;   // -1 .. 1
-      my = (y - 0.5) * 2;
+    // Parallax mouse tracking
+    const deep = document.querySelector('.layer-deep');
+    const mid = document.querySelector('.layer-mid');
+    const stars = document.querySelector('.layer-stars');
+    const mist = document.querySelector('.layer-mist');
+    let mx = 0, my = 0, tx = 0, ty = 0;
+    window.addEventListener('mousemove', e => {
+      mx = (e.clientX / window.innerWidth - 0.5) * 2;
+      my = (e.clientY / window.innerHeight - 0.5) * 2;
+    });
+    function animate() {
+      tx += (mx - tx) * 0.05;
+      ty += (my - ty) * 0.05;
+      const dx = tx * 12, dy = ty * 8;
+      deep.style.transform = `translateZ(-200px) translate(${dx}px, ${dy}px) scale(1.2)`;
+      mid.style.transform  = `translateZ(-100px) translate(${dx*1.5}px, ${dy*1.5}px) scale(1.1)`;
+      stars.style.transform= `translateZ(-60px)  translate(${dx*2}px, ${dy*2}px)`;
+      mist.style.transform = `translateZ(0px)    translate(${dx*2.5}px, ${dy*2.5}px)`;
+      requestAnimationFrame(animate);
     }
-
-    function frame(){
-      // ease toward target
-      tx += (mx - tx) * 0.06;
-      ty += (my - ty) * 0.06;
-
-      const dx = tx * 12,  dy = ty * 8;
-
-      if(deep)  deep .style.transform = `translateZ(-200px) translate3d(${dx}px,${dy}px,0) scale(1.2)`;
-      if(mid)   mid  .style.transform = `translateZ(-100px) translate3d(${dx*1.6}px,${dy*1.2}px,0) scale(1.1)`;
-      if(stars) stars.style.transform = `translateZ(-60px)  translate3d(${dx*2.2}px,${dy*1.8}px,0)`;
-      if(mist)  mist .style.transform = `translateZ(0px)   translate3d(${dx*3}px,${dy*2.2}px,0)`;
-
-      rafId = requestAnimationFrame(frame);
-    }
-
-    // Pointer parallax
-    window.addEventListener('mousemove', onPointerMove, { passive: true });
-    window.addEventListener('touchmove', onPointerMove, { passive: true });
-
-    // Tiny scroll parallax to accent depth
-    window.addEventListener('scroll', () => {
-      const s = window.scrollY * 0.02;
-      scene.style.transform = `translateY(${s}px)`;
-    }, { passive: true });
-
-    frame();
-  })();
+    animate();
   </script>
 </body>
 </html>
+
