@@ -10,51 +10,99 @@
     :root { --neon:#00ff99; --ink:#e0ffe8; --bg:#020d07; }
 
     * { box-sizing: border-box; }
-    html, body { height:100%; }
-    body {
-      margin:0;
-      font-family:'Orbitron', sans-serif;
-      color:var(--ink);
-      overflow-x:hidden;
-      background:var(--bg); /* fallback */
-      line-height:1.6;
+    html, body { height:100%; margin:0; font-family:'Orbitron', sans-serif; color:var(--ink); overflow-x:hidden; background:var(--bg); }
+
+    /* ---------- Parallax Background ---------- */
+    #parallax-scene {
+      position: fixed; inset: 0;
+      perspective: 1200px;
+      overflow: hidden;
+      z-index: -3;
+    }
+    #parallax-scene .layer {
+      position: absolute; inset: -6%;
+      will-change: transform;
+      transform-style: preserve-3d;
+      backface-visibility: hidden;
+    }
+    .layer-deep {
+      background: url("assets/bg.png") center / cover no-repeat;
+      filter: saturate(1.05) contrast(1.05);
+      transform: translateZ(-200px) scale(1.2);
+    }
+    .layer-mid {
+      background: url("assets/bg.png") center / cover no-repeat;
+      filter: blur(1.2px) brightness(.98);
+      opacity: .95;
+      transform: translateZ(-100px) scale(1.1);
+    }
+    .layer-stars {
+      background: transparent url('https://www.transparenttextures.com/patterns/stardust.png') repeat;
+      opacity: .18;
+      transform: translateZ(-60px) scale(1.05);
+      animation: moveStars 200s linear infinite;
+    }
+    @keyframes moveStars {
+      from { transform: translateZ(-60px) translate(0,0); }
+      to   { transform: translateZ(-60px) translate(-200px,-200px); }
+    }
+    .layer-mist {
+      background: radial-gradient(circle, rgba(0,255,128,0.08), transparent 70%);
+      mix-blend-mode: screen;
+      transform: translateZ(0px);
+      animation: drift 40s linear infinite;
+      opacity: 1;
+    }
+    @keyframes drift {
+      from { transform: translateZ(0px) translate(-25%, -25%) scale(1); }
+      to   { transform: translateZ(0px) translate(25%, 25%) scale(1.2); }
     }
 
-    /* ---------- Background layers ---------- */
-    .background{position:fixed; inset:0; background:url("assets/bg.png") center/cover no-repeat; z-index:-3}
-    .stars{position:fixed; inset:0; background:transparent url('https://www.transparenttextures.com/patterns/stardust.png') repeat; animation:moveStars 200s linear infinite; opacity:.18; pointer-events:none; z-index:-2}
-    @keyframes moveStars{from{transform:translate(0,0)} to{transform:translate(-200px,-200px)}}
-    .mist{position:fixed; inset:0; background:radial-gradient(circle, rgba(0,255,128,.08), transparent 70%); animation:drift 40s linear infinite; mix-blend-mode:screen; pointer-events:none; z-index:-1}
-    @keyframes drift{from{transform:translate(-25%,-25%) scale(1)} to{transform:translate(25%,25%) scale(1.2)}}
-
-    /* ---------- Header (no blur, responsive) ---------- */
-    header{
-      position:fixed; inset:0 0 auto 0;
-      display:flex; justify-content:space-between; align-items:center;
-      padding:14px 24px;
-      background:rgba(2,13,7,.75);
-      border-bottom:1px solid rgba(0,255,128,.2);
-      box-shadow:0 6px 24px rgba(0,0,0,.35);
-      z-index:1000;
+    @media (prefers-reduced-motion: reduce) {
+      #parallax-scene .layer {
+        animation: none !important;
+        transform: none !important;
+      }
     }
-    .brand{ display:flex; gap:10px; align-items:center; font-weight:800; letter-spacing:.02em; }
-    .brand img{ height:40px; width:auto; }
-    nav{ display:flex; align-items:center; gap:22px; }
-    nav a{ color:#76ffb2; text-decoration:none; font-weight:700; font-size:clamp(12px,1.6vw,14px); }
-    nav a:hover{ color:#00ffea; }
 
-    /* Mobile menu toggle */
-    .menu-btn{display:none; background:none; border:0; color:#b9ffdf; font-size:18px; font-weight:700; padding:6px 10px; border:1px solid rgba(0,255,128,.35); border-radius:8px}
-    .menu{display:flex}
+    /* ---------- Header ---------- */
+    header {
+      position: fixed; top: 0; left: 0; right: 0;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 14px 24px;
+      background: rgba(2,13,7,.75);
+      border-bottom: 1px solid rgba(0,255,128,.2);
+      box-shadow: 0 6px 24px rgba(0,0,0,.35);
+      z-index: 1000;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; letter-spacing: .02em; }
+    .brand img { height: 40px; width: auto; }
+    nav { display: flex; align-items: center; gap: 22px; }
+    nav a { color: #76ffb2; text-decoration: none; font-weight: 700; font-size: clamp(12px,1.6vw,14px); }
+    nav a:hover { color: #00ffea; }
 
-    /* ---------- Content ---------- */
-    .spacer{ height:72px; } /* pushes content below fixed header */
-    main{
+    /* ---------- Mobile Nav ---------- */
+    .menu-btn {
+      display: none;
+      background: none;
+      border: 0;
+      color: #b9ffdf;
+      font-size: 18px;
+      font-weight: 700;
+      padding: 6px 10px;
+      border: 1px solid rgba(0,255,128,.35);
+      border-radius: 8px;
+    }
+    .menu { display: flex; }
+
+    .spacer { height: 72px; }
+
+    main {
       max-width: 900px;
       margin: 0 auto 60px auto;
       padding: 22px;
     }
-    .card{
+    .card {
       background: rgba(0,0,0,0.6);
       border: 2px solid rgba(0,255,128,0.25);
       border-radius: 12px;
@@ -63,53 +111,62 @@
       position: relative;
       z-index: 1;
     }
-    h1{
-      text-align:center;
+    h1 {
+      text-align: center;
       font-size: clamp(26px, 5vw, 42px);
       margin: 0 0 16px 0;
       color: var(--neon);
       text-shadow: 0 0 20px var(--neon);
     }
-    p{
+    p {
       font-size: clamp(14px, 2.2vw, 16px);
       color: #c8fadc;
       margin: 0 0 1em 0;
     }
 
-    /* ---------- Breakpoints ---------- */
-    @media (max-width: 1024px){
-      header{ padding:12px 18px; }
-      .brand img{ height:36px; }
-      nav{ gap:16px; }
-      .spacer{ height:64px; }
-      main{ padding:18px; }
+    @media (max-width: 1024px) {
+      header { padding: 12px 18px; }
+      .brand img { height: 36px; }
+      nav { gap: 16px; }
+      .spacer { height: 64px; }
+      main { padding: 18px; }
     }
-    @media (max-width: 720px){
-      .brand img{ height:30px; }
-      .menu-btn{ display:inline-flex; }
-      /* dropdown menu panel on mobile */
-      .menu{ display:none; position:fixed; top:64px; right:12px; flex-direction:column; gap:10px;
-             background:rgba(2,13,7,.92); border:1px solid rgba(0,255,128,.25); border-radius:10px;
-             padding:12px; box-shadow:0 14px 40px rgba(0,0,0,.45); z-index:1001; }
-      .menu.open{ display:flex; }
+    @media (max-width: 720px) {
+      .brand img { height: 30px; }
+      .menu-btn { display: inline-flex; }
+      .menu {
+        display: none;
+        position: fixed;
+        top: 64px; right: 12px;
+        flex-direction: column; gap: 10px;
+        background: rgba(2,13,7,.92);
+        border: 1px solid rgba(0,255,128,.25);
+        border-radius: 10px;
+        padding: 12px;
+        box-shadow: 0 14px 40px rgba(0,0,0,.45);
+        z-index: 1001;
+      }
+      .menu.open { display: flex; }
     }
-    @media (max-width: 380px){
-      nav a{ font-size:13px; }
+    @media (max-width: 380px) {
+      nav a { font-size: 13px; }
     }
   </style>
 </head>
 <body>
-  <!-- Background layers -->
-  <div class="background"></div>
-  <div class="stars"></div>
-  <div class="mist"></div>
+  <!-- Parallax Background Layers -->
+  <div id="parallax-scene" aria-hidden="true">
+    <div class="layer layer-deep"></div>
+    <div class="layer layer-mid"></div>
+    <div class="layer layer-stars"></div>
+    <div class="layer layer-mist"></div>
+  </div>
 
   <header>
     <div class="brand">
       <img src="assets/favicon.png" alt="Ebmarah">
       <span style="font-size:clamp(16px,2.6vw,22px)">Ebmarah</span>
     </div>
-
     <button class="menu-btn" id="menuBtn">Menu</button>
     <nav class="menu" id="menu">
       <a href="index.html">Home</a>
@@ -150,7 +207,7 @@
     });
   </script>
 
-  <!-- Mobile menu toggle -->
+  <!-- Menu Toggle -->
   <script>
     (function(){
       const btn = document.getElementById('menuBtn');
@@ -159,6 +216,53 @@
         btn.addEventListener('click', ()=> menu.classList.toggle('open'));
       }
     })();
+  </script>
+
+  <!-- Parallax Background Script -->
+  <script>
+  (function(){
+    const scene = document.getElementById('parallax-scene');
+    const deep  = scene.querySelector('.layer-deep');
+    const mid   = scene.querySelector('.layer-mid');
+    const stars = scene.querySelector('.layer-stars');
+    const mist  = scene.querySelector('.layer-mist');
+
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if(prefersReduced) return;
+
+    let mx=0, my=0, tx=0, ty=0;
+
+    function onPointerMove(e){
+      const p = e.touches ? e.touches[0] : e;
+      const x = p.clientX / (window.innerWidth  || 1);
+      const y = p.clientY / (window.innerHeight || 1);
+      mx = (x - 0.5) * 2;
+      my = (y - 0.5) * 2;
+    }
+
+    function frame(){
+      tx += (mx - tx) * 0.06;
+      ty += (my - ty) * 0.06;
+
+      const dx = tx * 12, dy = ty * 8;
+      deep.style.transform = `translateZ(-200px) translate3d(${dx}px,${dy}px,0) scale(1.2)`;
+      mid.style.transform  = `translateZ(-100px) translate3d(${dx*1.6}px,${dy*1.2}px,0) scale(1.1)`;
+      stars.style.transform= `translateZ(-60px) translate3d(${dx*2.2}px,${dy*1.8}px,0)`;
+      mist.style.transform = `translateZ(0px) translate3d(${dx*3}px,${dy*2.2}px,0)`;
+
+      requestAnimationFrame(frame);
+    }
+
+    window.addEventListener('mousemove', onPointerMove, { passive: true });
+    window.addEventListener('touchmove', onPointerMove, { passive: true });
+
+    window.addEventListener('scroll', () => {
+      const s = window.scrollY * 0.02;
+      scene.style.transform = `translateY(${s}px)`;
+    }, { passive: true });
+
+    frame();
+  })();
   </script>
 </body>
 </html>
