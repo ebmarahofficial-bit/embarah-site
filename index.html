@@ -9,95 +9,123 @@
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&display=swap');
     :root { --neon:#00ff99; --bg:#020d07; --ink:#e0ffe8; }
 
-    body {
-      margin: 0;
-      font-family: 'Orbitron', sans-serif;
-      color: var(--ink);
-      overflow-x: hidden;
+    /* Base */
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:'Orbitron',sans-serif;
+      color:var(--ink);
       background:#020d07; /* fallback */
+      overflow-x:hidden;
     }
 
     /* Background layers */
-    .background {
-      position:fixed; inset:0;
-      background:url("assets/bg.png") center center / cover no-repeat;
-      z-index:-3;
+    .background{position:fixed; inset:0; background:url("assets/bg.png") center/cover no-repeat; z-index:-3}
+    .stars{position:fixed; inset:0; background:transparent url('https://www.transparenttextures.com/patterns/stardust.png') repeat; animation:moveStars 200s linear infinite; opacity:.2; z-index:-2}
+    @keyframes moveStars{from{transform:translate(0,0)} to{transform:translate(-200px,-200px)}}
+    .mist{position:fixed; inset:0; background:radial-gradient(circle, rgba(0,255,128,.08), transparent 70%); animation:drift 40s linear infinite; mix-blend-mode:screen; z-index:-1}
+    @keyframes drift{from{transform:translate(-25%,-25%) scale(1)} to{transform:translate(25%,25%) scale(1.2)}}
+
+    /* Header (no blur, responsive) */
+    header{
+      position:fixed; top:0; left:0; right:0;
+      display:flex; align-items:center; justify-content:space-between;
+      padding:14px 24px;
+      background:rgba(2,13,7,.75);
+      border-bottom:1px solid rgba(0,255,128,.2);
+      box-shadow:0 6px 24px rgba(0,0,0,.35);
+      z-index:1000;
     }
-    .stars { position: fixed; inset:0;
-      background: transparent url('https://www.transparenttextures.com/patterns/stardust.png') repeat;
-      animation: moveStars 200s linear infinite; opacity: 0.2; z-index:-2; }
-    @keyframes moveStars { from{transform:translate(0,0)} to{transform:translate(-200px,-200px)} }
-    .mist { position: fixed; inset:0;
-      background: radial-gradient(circle, rgba(0,255,128,0.08), transparent 70%);
-      animation: drift 40s linear infinite; mix-blend-mode: screen; z-index:-1; }
-    @keyframes drift { from{transform:translate(-25%,-25%) scale(1)} to{transform:translate(25%,25%) scale(1.2)} }
+    .brand{display:flex; align-items:center; gap:10px; font-weight:800; letter-spacing:.02em}
+    .brand img{height:40px; width:auto}
+    nav{display:flex; align-items:center; gap:22px}
+    nav a{color:#76ffb2; text-decoration:none; font-weight:700; font-size:clamp(12px,1.6vw,14px)}
+    nav a:hover{color:#00ffea}
 
-    header {
-      display: flex; justify-content: space-between; padding: 1rem 2rem;
-      background: rgba(2,13,7,0.75);
-      border-bottom: 1px solid rgba(0,255,128,0.2);
-      box-shadow: 0 6px 24px rgba(0,0,0,0.35);
-      position: fixed; top:0; left:0; right:0;
-      z-index: 1000;
-      pointer-events:auto;
+    /* Mobile menu toggle */
+    .menu-btn{display:none; background:none; border:0; color:#b9ffdf; font-size:18px; font-weight:700; padding:6px 10px; border:1px solid rgba(0,255,128,.35); border-radius:8px}
+    .menu{display:flex}
+
+    /* Hero + content */
+    .spacer{height:72px} /* pushes page below fixed header */
+    .hero{
+      text-align:center;
+      padding: clamp(64px, 12vw, 128px) 16px 32px;
+      background:linear-gradient(180deg, rgba(0,255,128,.05), transparent);
     }
-    nav a { margin: 0 1rem; text-decoration: none; color: #76ffb2; font-weight: bold; transition: color .3s; }
-    nav a:hover { color: #00ffea; }
+    .hero h1{font-size:clamp(28px, 6.5vw, 64px); margin:0 0 8px; text-shadow:0 0 20px var(--neon)}
+    .hero p{font-size:clamp(12px, 2.3vw, 16px); opacity:.9; margin:0}
 
-    .hero { text-align: center; padding: 8rem 2rem;
-      background: linear-gradient(180deg, rgba(0,255,128,0.05), transparent);
-      position: relative; z-index: 1; }
-    .hero h1 { font-size: clamp(2.4rem, 7vw, 4rem); text-shadow: 0 0 20px var(--neon); }
-
-    .soundcloud-embed { margin: 2rem auto; max-width: 600px;
-      border: 2px solid rgba(0,255,128,0.3); border-radius: 12px; overflow: hidden;
-      box-shadow: 0 0 30px rgba(0,255,128,0.2); position: relative; z-index: 1; }
-
-    /* Hide page until intro finishes */
-    .page--hidden { opacity: 0; filter: blur(8px); transition: opacity .6s ease, filter .6s ease; }
-
-    /* ---------- Intro Overlay ---------- */
-    #intro {
-      position: fixed; inset: 0; display: grid; place-items: center;
-      background: radial-gradient(80% 60% at 50% 40%, #03150e 0%, #010503 70%);
-      z-index: 9999; color: var(--ink); overflow: hidden;
+    .soundcloud-embed{
+      width:min(940px, 92vw);
+      margin: 24px auto 64px;
+      border:2px solid rgba(0,255,128,.3);
+      border-radius:12px; overflow:hidden;
+      box-shadow:0 0 30px rgba(0,255,128,.2);
+      background:rgba(0,0,0,.25);
     }
-    .intro-wrap { width: min(900px, 92vw); text-align: center; position: relative; }
-    .logo {
-      font-size: clamp(42px, 10vw, 96px); font-weight: 800; letter-spacing: .08em; color: var(--neon);
-      text-shadow: 0 0 12px rgba(0,255,153,.6), 0 0 30px rgba(0,255,153,.25);
-      position: relative; animation: glow 2.2s ease-in-out infinite alternate; user-select: none;
+    .soundcloud-embed iframe{display:block; width:100%; height:166px; border:0}
+
+    /* ---- Breakpoints ---- */
+    /* Tablet */
+    @media (max-width: 1024px){
+      header{padding:12px 18px}
+      .brand img{height:36px}
+      nav{gap:16px}
     }
-    .logo::before, .logo::after { content: attr(aria-label); position: absolute; inset: 0; mix-blend-mode: screen; }
-    .logo::before { color:#00f6ff; transform: translateX(-2px); filter: blur(.6px); opacity:.6; }
-    .logo::after  { color:#ff3b6e; transform: translateX( 2px); filter: blur(.6px); opacity:.6; }
-    @keyframes glow { from { text-shadow: 0 0 6px rgba(0,255,153,.4);} to { text-shadow: 0 0 16px rgba(0,255,153,.9);} }
-
-    .terminal { font-family: monospace; background: rgba(0,0,0,.35); border: 1px solid rgba(0,255,153,.25);
-      box-shadow: 0 0 0 1px rgba(0,255,153,.08) inset, 0 6px 40px rgba(0,255,153,.12);
-      border-radius: 12px; margin: 18px auto 16px; padding: 16px 18px; text-align: left; max-height: 40vh; }
-    .line { opacity: .92; margin: 6px 0; white-space: nowrap; }
-    .line.hidden { visibility: hidden; }
-    .caret { display: inline-block; width: 10px; height: 1.2em; border-left: 2px solid var(--neon); animation: blink .9s steps(1,end) infinite; margin-left: 2px; }
-    @keyframes blink { 50% { opacity: 0; } }
-
-    .progress { height: 10px; border-radius: 999px; overflow: hidden; border: 1px solid rgba(0,255,153,.35);
-      background: linear-gradient(90deg, rgba(0,255,153,.06), rgba(0,255,153,.02)); position: relative; margin: 10px auto 0; max-width: 560px; }
-    .bar { width: 0%; height: 100%; background: linear-gradient(90deg, var(--neon), #7affc7); box-shadow: 0 0 18px rgba(0,255,153,.6); transition: width .2s ease; }
-    .pct { position: absolute; inset: auto 10px -26px auto; font: 600 12px monospace; color: rgba(230,255,230,.65); }
-
-    .scanlines { pointer-events: none; position: absolute; inset: 0;
-      background: repeating-linear-gradient(0deg, rgba(255,255,255,.04), rgba(255,255,255,.04) 1px, transparent 1px, transparent 3px);
-      mix-blend-mode: soft-light; opacity: .25; }
-
-    .tap-hint{
-      margin-top: 16px; font: 700 12px/1.4 ui-monospace, monospace; opacity:.7;
-      letter-spacing:.08em; text-transform: uppercase; display:none;
+    /* Phone */
+    @media (max-width: 720px){
+      .brand img{height:30px}
+      .menu-btn{display:inline-flex}
+      .menu{display:none; position:fixed; top:64px; right:12px; flex-direction:column; gap:10px;
+             background:rgba(2,13,7,.92); border:1px solid rgba(0,255,128,.25); border-radius:10px; padding:12px; box-shadow:0 14px 40px rgba(0,0,0,.45)}
+      .menu.open{display:flex}
+      nav a{font-size:14px}
+      .spacer{height:64px}
+      .hero{padding:72px 16px 24px}
+      .soundcloud-embed{margin:18px auto 48px}
+      .soundcloud-embed iframe{height:148px}
+    }
+    /* Tiny phones */
+    @media (max-width: 380px){
+      nav a{font-size:13px}
+      .soundcloud-embed iframe{height:140px}
     }
 
-    .intro-out { animation: fadeOut .7s ease forwards, unblur .7s ease forwards; }
-    @keyframes fadeOut { to { opacity: 0; } }
-    @keyframes unblur { to { filter: blur(0); } }
+    /* Intro overlay (unchanged) */
+    #intro{
+      position:fixed; inset:0; display:grid; place-items:center;
+      background:radial-gradient(80% 60% at 50% 40%, #03150e 0%, #010503 70%);
+      z-index:9999; color:var(--ink); overflow:hidden;
+    }
+    .intro-wrap{width:min(900px, 92vw); text-align:center; position:relative}
+    .logo{font-size:clamp(42px,10vw,96px); font-weight:800; letter-spacing:.08em; color:var(--neon);
+      text-shadow:0 0 12px rgba(0,255,153,.6), 0 0 30px rgba(0,255,153,.25); position:relative; animation:glow 2.2s ease-in-out infinite alternate; user-select:none}
+    .logo::before,.logo::after{content:attr(aria-label); position:absolute; inset:0; mix-blend-mode:screen}
+    .logo::before{color:#00f6ff; transform:translateX(-2px); filter:blur(.6px); opacity:.6}
+    .logo::after{color:#ff3b6e; transform:translateX(2px); filter:blur(.6px); opacity:.6}
+    @keyframes glow{from{text-shadow:0 0 6px rgba(0,255,153,.4)} to{text-shadow:0 0 16px rgba(0,255,153,.9)}}
+
+    .terminal{font-family:monospace; background:rgba(0,0,0,.35); border:1px solid rgba(0,255,153,.25);
+      box-shadow:0 0 0 1px rgba(0,255,153,.08) inset, 0 6px 40px rgba(0,255,153,.12);
+      border-radius:12px; margin:18px auto 16px; padding:16px 18px; text-align:left; max-height:40vh}
+    .line{opacity:.92; margin:6px 0; white-space:nowrap}
+    .line.hidden{visibility:hidden}
+    .caret{display:inline-block; width:10px; height:1.2em; border-left:2px solid var(--neon); animation:blink .9s steps(1,end) infinite; margin-left:2px}
+    @keyframes blink{50%{opacity:0}}
+
+    .progress{height:10px; border-radius:999px; overflow:hidden; border:1px solid rgba(0,255,153,.35);
+      background:linear-gradient(90deg, rgba(0,255,153,.06), rgba(0,255,153,.02)); position:relative; margin:10px auto 0; max-width:560px}
+    .bar{width:0%; height:100%; background:linear-gradient(90deg, var(--neon), #7affc7); box-shadow:0 0 18px rgba(0,255,153,.6); transition:width .2s ease}
+    .pct{position:absolute; right:10px; bottom:-26px; font:600 12px monospace; color:rgba(230,255,230,.65)}
+
+    .scanlines{pointer-events:none; position:absolute; inset:0; background:repeating-linear-gradient(0deg, rgba(255,255,255,.04), rgba(255,255,255,.04) 1px, transparent 1px, transparent 3px); mix-blend-mode:soft-light; opacity:.25}
+    .tap-hint{margin-top:16px; font:700 12px/1.4 ui-monospace,monospace; opacity:.7; letter-spacing:.08em; text-transform:uppercase; display:none}
+
+    /* Page reveal */
+    .page--hidden{opacity:0; filter:blur(8px); transition:opacity .6s ease, filter .6s ease}
+    .intro-out{animation:fadeOut .7s ease forwards, unblur .7s ease forwards}
+    @keyframes fadeOut{to{opacity:0}} @keyframes unblur{to{filter:blur(0)}}
   </style>
 </head>
 <body>
@@ -107,7 +135,7 @@
   <div class="stars"></div>
   <div class="mist"></div>
 
-  <!-- ===== Intro Overlay ===== -->
+  <!-- Intro Overlay -->
   <div id="intro" aria-hidden="true">
     <div class="intro-wrap">
       <div class="logo" aria-label="EBMARAH">EBMARAH</div>
@@ -125,13 +153,17 @@
     <audio id="introAudio" src="assets/intro.mp3" preload="auto" playsinline></audio>
   </div>
 
-  <!-- ===== Page Content ===== -->
+  <!-- Page Content -->
   <div id="page" class="page--hidden">
-
     <header>
-      <div class="logo"><img src="assets/favicon.png" alt="Ebmarah Logo" style="height:40px; vertical-align:middle;"> Ebmarah</div>
-      <nav>
-        <a href="#">Home</a>
+      <div class="brand">
+        <img src="assets/favicon.png" alt="Ebmarah">
+        <span style="font-size:clamp(16px,2.6vw,22px)">Ebmarah</span>
+      </div>
+
+      <button class="menu-btn" id="menuBtn">Menu</button>
+      <nav class="menu" id="menu">
+        <a href="index.html">Home</a>
         <a href="music.html">Music</a>
         <a href="sample-packs.html">Sample Packs</a>
         <a href="about.html">About</a>
@@ -139,13 +171,18 @@
       </nav>
     </header>
 
+    <div class="spacer"></div>
+
     <section class="hero">
       <h1>Welcome to the Digital Gorilla Forest</h1>
       <p>Stream my latest dubstep tracks & explore the digital jungle.</p>
     </section>
 
     <section class="soundcloud-embed">
-      <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay"
+      <iframe
+        title="Enemy – Ebmarah"
+        scrolling="no"
+        allow="autoplay"
         src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/ebmarah/enemy">
       </iframe>
     </section>
@@ -154,114 +191,73 @@
     <script src="js/ebmarah-mascot.js"></script>
     <script>
       EbmarahMascot.init({
-        mode: 'passive',
-        position: 'bottom-right',
-        funnyLines: [
+        mode:'passive',
+        position:'bottom-right',
+        funnyLines:[
           'BASS INCOMING','sub-bass handshake!','gorilla certified 🔊',
           'who threw this banana?','i smell a DROP...'
         ]
       });
     </script>
+
+    <!-- SoundCloud widget trigger example -->
     <script src="https://w.soundcloud.com/player/api.js"></script>
     <script>
-      const scFrame = document.querySelector('.soundcloud-embed iframe');
-      const widget = SC.Widget(scFrame);
-      const dropMs = [30000, 65000, 130000];
-      const hitWindow = 900;
-      const triggered = new Set();
-      widget.bind(SC.Widget.Events.PLAY_PROGRESS, (e) => {
-        const t = Math.floor(e.currentPosition);
-        for (const d of dropMs) {
-          if (!triggered.has(d) && Math.abs(t - d) <= hitWindow) {
-            triggered.add(d);
-            EbmarahMascot.say('BASS INCOMING!', 3000);
+      const scFrame=document.querySelector('.soundcloud-embed iframe');
+      const widget=SC.Widget(scFrame);
+      const dropMs=[30000,65000,130000], hitWindow=900, fired=new Set();
+      widget.bind(SC.Widget.Events.PLAY_PROGRESS, e=>{
+        const t=Math.floor(e.currentPosition);
+        for(const d of dropMs){
+          if(!fired.has(d) && Math.abs(t-d)<=hitWindow){
+            fired.add(d);
+            EbmarahMascot.say('BASS INCOMING!',3000);
             EbmarahMascot.throwBananas(7);
             EbmarahMascot.setMood('curious');
-            setTimeout(()=>EbmarahMascot.setMood('idle'), 600);
+            setTimeout(()=>EbmarahMascot.setMood('idle'),600);
           }
         }
       });
     </script>
   </div>
 
-  <!-- ===== Intro Script ===== -->
+  <!-- Intro Script -->
   <script>
   (function(){
-    const SEEN_KEY = "ebmarah_intro_seen_v2"; 
-    const introEl = document.getElementById('intro');
-    const pageEl  = document.getElementById('page');
-    const bar     = introEl.querySelector('.bar');
-    const pct     = introEl.querySelector('.pct');
-    const lines   = [...introEl.querySelectorAll('.terminal .line')];
-    const audio   = document.getElementById('introAudio');
-    const tapHint = document.getElementById('tapHint');
+    const SEEN_KEY="ebmarah_intro_seen_v2";
+    const intro=document.getElementById('intro'), page=document.getElementById('page');
+    const bar=intro.querySelector('.bar'), pct=intro.querySelector('.pct');
+    const lines=[...intro.querySelectorAll('.terminal .line')];
+    const audio=document.getElementById('introAudio');
+    const tap=document.getElementById('tapHint');
 
-    if (localStorage.getItem(SEEN_KEY)) {
-      introEl.style.display = 'none';
-      pageEl.classList.remove('page--hidden');
-      pageEl.style.opacity = '1';
-      return;
+    if(localStorage.getItem(SEEN_KEY)){
+      intro.style.display='none'; page.classList.remove('page--hidden'); page.style.opacity='1'; return;
     }
 
-    let started = false;
-
-    async function beginIntro(withGesture=false){
-      if (started) return;
-      started = true;
-
-      if (audio) {
-        try { audio.currentTime = 0; audio.volume = 1; await audio.play(); } catch (e) {}
-      }
-
-      const typeLine = (el, text, speed=18) => new Promise(res => {
-        let i=0; el.textContent=''; el.style.visibility='visible';
-        (function tick(){ if(i<text.length){ el.textContent += text[i++]; setTimeout(tick, speed); } else res(); })();
-      });
-
-      const first = lines[0];
-      const caret = first.querySelector('.caret');
-      if (caret) caret.remove();
-      await typeLine(first, '>> INIT EBS LOADER');
-      for (let i=1;i<lines.length;i++){ await typeLine(lines[i], lines[i].dataset.text); }
-
-      let p=0;
-      (function step(){
-        const inc = Math.max(1, Math.min(7, 20 * Math.random()));
-        p = Math.min(100, p + inc);
-        bar.style.width = p + '%'; pct.textContent = p + '%';
-        if (p < 100) setTimeout(step, 100 + Math.random()*160);
-        else done();
-      })();
+    let started=false;
+    async function begin(){
+      if(started) return; started=true;
+      try{ await audio.play(); }catch(e){}
+      const type=(el,txt,s=18)=>new Promise(r=>{ let i=0; el.textContent=''; el.style.visibility='visible'; (function tick(){ if(i<txt.length){ el.textContent+=txt[i++]; setTimeout(tick,s);} else r();})();});
+      const first=lines[0]; const caret=first.querySelector('.caret'); if(caret) caret.remove();
+      await type(first,'>> INIT EBS LOADER');
+      for(let i=1;i<lines.length;i++){ await type(lines[i], lines[i].dataset.text); }
+      let p=0; (function step(){ p=Math.min(100, p + Math.max(1, Math.min(7, 20*Math.random()))); bar.style.width=p+'%'; pct.textContent=p+'%'; if(p<100) setTimeout(step, 100+Math.random()*160); else done(); })();
     }
-
-    function done(){
-      localStorage.setItem(SEEN_KEY, '1');
-      introEl.classList.add('intro-out');
-      pageEl.classList.remove('page--hidden');
-      pageEl.style.opacity = '1';
-      if (audio){ audio.pause(); audio.currentTime = 0; }
-      setTimeout(()=> { introEl.style.display = 'none'; }, 700);
-    }
-
-    (async function tryAutoplayThenMaybeWait(){
-      if (!audio) { beginIntro(); return; }
-      try {
-        audio.currentTime = 0; await audio.play();
-        audio.pause(); audio.currentTime = 0;
-        beginIntro();
-      } catch (err) {
-        tapHint.style.display = 'block';
-        const startOnGesture = () => { tapHint.style.display='none'; beginIntro(true); cleanup(); };
-        const cleanup = () => {
-          window.removeEventListener('pointerdown', startOnGesture);
-          window.removeEventListener('keydown', startOnGesture);
-        };
-        window.addEventListener('pointerdown', startOnGesture, { once:true });
-        window.addEventListener('keydown', startOnGesture, { once:true });
+    function done(){ localStorage.setItem(SEEN_KEY,'1'); intro.classList.add('intro-out'); page.classList.remove('page--hidden'); page.style.opacity='1'; try{ audio.pause(); audio.currentTime=0; }catch(e){} setTimeout(()=>intro.style.display='none',700); }
+    (async function(){
+      try{ await audio.play(); audio.pause(); audio.currentTime=0; begin(); }
+      catch(err){
+        tap.style.display='block';
+        const go=()=>{ tap.style.display='none'; begin(); window.removeEventListener('pointerdown',go); window.removeEventListener('keydown',go); };
+        window.addEventListener('pointerdown',go,{once:true}); window.addEventListener('keydown',go,{once:true});
       }
     })();
 
-    window.addEventListener('keydown', (e)=>{ if (e.key === 'Escape') { if (!started) beginIntro(true); else done(); } });
+    // Mobile menu toggle
+    const btn=document.getElementById('menuBtn'), menu=document.getElementById('menu');
+    btn.addEventListener('click', ()=> menu.classList.toggle('open'));
   })();
   </script>
 </body>
