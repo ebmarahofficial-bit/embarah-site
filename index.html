@@ -476,15 +476,16 @@
     frame();
   })();
   </script>
-  <!-- Background music (Enemy) -->
+ <!-- Background music (Enemy) – starts AFTER intro finishes -->
 <audio id="bgm" src="music/Enemy.mp3" preload="auto" loop playsinline></audio>
 
 <script>
 (() => {
-  // ---- styles (injected so we don't edit <head>) ----
+  // ----- styles (injected so we don't edit <head>) -----
   const css = `
     .ebm-audio {
-      position: fixed; right: 16px; bottom: 16px; z-index: 1100;
+      position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%);
+      z-index: 1100;
       display: flex; align-items: center; gap: 10px;
       background: rgba(0,0,0,.55);
       border: 1px solid rgba(0,255,128,.35);
@@ -511,14 +512,14 @@
   style.textContent = css;
   document.head.appendChild(style);
 
-  // ---- build the widget (so we don't edit your header) ----
+  // ----- build the widget (no edits to header) -----
   const wrap = document.createElement('div');
   wrap.className = 'ebm-audio';
   wrap.innerHTML = `
-    <button id="ebmPlay">Play</button>
-    <button id="ebmMute">Mute</button>
-    <input id="ebmVol" type="range" min="0" max="1" step="0.01" />
-    <span class="status" id="ebmStatus">loading<span class="dot" aria-hidden="true"></span></span>
+    <button id="ebmPlay" disabled>Play</button>
+    <button id="ebmMute" disabled>Mute</button>
+    <input id="ebmVol" type="range" min="0" max="1" step="0.01" disabled />
+    <span class="status" id="ebmStatus">waiting for intro<span class="dot" aria-hidden="true"></span></span>
   `;
   document.body.appendChild(wrap);
 
@@ -536,6 +537,11 @@
   audio.muted = savedMute;
   vol.value = audio.volume;
 
+  function setControlsEnabled(on){
+    playBtn.disabled = !on;
+    muteBtn.disabled = !on;
+    vol.disabled = !on;
+  }
   function updateUI(){
     playBtn.textContent = audio.paused ? 'Play' : 'Pause';
     muteBtn.textContent = audio.muted ? 'Unmute' : 'Mute';
@@ -544,27 +550,31 @@
     status.insertAdjacentHTML('beforeend','<span class="dot" aria-hidden="true"></span>');
   }
 
-  // try autoplay; if blocked, show tap hint via status
-  const resume = async () => {
-    try { await audio.play(); updateUI(); }
-    finally {
-      window.removeEventListener('pointerdown', resume);
-      window.removeEventListener('keydown', resume);
-    }
-  };
-  (async () => {
+  // Start ONLY after intro finishes
+  const introAudio = document.getElementById('introAudio');
+  async function startBGM(){
+    setControlsEnabled(true);
+    // try to play; if blocked, user can press Play
     try { await audio.play(); }
     catch {
       status.textContent = 'tap to play';
       status.insertAdjacentHTML('beforeend','<span class="dot" aria-hidden="true"></span>');
-      window.addEventListener('pointerdown', resume, { once:true });
-      window.addEventListener('keydown', resume, { once:true });
-    } finally { updateUI(); }
-  })();
+    }
+    updateUI();
+  }
+
+  if (introAudio) {
+    // normal path: after intro audio ends
+    introAudio.addEventListener('ended', startBGM, { once: true });
+  } else {
+    // safety fallback (if intro removed in future)
+    window.addEventListener('load', () => setControlsEnabled(true));
+  }
 
   // controls
   playBtn.addEventListener('click', async () => {
-    if (audio.paused) { await audio.play(); } else { audio.pause(); }
+    if (audio.paused) { await audio.play().catch(()=>{}); }
+    else { audio.pause(); }
     updateUI();
   });
   muteBtn.addEventListener('click', () => {
