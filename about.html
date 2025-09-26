@@ -145,10 +145,7 @@
       .menu.open { display: flex; }
     }
 
-    /* Optional audio control */
-    #bg-music {
-      display: none;
-    }
+    #bg-music { display: none; }
   </style>
 </head>
 <body>
@@ -207,7 +204,7 @@
     });
   </script>
 
-  <!-- Background Audio -->
+  <!-- Background Music -->
   <audio id="bg-music" src="assets/about.mp3" autoplay loop playsinline></audio>
   <script>
     const bgMusic = document.getElementById('bg-music');
@@ -223,7 +220,7 @@
     btn.addEventListener('click', () => menu.classList.toggle('open'));
   </script>
 
-  <!-- Parallax Motion -->
+  <!-- Parallax Movement -->
   <script>
   (function(){
     const scene = document.getElementById('parallax-scene');
@@ -245,21 +242,19 @@
     function animate(){
       tx += (mx - tx) * 0.06;
       ty += (my - ty) * 0.06;
-
       const dx = tx * 12, dy = ty * 8;
       deep.style.transform  = `translateZ(-200px) translate(${dx}px,${dy}px) scale(1.2)`;
       mid.style.transform   = `translateZ(-100px) translate(${dx*1.6}px,${dy*1.2}px) scale(1.1)`;
       stars.style.transform = `translateZ(-60px)  translate(${dx*2}px,${dy*1.6}px)`;
       mist.style.transform  = `translateZ(0px)    translate(${dx*2.5}px,${dy*2.2}px)`;
-
       requestAnimationFrame(animate);
     }
 
     window.addEventListener('mousemove', onPointerMove, { passive: true });
     window.addEventListener('touchmove', onPointerMove, { passive: true });
-
     animate();
   })();
   </script>
 </body>
 </html>
+
