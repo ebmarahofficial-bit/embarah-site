@@ -3,50 +3,62 @@
 <head>
   <meta charset="UTF-8" />
   <title>Ebmarah – About</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="icon" type="image/png" href="assets/favicon.png" />
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&display=swap');
     :root { --neon:#00ff99; --ink:#e0ffe8; --bg:#020d07; }
 
     * { box-sizing: border-box; }
-    html, body { height:100%; margin:0; font-family:'Orbitron', sans-serif; color:var(--ink); overflow-x:hidden; background:var(--bg); }
+    html, body { height:100%; }
+    body {
+      margin:0;
+      font-family:'Orbitron', sans-serif;
+      color:var(--ink);
+      overflow-x:hidden;
+      background:var(--bg); /* fallback */
+    }
 
-    /* ---------- Parallax Background ---------- */
-    #parallax-scene {
+    /* === Parallax Background === */
+    #parallax-scene{
       position: fixed; inset: 0;
       perspective: 1200px;
       overflow: hidden;
-      z-index: -3;
+      z-index: -3; /* behind everything */
     }
-    #parallax-scene .layer {
-      position: absolute; inset: -6%;
+    #parallax-scene .layer{
+      position: absolute; inset: -6%; /* bleed for movement */
       will-change: transform;
       transform-style: preserve-3d;
       backface-visibility: hidden;
     }
-    .layer-deep {
+    /* Deep jungle layer (base image, slowest) */
+    .layer-deep{
       background: url("assets/bg.png") center / cover no-repeat;
       filter: saturate(1.05) contrast(1.05);
       transform: translateZ(-200px) scale(1.2);
     }
-    .layer-mid {
+    /* Mid jungle layer (same image, slightly blurred & darker) */
+    .layer-mid{
       background: url("assets/bg.png") center / cover no-repeat;
       filter: blur(1.2px) brightness(.98);
       opacity: .95;
       transform: translateZ(-100px) scale(1.1);
+      mix-blend-mode: normal;
     }
-    .layer-stars {
+    /* Stars layer */
+    .layer-stars{
       background: transparent url('https://www.transparenttextures.com/patterns/stardust.png') repeat;
       opacity: .18;
       transform: translateZ(-60px) scale(1.05);
       animation: moveStars 200s linear infinite;
     }
     @keyframes moveStars {
-      from { transform: translateZ(-60px) translate(0,0); }
-      to   { transform: translateZ(-60px) translate(-200px,-200px); }
+      from { transform: translateZ(-60px) translate(0,0) }
+      to   { transform: translateZ(-60px) translate(-200px,-200px) }
     }
-    .layer-mist {
+    /* Mist layer */
+    .layer-mist{
       background: radial-gradient(circle, rgba(0,255,128,0.08), transparent 70%);
       mix-blend-mode: screen;
       transform: translateZ(0px);
@@ -54,10 +66,10 @@
       opacity: 1;
     }
     @keyframes drift {
-      from { transform: translateZ(0px) translate(-25%, -25%) scale(1); }
-      to   { transform: translateZ(0px) translate(25%, 25%) scale(1.2); }
+      from { transform: translateZ(0px) translate(-25%, -25%) scale(1) }
+      to   { transform: translateZ(0px) translate( 25%,  25%) scale(1.2) }
     }
-
+    /* Reduced motion: keep layered look but no movement */
     @media (prefers-reduced-motion: reduce) {
       #parallax-scene .layer {
         animation: none !important;
@@ -65,96 +77,97 @@
       }
     }
 
-    /* ---------- Header ---------- */
-    header {
-      position: fixed; top: 0; left: 0; right: 0;
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 14px 24px;
-      background: rgba(2,13,7,.75);
-      border-bottom: 1px solid rgba(0,255,128,.2);
-      box-shadow: 0 6px 24px rgba(0,0,0,.35);
-      z-index: 1000;
+    /* ---------- Header (no blur, responsive) ---------- */
+    header{
+      position:fixed; inset:0 0 auto 0;
+      display:flex; justify-content:space-between; align-items:center;
+      padding:14px 24px;
+      background:rgba(2,13,7,.75);
+      border-bottom:1px solid rgba(0,255,128,.2);
+      box-shadow:0 6px 24px rgba(0,0,0,.35);
+      z-index:1000;
     }
-    .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; letter-spacing: .02em; }
-    .brand img { height: 40px; width: auto; }
-    nav { display: flex; align-items: center; gap: 22px; }
-    nav a { color: #76ffb2; text-decoration: none; font-weight: 700; font-size: clamp(12px,1.6vw,14px); }
-    nav a:hover { color: #00ffea; }
+    .brand{ display:flex; gap:10px; align-items:center; font-weight:800; letter-spacing:.02em; }
+    .brand img{ height:40px; width:auto; }
+    nav{ display:flex; align-items:center; gap:22px; }
+    nav a{ color:#76ffb2; text-decoration:none; font-weight:700; font-size:clamp(12px,1.6vw,14px); }
+    nav a:hover{ color:#00ffea; }
 
-    /* ---------- Mobile Nav ---------- */
-    .menu-btn {
-      display: none;
-      background: none;
-      border: 0;
-      color: #b9ffdf;
-      font-size: 18px;
-      font-weight: 700;
-      padding: 6px 10px;
-      border: 1px solid rgba(0,255,128,.35);
-      border-radius: 8px;
-    }
-    .menu { display: flex; }
+    /* Mobile menu toggle */
+    .menu-btn{display:none; background:none; border:0; color:#b9ffdf; font-size:18px; font-weight:700; padding:6px 10px; border:1px solid rgba(0,255,128,.35); border-radius:8px}
+    .menu{display:flex}
 
-    .spacer { height: 72px; }
+    /* ---------- Page Content ---------- */
+    .spacer{ height:72px; } /* pushes content below fixed header */
+    main{
+      position:relative; z-index:1;
+      max-width:1100px; margin:0 auto 40px auto; padding:22px;
+    }
+    .card{
+      background:rgba(0,0,0,0.6);
+      border:2px solid rgba(0,255,128,0.25);
+      border-radius:12px;
+      box-shadow:0 0 30px rgba(0,255,128,0.2);
+      padding: clamp(18px, 3vw, 28px);
+      margin-bottom:22px;
+    }
+    h1{
+      font-size:clamp(24px, 4.5vw, 40px);
+      margin:0 0 12px 0;
+      color:var(--neon); text-shadow:0 0 18px var(--neon);
+      text-align:center;
+    }
+    p{
+      font-size:clamp(14px, 2.2vw, 16px);
+      margin:0 0 12px 0;
+      color:#c8fadc;
+      text-align:center;
+    }
+    .email a{
+      color:#e0ffe8; text-decoration:none; border-bottom:1px dashed rgba(0,255,153,.4);
+    }
+    .email a:hover{ color:#00ffea; }
 
-    main {
-      max-width: 900px;
-      margin: 0 auto 60px auto;
-      padding: 22px;
-    }
-    .card {
-      background: rgba(0,0,0,0.6);
-      border: 2px solid rgba(0,255,128,0.25);
-      border-radius: 12px;
-      box-shadow: 0 0 30px rgba(0,255,128,0.2);
-      padding: clamp(22px, 3.2vw, 34px);
-      position: relative;
-      z-index: 1;
-    }
-    h1 {
-      text-align: center;
-      font-size: clamp(26px, 5vw, 42px);
-      margin: 0 0 16px 0;
-      color: var(--neon);
-      text-shadow: 0 0 20px var(--neon);
-    }
-    p {
-      font-size: clamp(14px, 2.2vw, 16px);
-      color: #c8fadc;
-      margin: 0 0 1em 0;
+    /* Google Form frame (responsive height) */
+    .frame{
+      width:100%;
+      height: clamp(720px, 80vh, 1100px);
+      min-height: 520px;
+      border:0; border-radius:10px; overflow:hidden;
+      background:#0b120f;
+      display:block;
     }
 
-    @media (max-width: 1024px) {
-      header { padding: 12px 18px; }
-      .brand img { height: 36px; }
-      nav { gap: 16px; }
-      .spacer { height: 64px; }
-      main { padding: 18px; }
+    /* ---------- Breakpoints ---------- */
+    /* Tablet */
+    @media (max-width: 1024px){
+      header{ padding:12px 18px; }
+      .brand img{ height:36px; }
+      nav{ gap:16px; }
+      .spacer{ height:64px; }
+      main{ padding:18px; }
     }
-    @media (max-width: 720px) {
-      .brand img { height: 30px; }
-      .menu-btn { display: inline-flex; }
-      .menu {
-        display: none;
-        position: fixed;
-        top: 64px; right: 12px;
-        flex-direction: column; gap: 10px;
-        background: rgba(2,13,7,.92);
-        border: 1px solid rgba(0,255,128,.25);
-        border-radius: 10px;
-        padding: 12px;
-        box-shadow: 0 14px 40px rgba(0,0,0,.45);
-        z-index: 1001;
-      }
-      .menu.open { display: flex; }
+
+    /* Phone */
+    @media (max-width: 720px){
+      .brand img{ height:30px; }
+      .menu-btn{ display:inline-flex; }
+      /* turn nav into a dropdown panel */
+      .menu{ display:none; position:fixed; top:64px; right:12px; flex-direction:column; gap:10px;
+             background:rgba(2,13,7,.92); border:1px solid rgba(0,255,128,.25); border-radius:10px;
+             padding:12px; box-shadow:0 14px 40px rgba(0,0,0,.45); z-index:1001; }
+      .menu.open{ display:flex; }
     }
-    @media (max-width: 380px) {
-      nav a { font-size: 13px; }
+
+    /* Tiny phones */
+    @media (max-width: 380px){
+      nav a{ font-size:13px; }
     }
   </style>
 </head>
 <body>
-  <!-- Parallax Background Layers -->
+
+  <!-- Parallax Background Scene -->
   <div id="parallax-scene" aria-hidden="true">
     <div class="layer layer-deep"></div>
     <div class="layer layer-mid"></div>
@@ -167,6 +180,7 @@
       <img src="assets/favicon.png" alt="Ebmarah">
       <span style="font-size:clamp(16px,2.6vw,22px)">Ebmarah</span>
     </div>
+
     <button class="menu-btn" id="menuBtn">Menu</button>
     <nav class="menu" id="menu">
       <a href="index.html">Home</a>
