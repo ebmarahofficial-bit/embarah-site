@@ -14,41 +14,32 @@
       font-family: 'Orbitron', sans-serif;
       color: var(--ink);
       overflow-x: hidden;
-      background: var(--bg); /* fallback */
+      background:#020d07; /* fallback */
     }
 
-    /* Background image layer */
+    /* Background layers */
     .background {
-      position: fixed;
-      inset: 0;
-      background: url("assets/bg.png") center center / cover no-repeat;
-      z-index: -3;
+      position:fixed; inset:0;
+      background:url("assets/bg.png") center center / cover no-repeat;
+      z-index:-3;
     }
-
-    .stars { 
-      position: fixed; inset:0;
+    .stars { position: fixed; inset:0;
       background: transparent url('https://www.transparenttextures.com/patterns/stardust.png') repeat;
-      animation: moveStars 200s linear infinite; 
-      opacity: 0.2; 
-      z-index: -2; 
-    }
+      animation: moveStars 200s linear infinite; opacity: 0.2; z-index:-2; }
     @keyframes moveStars { from{transform:translate(0,0)} to{transform:translate(-200px,-200px)} }
-
-    .mist { 
-      position: fixed; inset:0;
+    .mist { position: fixed; inset:0;
       background: radial-gradient(circle, rgba(0,255,128,0.08), transparent 70%);
-      animation: drift 40s linear infinite; 
-      mix-blend-mode: screen; 
-      z-index: -1; 
-    }
+      animation: drift 40s linear infinite; mix-blend-mode: screen; z-index:-1; }
     @keyframes drift { from{transform:translate(-25%,-25%) scale(1)} to{transform:translate(25%,25%) scale(1.2)} }
 
     header {
       display: flex; justify-content: space-between; padding: 1rem 2rem;
-      backdrop-filter: blur(12px);
-      background: rgba(0,255,128,0.05);
+      background: rgba(2,13,7,0.75);
       border-bottom: 1px solid rgba(0,255,128,0.2);
-      position: relative; z-index: 2;
+      box-shadow: 0 6px 24px rgba(0,0,0,0.35);
+      position: fixed; top:0; left:0; right:0;
+      z-index: 1000;
+      pointer-events:auto;
     }
     nav a { margin: 0 1rem; text-decoration: none; color: #76ffb2; font-weight: bold; transition: color .3s; }
     nav a:hover { color: #00ffea; }
@@ -111,7 +102,7 @@
 </head>
 <body>
 
-  <!-- ===== Background Layers ===== -->
+  <!-- Background layers -->
   <div class="background"></div>
   <div class="stars"></div>
   <div class="mist"></div>
@@ -196,7 +187,7 @@
   <!-- ===== Intro Script ===== -->
   <script>
   (function(){
-    const SEEN_KEY = "ebmarah_intro_seen_v2";
+    const SEEN_KEY = "ebmarah_intro_seen_v2"; 
     const introEl = document.getElementById('intro');
     const pageEl  = document.getElementById('page');
     const bar     = introEl.querySelector('.bar');
