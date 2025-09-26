@@ -192,7 +192,7 @@
     </div>
   </main>
 
-  <!-- Mascot -->
+   <!-- Mascot -->
   <script src="js/ebmarah-mascot.js"></script>
   <script>
     EbmarahMascot.init({
@@ -201,14 +201,13 @@
       funnyLines: [
         'welcome to the jungle 🌴',
         'bananas > drama',
-        'shut up justin',
         'bass life forever',
         'gorilla certified 🔊'
       ]
     });
   </script>
 
-  <!-- Menu Toggle -->
+  <!-- Mobile menu toggle -->
   <script>
     (function(){
       const btn = document.getElementById('menuBtn');
@@ -219,10 +218,12 @@
     })();
   </script>
 
-  <!-- Parallax Background Script -->
+  <!-- Parallax Script -->
   <script>
   (function(){
     const scene = document.getElementById('parallax-scene');
+    if(!scene) return;
+
     const deep  = scene.querySelector('.layer-deep');
     const mid   = scene.querySelector('.layer-mid');
     const stars = scene.querySelector('.layer-stars');
@@ -231,32 +232,36 @@
     const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if(prefersReduced) return;
 
-    let mx=0, my=0, tx=0, ty=0;
+    let mx = 0, my = 0, tx = 0, ty = 0, rafId = 0;
 
     function onPointerMove(e){
       const p = e.touches ? e.touches[0] : e;
       const x = p.clientX / (window.innerWidth  || 1);
       const y = p.clientY / (window.innerHeight || 1);
-      mx = (x - 0.5) * 2;
+      mx = (x - 0.5) * 2;   // -1 .. 1
       my = (y - 0.5) * 2;
     }
 
     function frame(){
+      // ease toward target
       tx += (mx - tx) * 0.06;
       ty += (my - ty) * 0.06;
 
-      const dx = tx * 12, dy = ty * 8;
-      deep.style.transform = `translateZ(-200px) translate3d(${dx}px,${dy}px,0) scale(1.2)`;
-      mid.style.transform  = `translateZ(-100px) translate3d(${dx*1.6}px,${dy*1.2}px,0) scale(1.1)`;
-      stars.style.transform= `translateZ(-60px) translate3d(${dx*2.2}px,${dy*1.8}px,0)`;
-      mist.style.transform = `translateZ(0px) translate3d(${dx*3}px,${dy*2.2}px,0)`;
+      const dx = tx * 12,  dy = ty * 8;
 
-      requestAnimationFrame(frame);
+      if(deep)  deep .style.transform = `translateZ(-200px) translate3d(${dx}px,${dy}px,0) scale(1.2)`;
+      if(mid)   mid  .style.transform = `translateZ(-100px) translate3d(${dx*1.6}px,${dy*1.2}px,0) scale(1.1)`;
+      if(stars) stars.style.transform = `translateZ(-60px)  translate3d(${dx*2.2}px,${dy*1.8}px,0)`;
+      if(mist)  mist .style.transform = `translateZ(0px)   translate3d(${dx*3}px,${dy*2.2}px,0)`;
+
+      rafId = requestAnimationFrame(frame);
     }
 
+    // Pointer parallax
     window.addEventListener('mousemove', onPointerMove, { passive: true });
     window.addEventListener('touchmove', onPointerMove, { passive: true });
 
+    // Tiny scroll parallax to accent depth
     window.addEventListener('scroll', () => {
       const s = window.scrollY * 0.02;
       scene.style.transform = `translateY(${s}px)`;
