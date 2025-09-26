@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Ebmarah – Digital Gorilla Forest</title>
-  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="icon" type="image/png" href="assets/favicon.png">
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&display=swap');
@@ -11,25 +11,37 @@
 
     body {
       margin: 0;
-      background: radial-gradient(circle at center, var(--bg), #000);
       font-family: 'Orbitron', sans-serif;
       color: var(--ink);
       overflow-x: hidden;
+      background: var(--bg); /* fallback */
     }
 
-    .mist { position: fixed; width: 200%; height: 200%;
-      background: radial-gradient(circle, rgba(0,255,128,0.08), transparent 70%);
-      animation: drift 40s linear infinite; mix-blend-mode: screen; z-index: 0; }
-    @keyframes drift { from{transform:translate(-25%,-25%) scale(1)} to{transform:translate(25%,25%) scale(1.2)} }
+    /* Background image layer */
+    .background {
+      position: fixed;
+      inset: 0;
+      background: url("assets/bg.png") center center / cover no-repeat;
+      z-index: -3;
+    }
 
-    .gorilla { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
-      opacity: 0.05; pointer-events: none; z-index: 0; }
-    .gorilla img { max-width: 80%; height: auto; filter: drop-shadow(0 0 40px var(--neon)); }
-
-    .stars { position: fixed; width: 200%; height: 200%;
+    .stars { 
+      position: fixed; inset:0;
       background: transparent url('https://www.transparenttextures.com/patterns/stardust.png') repeat;
-      animation: moveStars 200s linear infinite; opacity: 0.2; z-index: 0; }
+      animation: moveStars 200s linear infinite; 
+      opacity: 0.2; 
+      z-index: -2; 
+    }
     @keyframes moveStars { from{transform:translate(0,0)} to{transform:translate(-200px,-200px)} }
+
+    .mist { 
+      position: fixed; inset:0;
+      background: radial-gradient(circle, rgba(0,255,128,0.08), transparent 70%);
+      animation: drift 40s linear infinite; 
+      mix-blend-mode: screen; 
+      z-index: -1; 
+    }
+    @keyframes drift { from{transform:translate(-25%,-25%) scale(1)} to{transform:translate(25%,25%) scale(1.2)} }
 
     header {
       display: flex; justify-content: space-between; padding: 1rem 2rem;
@@ -99,6 +111,11 @@
 </head>
 <body>
 
+  <!-- ===== Background Layers ===== -->
+  <div class="background"></div>
+  <div class="stars"></div>
+  <div class="mist"></div>
+
   <!-- ===== Intro Overlay ===== -->
   <div id="intro" aria-hidden="true">
     <div class="intro-wrap">
@@ -119,12 +136,9 @@
 
   <!-- ===== Page Content ===== -->
   <div id="page" class="page--hidden">
-    <div class="stars"></div>
-    <div class="mist"></div>
-    <div class="gorilla"><img src="logo-bg.png" alt="Ebmarah Gorilla Logo"></div>
 
     <header>
-      <div class="logo"><img src="favicon.png" alt="Ebmarah Logo" style="height:40px; vertical-align:middle;"> Ebmarah</div>
+      <div class="logo"><img src="assets/favicon.png" alt="Ebmarah Logo" style="height:40px; vertical-align:middle;"> Ebmarah</div>
       <nav>
         <a href="#">Home</a>
         <a href="music.html">Music</a>
@@ -182,7 +196,7 @@
   <!-- ===== Intro Script ===== -->
   <script>
   (function(){
-    const SEEN_KEY = "ebmarah_intro_seen_v2"; // bump so you can test again
+    const SEEN_KEY = "ebmarah_intro_seen_v2";
     const introEl = document.getElementById('intro');
     const pageEl  = document.getElementById('page');
     const bar     = introEl.querySelector('.bar');
@@ -191,7 +205,6 @@
     const audio   = document.getElementById('introAudio');
     const tapHint = document.getElementById('tapHint');
 
-    // Skip intro if seen
     if (localStorage.getItem(SEEN_KEY)) {
       introEl.style.display = 'none';
       pageEl.classList.remove('page--hidden');
@@ -205,18 +218,10 @@
       if (started) return;
       started = true;
 
-      // Try audio (gesture usually allows it)
       if (audio) {
-        try {
-          audio.currentTime = 0;
-          audio.volume = 1;
-          await audio.play();
-        } catch (e) {
-          // If still blocked, just run silent intro
-        }
+        try { audio.currentTime = 0; audio.volume = 1; await audio.play(); } catch (e) {}
       }
 
-      // Remove caret, start typing
       const typeLine = (el, text, speed=18) => new Promise(res => {
         let i=0; el.textContent=''; el.style.visibility='visible';
         (function tick(){ if(i<text.length){ el.textContent += text[i++]; setTimeout(tick, speed); } else res(); })();
@@ -228,7 +233,6 @@
       await typeLine(first, '>> INIT EBS LOADER');
       for (let i=1;i<lines.length;i++){ await typeLine(lines[i], lines[i].dataset.text); }
 
-      // Progress to 100
       let p=0;
       (function step(){
         const inc = Math.max(1, Math.min(7, 20 * Math.random()));
@@ -248,17 +252,13 @@
       setTimeout(()=> { introEl.style.display = 'none'; }, 700);
     }
 
-    // Try autoplay immediately. If blocked, show hint and wait for first gesture.
     (async function tryAutoplayThenMaybeWait(){
       if (!audio) { beginIntro(); return; }
       try {
-        audio.currentTime = 0;
-        await audio.play();
-        // Autoplay worked! Pause immediately; we'll start clean when intro begins.
+        audio.currentTime = 0; await audio.play();
         audio.pause(); audio.currentTime = 0;
         beginIntro();
       } catch (err) {
-        // Autoplay blocked – show subtle hint and start on first user gesture
         tapHint.style.display = 'block';
         const startOnGesture = () => { tapHint.style.display='none'; beginIntro(true); cleanup(); };
         const cleanup = () => {
@@ -270,7 +270,6 @@
       }
     })();
 
-    // Allow ESC to skip intro if needed
     window.addEventListener('keydown', (e)=>{ if (e.key === 'Escape') { if (!started) beginIntro(true); else done(); } });
   })();
   </script>
