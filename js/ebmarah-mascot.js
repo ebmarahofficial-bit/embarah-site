@@ -15,6 +15,7 @@
     'protect ya neck (sub)',
     'left a bass print',
     'i contain 140 bpm',
+    'shut up justin',
   ];
 
   const API = { init, attachToAudio, throwBananas, say, setMood, destroy };
