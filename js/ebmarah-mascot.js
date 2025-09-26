@@ -14,8 +14,7 @@
     'gorilla certified 🔊',
     'protect ya neck (sub)',
     'left a bass print',
-    'i contain 140 bpm',
-    'shut up justin'
+    'i contain 140 bpm'
   ];
 
   const API = { init, attachToAudio, throwBananas, say, setMood, destroy };
