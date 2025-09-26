@@ -84,7 +84,7 @@
     .mini-player{
       position:fixed; left:50%; bottom:16px; transform:translateX(-50%);
       z-index:1100;
-      display:flex; align-items:center; gap:12px;
+      display:flex; align-items:center; gap:10px;
       padding:8px 12px;
       border:1px solid rgba(0,255,128,.35);
       border-radius:12px;
@@ -103,33 +103,59 @@
     }
     .mini-player button:hover{ color:#00ffea; border-color:#00ffea; }
     .mini-player .title{
-      max-width:min(56vw,560px);
+      max-width:min(48vw,520px);
       white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
       font-size:12px; letter-spacing:.02em; color:#76ffb2;
     }
     .mini-player .dot{
-      width:6px; height:6px; border-radius:50%; margin-left:4px;
+      width:6px; height:6px; border-radius:50%; margin-left:2px;
       background:#ff5c5c; box-shadow:0 0 8px #ff5c5c; display:inline-block;
     }
     .mini-player.playing .dot{
       background:#00ffa0; box-shadow:0 0 8px #00ffa0;
     }
 
+    /* Volume slider */
+    .volume {
+      display:flex; align-items:center; gap:8px;
+      margin-left:6px;
+    }
+    .volume input[type="range"]{
+      -webkit-appearance:none; appearance:none;
+      width:110px; height:8px; background:rgba(0,255,128,.18);
+      border:1px solid rgba(0,255,128,.35); border-radius:999px;
+      outline:none;
+    }
+    .volume input[type="range"]::-webkit-slider-thumb{
+      -webkit-appearance:none; appearance:none;
+      width:16px; height:16px; border-radius:50%;
+      background:#00ff99; border:1px solid #0b3; cursor:pointer;
+      box-shadow:0 0 12px rgba(0,255,153,.6);
+    }
+    .volume input[type="range"]::-moz-range-thumb{
+      width:16px; height:16px; border-radius:50%;
+      background:#00ff99; border:1px solid #0b3; cursor:pointer;
+      box-shadow:0 0 12px rgba(0,255,153,.6);
+    }
+    .vol-label{font-size:11px; color:#9dffd2; opacity:.9}
+
     /* ===== Responsive (match index) ===== */
     @media (max-width: 960px){
-      nav.site-nav{ display:none; }      /* hide desktop links */
-      .menu-btn{ display:inline-flex; }  /* show hamburger */
-      .mini-player .title{ max-width:60vw; }
+      nav.site-nav{ display:none; }
+      .menu-btn{ display:inline-flex; }
+      .mini-player .title{ max-width:50vw; }
+      .volume input[type="range"]{ width:90px; }
     }
     @media (max-width: 520px){
-      /* widen tap target + respect safe areas */
       .mini-player{
         left:12px; right:12px; transform:none; justify-content:space-between;
-        padding:10px 12px;
+        padding:10px 12px; gap:8px;
       }
-      .mini-player .title{ max-width:58vw; }
+      .mini-player .title{ max-width:44vw; }
+      .volume input[type="range"]{ width:78px; }
       header{ padding:10px 12px; }
       .brand img{ height:34px; }
+      .btn-text{ display:none; } /* icon-only labels on tiny screens */
     }
     @supports (padding: max(0px)){
       .mini-player{ bottom: max(16px, env(safe-area-inset-bottom)); }
@@ -195,9 +221,17 @@
 
   <!-- Minimal bottom-center controls -->
   <div class="mini-player" id="miniPlayer" aria-live="polite">
-    <button id="scToggle" aria-label="Play/Pause">Play</button>
+    <button id="scPrev" aria-label="Previous track">⏮ <span class="btn-text">Prev</span></button>
+    <button id="scToggle" aria-label="Play/Pause">▶ <span class="btn-text">Play</span></button>
+    <button id="scNext" aria-label="Next track">⏭ <span class="btn-text">Next</span></button>
+
     <span class="title" id="scTitle">Loading…</span>
     <span class="dot" aria-hidden="true"></span>
+
+    <div class="volume" aria-label="Volume">
+      <span class="vol-label">VOL</span>
+      <input id="scVol" type="range" min="0" max="100" step="1" value="70" aria-valuemin="0" aria-valuemax="100" aria-valuenow="70" />
+    </div>
   </div>
 
   <!-- Mascot -->
@@ -224,12 +258,17 @@
     (function(){
       const frame = document.querySelector('.sc-driver');
       const widget = SC.Widget(frame);
-      const btn = document.getElementById('scToggle');
-      const titleEl = document.getElementById('scTitle');
-      const bar = document.getElementById('miniPlayer');
+
+      const btnPrev  = document.getElementById('scPrev');
+      const btnPlay  = document.getElementById('scToggle');
+      const btnNext  = document.getElementById('scNext');
+      const titleEl  = document.getElementById('scTitle');
+      const bar      = document.getElementById('miniPlayer');
+      const volInput = document.getElementById('scVol');
 
       let ready = false;
       let isPlaying = false;
+      let hasMultiple = true; // assume yes; verify after READY
 
       function updateTitle(){
         widget.getCurrentSound(function(s){
@@ -239,13 +278,31 @@
 
       function updateState(playing){
         isPlaying = playing;
-        btn.textContent = playing ? 'Pause' : 'Play';
+        btnPlay.innerHTML = playing ? '⏸ <span class="btn-text">Pause</span>' : '▶ <span class="btn-text">Play</span>';
         bar.classList.toggle('playing', playing);
+      }
+
+      function setButtonsEnabled(enabled){
+        [btnPrev, btnPlay, btnNext, volInput].forEach(el => el.disabled = !enabled);
+      }
+
+      function setSkipEnabled(enabled){
+        btnPrev.disabled = !enabled;
+        btnNext.disabled = !enabled;
       }
 
       widget.bind(SC.Widget.Events.READY, function(){
         ready = true;
-        btn.disabled = false;
+        // set starting volume
+        widget.setVolume(parseInt(volInput.value,10) || 70);
+
+        // detect if there are multiple sounds to enable prev/next
+        widget.getSounds(function(list){
+          hasMultiple = Array.isArray(list) && list.length > 1;
+          setSkipEnabled(hasMultiple);
+        });
+
+        setButtonsEnabled(true);
         updateTitle();
       });
 
@@ -260,10 +317,31 @@
         if(e.currentPosition < 1200){ updateTitle(); }
       });
 
-      btn.addEventListener('click', function(){
+      // Controls
+      btnPlay.addEventListener('click', function(){
         if(!ready) return;
         if(isPlaying){ widget.pause(); } else { widget.play(); }
       });
+
+      btnPrev.addEventListener('click', function(){
+        if(!ready || !hasMultiple) return;
+        widget.prev();
+      });
+
+      btnNext.addEventListener('click', function(){
+        if(!ready || !hasMultiple) return;
+        widget.next();
+      });
+
+      volInput.addEventListener('input', function(){
+        if(!ready) return;
+        const v = parseInt(this.value,10);
+        widget.setVolume(isNaN(v) ? 70 : v);
+        this.setAttribute('aria-valuenow', String(v));
+      });
+
+      // Disable until READY fires
+      setButtonsEnabled(false);
     })();
   </script>
 
