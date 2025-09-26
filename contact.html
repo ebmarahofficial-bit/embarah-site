@@ -19,25 +19,63 @@
       background:var(--bg); /* fallback */
     }
 
-    /* ---------- Background layers ---------- */
-    .background {
-      position:fixed; inset:0;
-      background:url("assets/bg.png") center / cover no-repeat;
-      z-index:-3;
+    /* === Parallax Background === */
+    #parallax-scene{
+      position: fixed; inset: 0;
+      perspective: 1200px;
+      overflow: hidden;
+      z-index: -3; /* behind everything */
     }
-    .stars{
-      position:fixed; inset:0;
+    #parallax-scene .layer{
+      position: absolute; inset: -6%; /* bleed for movement */
+      will-change: transform;
+      transform-style: preserve-3d;
+      backface-visibility: hidden;
+    }
+    /* Deep jungle layer (base image, slowest) */
+    .layer-deep{
+      background: url("assets/bg.png") center / cover no-repeat;
+      filter: saturate(1.05) contrast(1.05);
+      transform: translateZ(-200px) scale(1.2);
+    }
+    /* Mid jungle layer (same image, slightly blurred & darker) */
+    .layer-mid{
+      background: url("assets/bg.png") center / cover no-repeat;
+      filter: blur(1.2px) brightness(.98);
+      opacity: .95;
+      transform: translateZ(-100px) scale(1.1);
+      mix-blend-mode: normal;
+    }
+    /* Stars layer */
+    .layer-stars{
       background: transparent url('https://www.transparenttextures.com/patterns/stardust.png') repeat;
+      opacity: .18;
+      transform: translateZ(-60px) scale(1.05);
       animation: moveStars 200s linear infinite;
-      opacity:.18; pointer-events:none; z-index:-2;
     }
-    @keyframes moveStars{ from{transform:translate(0,0)} to{transform:translate(-200px,-200px)} }
-    .mist{
-      position:fixed; inset:0;
+    @keyframes moveStars {
+      from { transform: translateZ(-60px) translate(0,0) }
+      to   { transform: translateZ(-60px) translate(-200px,-200px) }
+    }
+    /* Mist layer */
+    .layer-mist{
       background: radial-gradient(circle, rgba(0,255,128,0.08), transparent 70%);
-      animation: drift 40s linear infinite; mix-blend-mode:screen; pointer-events:none; z-index:-1;
+      mix-blend-mode: screen;
+      transform: translateZ(0px);
+      animation: drift 40s linear infinite;
+      opacity: 1;
     }
-    @keyframes drift{ from{transform:translate(-25%,-25%) scale(1)} to{transform:translate(25%,25%) scale(1.2)} }
+    @keyframes drift {
+      from { transform: translateZ(0px) translate(-25%, -25%) scale(1) }
+      to   { transform: translateZ(0px) translate( 25%,  25%) scale(1.2) }
+    }
+    /* Reduced motion: keep layered look but no movement */
+    @media (prefers-reduced-motion: reduce) {
+      #parallax-scene .layer {
+        animation: none !important;
+        transform: none !important;
+      }
+    }
 
     /* ---------- Header (no blur, responsive) ---------- */
     header{
@@ -128,10 +166,14 @@
   </style>
 </head>
 <body>
-  <!-- Background layers -->
-  <div class="background"></div>
-  <div class="stars"></div>
-  <div class="mist"></div>
+
+  <!-- Parallax Background Scene -->
+  <div id="parallax-scene" aria-hidden="true">
+    <div class="layer layer-deep"></div>
+    <div class="layer layer-mid"></div>
+    <div class="layer layer-stars"></div>
+    <div class="layer layer-mist"></div>
+  </div>
 
   <header>
     <div class="brand">
@@ -191,5 +233,59 @@
       }
     })();
   </script>
+
+  <!-- Parallax Script -->
+  <script>
+  (function(){
+    const scene = document.getElementById('parallax-scene');
+    if(!scene) return;
+
+    const deep  = scene.querySelector('.layer-deep');
+    const mid   = scene.querySelector('.layer-mid');
+    const stars = scene.querySelector('.layer-stars');
+    const mist  = scene.querySelector('.layer-mist');
+
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if(prefersReduced) return;
+
+    let mx = 0, my = 0, tx = 0, ty = 0, rafId = 0;
+
+    function onPointerMove(e){
+      const p = e.touches ? e.touches[0] : e;
+      const x = p.clientX / (window.innerWidth  || 1);
+      const y = p.clientY / (window.innerHeight || 1);
+      mx = (x - 0.5) * 2;   // -1 .. 1
+      my = (y - 0.5) * 2;
+    }
+
+    function frame(){
+      // ease toward target
+      tx += (mx - tx) * 0.06;
+      ty += (my - ty) * 0.06;
+
+      const dx = tx * 12,  dy = ty * 8;
+
+      if(deep)  deep .style.transform = `translateZ(-200px) translate3d(${dx}px,${dy}px,0) scale(1.2)`;
+      if(mid)   mid  .style.transform = `translateZ(-100px) translate3d(${dx*1.6}px,${dy*1.2}px,0) scale(1.1)`;
+      if(stars) stars.style.transform = `translateZ(-60px)  translate3d(${dx*2.2}px,${dy*1.8}px,0)`;
+      if(mist)  mist .style.transform = `translateZ(0px)   translate3d(${dx*3}px,${dy*2.2}px,0)`;
+
+      rafId = requestAnimationFrame(frame);
+    }
+
+    // Pointer parallax
+    window.addEventListener('mousemove', onPointerMove, { passive: true });
+    window.addEventListener('touchmove', onPointerMove, { passive: true });
+
+    // Tiny scroll parallax to accent depth
+    window.addEventListener('scroll', () => {
+      const s = window.scrollY * 0.02;
+      scene.style.transform = `translateY(${s}px)`;
+    }, { passive: true });
+
+    frame();
+  })();
+  </script>
 </body>
 </html>
+
