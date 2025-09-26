@@ -10,19 +10,19 @@
     :root { --neon:#00ff99; --bg:#020d07; --ink:#e0ffe8; --glass:rgba(2,13,7,.75); }
 
     * { box-sizing: border-box; }
-    html, body { height:100%; }
+    html, body { height:100%; margin:0; }
     body {
-      margin:0; font-family:'Orbitron', sans-serif; color:var(--ink);
+      font-family:'Orbitron', sans-serif; color:var(--ink);
       background:var(--bg); overflow-x:hidden;
     }
 
-    /* ===== Video Background (fills any screen) ===== */
+    /* ===== Video Background ===== */
     .video-bg{ position:fixed; inset:0; z-index:-3; overflow:hidden }
     .video-bg video{
       width:100%; height:100%; object-fit:cover; object-position:center;
     }
 
-    /* ===== Header (same as index) ===== */
+    /* ===== Header ===== */
     header{
       position:fixed; inset:0 0 auto 0;
       display:flex; align-items:center; justify-content:space-between;
@@ -76,11 +76,19 @@
     .drawer-open .drawer-overlay{ opacity:1; pointer-events:auto }
 
     /* ===== Page content ===== */
-    .spacer{ height:70px }
+    .spacer{ height:70px } /* keeps header off content */
+
     main{
       position:relative; z-index:1;
-      max-width:1100px; margin:0 auto 40px; padding:22px;
+      max-width:1100px; margin:0 auto; padding:22px;
+      display:flex; flex-direction:column; justify-content:flex-start; min-height:calc(100vh - 70px);
     }
+
+    /* Center the about card vertically on desktop */
+    @media (min-width: 961px){
+      main{ justify-content:center; }
+    }
+
     .card{
       background:rgba(0,0,0,0.6);
       border:2px solid rgba(0,255,128,0.25);
@@ -88,21 +96,20 @@
       box-shadow:0 0 30px rgba(0,255,128,0.2);
       padding: clamp(18px, 3vw, 28px);
       margin-bottom:22px;
+      text-align:center;
     }
     h1{
       font-size:clamp(24px, 4.5vw, 40px);
       margin:0 0 12px 0;
       color:var(--neon); text-shadow:0 0 18px var(--neon);
-      text-align:center;
     }
     p{
       font-size:clamp(14px, 2.2vw, 16px);
       margin:0 0 12px 0;
       color:#c8fadc;
-      text-align:center;
     }
 
-    /* ===== Bottom audio widget (same pattern as index) ===== */
+    /* ===== Bottom audio widget ===== */
     .ebm-audio{
       position:fixed; left:50%; bottom:16px; transform:translateX(-50%);
       z-index:1100; display:flex; align-items:center; gap:10px;
@@ -119,7 +126,7 @@
     .ebm-audio .dot{ display:inline-block; width:6px; height:6px; border-radius:50%; background:#ff5c5c; margin-left:6px; box-shadow:0 0 8px #ff5c5c }
     .ebm-audio.playing .dot{ background:#00ffa0; box-shadow:0 0 8px #00ffa0 }
 
-    /* ===== Responsive ===== */
+    /* ===== Responsive tweaks ===== */
     @media (max-width: 960px){
       nav.site-nav{ display:none }
       .menu-btn{ display:inline-flex }
@@ -133,9 +140,9 @@
 </head>
 <body>
 
-  <!-- Background video (auto-resizes) -->
+  <!-- Background video -->
   <div class="video-bg" aria-hidden="true">
-    <video id="bgVideo" autoplay loop muted playsinline preload="auto">
+    <video autoplay loop muted playsinline preload="auto">
       <source src="video/bg2.mp4" type="video/mp4" />
     </video>
   </div>
@@ -146,8 +153,6 @@
       <img src="assets/favicon.png" alt="Ebmarah" />
       <span>Ebmarah</span>
     </div>
-
-    <!-- Desktop nav -->
     <nav class="site-nav" aria-label="Primary">
       <a href="index.html">Home</a>
       <a href="music.html">Music</a>
@@ -155,19 +160,17 @@
       <a href="about.html">About</a>
       <a href="contact.html">Contact</a>
     </nav>
-
-    <!-- Mobile trigger -->
-    <button class="menu-btn" id="menuBtn" aria-haspopup="true" aria-expanded="false" aria-controls="drawer">Menu</button>
+    <button class="menu-btn" id="menuBtn">Menu</button>
   </header>
 
-  <!-- Offcanvas drawer (mobile) -->
+  <!-- Offcanvas drawer -->
   <div class="drawer-overlay" id="drawerOverlay"></div>
   <aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-label="Site menu">
     <header>
       <h2>Menu</h2>
-      <button class="close" id="drawerClose" aria-label="Close menu">Close</button>
+      <button class="close" id="drawerClose">Close</button>
     </header>
-    <nav aria-label="Mobile">
+    <nav>
       <a href="index.html">Home</a>
       <a href="music.html">Music</a>
       <a href="sample-packs.html">Sample Packs</a>
@@ -181,23 +184,18 @@
   <main>
     <div class="card">
       <h1>About Ebmarah</h1>
-      <p><strong>Ebmarah A.K.A. Cody</strong> is a fictional character in the EDM artist scene pronounced: <em>ehb-mar-uh</em>.
-      The artist name is actually "Harambe" backwards. Harambe (May 27, 1999 – May 28, 2016) was a western lowland gorilla who lived at the Cincinnati Zoo from 2014 to 2016.</p>
-
+      <p><strong>Ebmarah A.K.A. Cody</strong> is a fictional character in the EDM artist scene pronounced: <em>ehb-mar-uh</em>. The artist name is actually "Harambe" backwards.</p>
       <p>Due to the unfortunate nature of how much Marijuana is consumed by the artist at hand, comedy and hilarity are the two attractive features with obnoxious vocals and gut-wrenching bass design.</p>
-
-      <p>Cody at heart is a creative character, with such lines as <em>"in my ass"</em> and <em>"I want to try it out"</em>.
-      With many years behind him in the EDM community and top-notch support from the homies, he continues to become a longstanding figure in the race for being cancelled in the electronic drama community.</p>
+      <p>Cody at heart is a creative character, with such lines as <em>"in my ass"</em> and <em>"I want to try it out"</em>. With many years behind him in the EDM community and top-notch support from the homies, he continues to become a longstanding figure in the race for being cancelled in the electronic drama community.</p>
     </div>
   </main>
 
-  <!-- Hidden audio element -->
+  <!-- Audio -->
   <audio id="bgm" src="music/ebmarahabout.mp3" preload="auto" loop playsinline></audio>
 
   <!-- Mascot -->
   <script src="js/ebmarah-mascot.js"></script>
   <script>
-    // Keep mascot bottom-right on About
     if (window.EbmarahMascot?.init) {
       EbmarahMascot.init({
         mode:'passive',
@@ -207,92 +205,38 @@
     }
   </script>
 
-  <!-- Drawer + Audio controls (same behavior as index) -->
+  <!-- Drawer + audio controls -->
   <script>
     (function(){
-      // Drawer controls
-      const root = document.documentElement;
-      const btn = document.getElementById('menuBtn');
-      const drawer = document.getElementById('drawer');
-      const overlay = document.getElementById('drawerOverlay');
-      const closeBtn = document.getElementById('drawerClose');
+      const root=document.documentElement;
+      const btn=document.getElementById('menuBtn');
+      const drawer=document.getElementById('drawer');
+      const overlay=document.getElementById('drawerOverlay');
+      const closeBtn=document.getElementById('drawerClose');
+      const openDrawer=()=>{root.classList.add('drawer-open');btn.setAttribute('aria-expanded','true');drawer.querySelector('a')?.focus();}
+      const closeDrawer=()=>{root.classList.remove('drawer-open');btn.setAttribute('aria-expanded','false');btn.focus();}
+      btn.addEventListener('click',openDrawer);closeBtn.addEventListener('click',closeDrawer);overlay.addEventListener('click',closeDrawer);
+      window.addEventListener('keydown',e=>{if(e.key==='Escape')closeDrawer();});
 
-      const openDrawer = () => {
-        root.classList.add('drawer-open');
-        btn.setAttribute('aria-expanded','true');
-        drawer.querySelector('a')?.focus();
-      };
-      const closeDrawer = () => {
-        root.classList.remove('drawer-open');
-        btn.setAttribute('aria-expanded','false');
-        btn.focus();
-      };
-
-      btn.addEventListener('click', openDrawer);
-      closeBtn.addEventListener('click', closeDrawer);
-      overlay.addEventListener('click', closeDrawer);
-      window.addEventListener('keydown', e => { if(e.key === 'Escape') closeDrawer(); });
-
-      // Audio widget
-      const audio = document.getElementById('bgm');
+      const audio=document.getElementById('bgm');
       const keyVol='ebm_about_vol', keyMute='ebm_about_mute';
-      const savedVol = parseFloat(localStorage.getItem(keyVol));
-      const savedMute = localStorage.getItem(keyMute)==='true';
-      audio.volume = Number.isFinite(savedVol)? savedVol : 0.4;
-      audio.muted = !!savedMute;
+      const savedVol=parseFloat(localStorage.getItem(keyVol));
+      const savedMute=localStorage.getItem(keyMute)==='true';
+      audio.volume=Number.isFinite(savedVol)? savedVol:0.4; audio.muted=!!savedMute;
 
-      // Controls container (same UI as index)
-      const wrap=document.createElement('div'); wrap.className='ebm-audio';
-      wrap.innerHTML = `
-        <button id="ebmPlay" disabled>Play</button>
-        <button id="ebmMute" disabled>Mute</button>
-        <input id="ebmVol" type="range" min="0" max="1" step="0.01" />
-        <span class="status" id="ebmStatus">loading<span class="dot"></span></span>`;
+      const wrap=document.createElement('div');wrap.className='ebm-audio';
+      wrap.innerHTML=`<button id="ebmPlay" disabled>Play</button><button id="ebmMute" disabled>Mute</button><input id="ebmVol" type="range" min="0" max="1" step="0.01" /><span class="status" id="ebmStatus">loading<span class="dot"></span></span>`;
       document.body.appendChild(wrap);
 
-      const playBtn=wrap.querySelector('#ebmPlay');
-      const muteBtn=wrap.querySelector('#ebmMute');
-      const vol=wrap.querySelector('#ebmVol');
-      const status=wrap.querySelector('#ebmStatus');
-
-      const setControls = on => { playBtn.disabled=!on; muteBtn.disabled=!on; vol.disabled=!on; };
-      const updateUI = () => {
-        playBtn.textContent = audio.paused ? 'Play' : 'Pause';
-        muteBtn.textContent = audio.muted ? 'Unmute' : 'Mute';
-        status.textContent = audio.paused ? 'paused' : 'playing';
-        wrap.classList.toggle('playing', !audio.paused);
-        status.insertAdjacentHTML('beforeend','<span class="dot"></span>');
-      };
-
-      async function startBGM(){
-        setControls(true);
-        try{ await audio.play(); }catch{ status.textContent='tap to play'; status.insertAdjacentHTML('beforeend','<span class="dot"></span>'); }
-        updateUI();
-      }
-
-      // Try autoplay; enable controls once ready
-      audio.addEventListener('canplay', () => { setControls(true); updateUI(); }, { once:true });
-      startBGM();
-
-      playBtn.addEventListener('click', async()=>{
-        if(audio.paused){ await audio.play().catch(()=>{}); } else { audio.pause(); }
-        updateUI();
-      });
-      muteBtn.addEventListener('click', ()=>{
-        audio.muted = !audio.muted;
-        localStorage.setItem(keyMute, String(audio.muted));
-        updateUI();
-      });
-      vol.value = audio.volume;
-      vol.addEventListener('input', ()=>{
-        audio.volume = Number(vol.value);
-        localStorage.setItem(keyVol, String(audio.volume));
-        if(audio.volume>0 && audio.muted){ audio.muted=false; localStorage.setItem(keyMute,'false'); }
-        updateUI();
-      });
-      audio.addEventListener('play',updateUI);
-      audio.addEventListener('pause',updateUI);
-      audio.addEventListener('volumechange',updateUI);
+      const playBtn=wrap.querySelector('#ebmPlay'),muteBtn=wrap.querySelector('#ebmMute'),vol=wrap.querySelector('#ebmVol'),status=wrap.querySelector('#ebmStatus');
+      const setControls=on=>{playBtn.disabled=!on;muteBtn.disabled=!on;vol.disabled=!on;}
+      const updateUI=()=>{playBtn.textContent=audio.paused?'Play':'Pause';muteBtn.textContent=audio.muted?'Unmute':'Mute';status.textContent=audio.paused?'paused':'playing';wrap.classList.toggle('playing',!audio.paused);status.insertAdjacentHTML('beforeend','<span class="dot"></span>');}
+      async function startBGM(){setControls(true);try{await audio.play();}catch{status.textContent='tap to play';status.insertAdjacentHTML('beforeend','<span class="dot"></span>');}updateUI();}
+      audio.addEventListener('canplay',()=>{setControls(true);updateUI();},{once:true});startBGM();
+      playBtn.addEventListener('click',async()=>{if(audio.paused){await audio.play().catch(()=>{});}else{audio.pause();}updateUI();});
+      muteBtn.addEventListener('click',()=>{audio.muted=!audio.muted;localStorage.setItem(keyMute,String(audio.muted));updateUI();});
+      vol.value=audio.volume;vol.addEventListener('input',()=>{audio.volume=Number(vol.value);localStorage.setItem(keyVol,String(audio.volume));if(audio.volume>0&&audio.muted){audio.muted=false;localStorage.setItem(keyMute,'false');}updateUI();});
+      audio.addEventListener('play',updateUI);audio.addEventListener('pause',updateUI);audio.addEventListener('volumechange',updateUI);
     })();
   </script>
 </body>
