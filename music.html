@@ -88,7 +88,7 @@
       padding:8px 12px;
       border:1px solid rgba(0,255,128,.35);
       border-radius:12px;
-      background:rgba(0,0,0,.30); /* transparent look so BG stays visible */
+      background:rgba(0,0,0,.30);
       box-shadow:0 8px 24px rgba(0,0,0,.35);
       backdrop-filter:saturate(110%) blur(2px);
     }
@@ -114,8 +114,25 @@
     .mini-player.playing .dot{
       background:#00ffa0; box-shadow:0 0 8px #00ffa0;
     }
-    @media(max-width:520px){
+
+    /* ===== Responsive (match index) ===== */
+    @media (max-width: 960px){
+      nav.site-nav{ display:none; }      /* hide desktop links */
+      .menu-btn{ display:inline-flex; }  /* show hamburger */
       .mini-player .title{ max-width:60vw; }
+    }
+    @media (max-width: 520px){
+      /* widen tap target + respect safe areas */
+      .mini-player{
+        left:12px; right:12px; transform:none; justify-content:space-between;
+        padding:10px 12px;
+      }
+      .mini-player .title{ max-width:58vw; }
+      header{ padding:10px 12px; }
+      .brand img{ height:34px; }
+    }
+    @supports (padding: max(0px)){
+      .mini-player{ bottom: max(16px, env(safe-area-inset-bottom)); }
     }
   </style>
 </head>
@@ -136,7 +153,7 @@
     </div>
 
     <!-- Desktop nav -->
-    <nav class="site-nav">
+    <nav class="site-nav" aria-label="Primary">
       <a href="index.html">Home</a>
       <a href="music.html">Music</a>
       <a class="nav-link" href="live.html">Live</a>
@@ -154,9 +171,9 @@
   <aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-label="Site menu">
     <header>
       <h2>Menu</h2>
-      <button class="close" id="drawerClose">Close</button>
+      <button class="close" id="drawerClose" aria-label="Close menu">Close</button>
     </header>
-    <nav>
+    <nav aria-label="Mobile">
       <a href="index.html">Home</a>
       <a href="music.html">Music</a>
       <a class="nav-link" href="live.html">Live</a>
@@ -216,11 +233,7 @@
 
       function updateTitle(){
         widget.getCurrentSound(function(s){
-          if(s && s.title){
-            titleEl.textContent = s.title;
-          } else {
-            titleEl.textContent = 'Ready';
-          }
+          titleEl.textContent = (s && s.title) ? s.title : 'Ready';
         });
       }
 
@@ -240,16 +253,10 @@
         updateState(true);
         updateTitle();
       });
-      widget.bind(SC.Widget.Events.PAUSE, function(){
-        updateState(false);
-      });
-      widget.bind(SC.Widget.Events.FINISH, function(){
-        updateState(false);
-      });
+      widget.bind(SC.Widget.Events.PAUSE, function(){ updateState(false); });
+      widget.bind(SC.Widget.Events.FINISH, function(){ updateState(false); });
 
-      // If track changes (e.g., user’s stream/playlist advances)
       widget.bind(SC.Widget.Events.PLAY_PROGRESS, function(e){
-        // Just keep title fresh occasionally
         if(e.currentPosition < 1200){ updateTitle(); }
       });
 
@@ -268,10 +275,14 @@
       const drawer=document.getElementById('drawer');
       const overlay=document.getElementById('drawerOverlay');
       const closeBtn=document.getElementById('drawerClose');
-      const openDrawer=()=>{root.classList.add('drawer-open');btn.setAttribute('aria-expanded','true');drawer.querySelector('a')?.focus();}
-      const closeDrawer=()=>{root.classList.remove('drawer-open');btn.setAttribute('aria-expanded','false');btn.focus();}
-      btn.addEventListener('click',openDrawer);closeBtn.addEventListener('click',closeDrawer);overlay.addEventListener('click',closeDrawer);
-      window.addEventListener('keydown',e=>{if(e.key==='Escape')closeDrawer();});
+
+      const openDrawer=()=>{ root.classList.add('drawer-open'); btn.setAttribute('aria-expanded','true'); drawer.querySelector('a')?.focus(); };
+      const closeDrawer=()=>{ root.classList.remove('drawer-open'); btn.setAttribute('aria-expanded','false'); btn.focus(); };
+
+      btn.addEventListener('click',openDrawer);
+      closeBtn.addEventListener('click',closeDrawer);
+      overlay.addEventListener('click',closeDrawer);
+      window.addEventListener('keydown',e=>{ if(e.key==='Escape') closeDrawer(); });
     })();
   </script>
 </body>
