@@ -26,13 +26,11 @@
   let resizeRaf = 0;
 
   function init(userCfg = {}) {
-    // Breakpoints in px
     const BP = { mobile: 640, tablet: 1024 };
 
     config = {
-      mode: 'passive',            // 'passive' | 'reactive'
-      audioSelector: null,        // CSS selector for <audio>/<video> when reactive
-      // Responsive sizes (in px) – tweak as desired
+      mode: 'passive',
+      audioSelector: null,
       sizeMobile: 64,
       sizeTablet: 80,
       sizeDesktop: 96,
@@ -41,7 +39,8 @@
       dropCooldownMs: 1800,
       energyFactor: 2.15,
       minVolumeGate: 4,
-      funnyLines: defaultLines,
+      // merge user funnyLines with defaults
+      funnyLines: defaultLines.concat(userCfg.funnyLines || []),
       idleBubbleEveryMs: [20000, 40000],
       respectReducedMotion: true,
       zIndex: 9999,
@@ -53,7 +52,7 @@
 
     injectStyles();
     createDOM();
-    applyResponsiveSize(); // set initial size
+    applyResponsiveSize();
     window.addEventListener('resize', onResize, { passive: true });
 
     if (config.mode === 'reactive' && config.audioSelector) {
@@ -95,7 +94,6 @@
     sprite = document.createElement('div');
     sprite.className = `${NS}-sprite idle`;
 
-    // Always use mascot.png from assets folder
     sprite.style.backgroundImage = "url('assets/mascot.png')";
     sprite.setAttribute('role','img');
     sprite.setAttribute('aria-label','Ebmarah mascot');
@@ -277,7 +275,6 @@
     if(audioCtx) audioCtx.close();
   }
 
-  // Expose globally
   window.EbmarahMascot=API;
 })();
 
