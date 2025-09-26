@@ -1,15 +1,10 @@
 /* 
-  Ebmarah Mascot – drop-reactive gorilla
-  ----------------------------------------
-  One-file JS module. Drop this into /js/ebmarah-mascot.js
-  and include with <script src="/js/ebmarah-mascot.js"></script>
+  Ebmarah Mascot – drop-reactive gorilla (responsive)
+  ---------------------------------------------------
+  Include with: <script src="/js/ebmarah-mascot.js"></script>
+  Initialize with: EbmarahMascot.init({ audioSelector: 'audio#player', mode:'reactive' })
 
-  Features:
-  - Persistent mascot on all pages
-  - Passive idle mode everywhere
-  - Reactive drop-detection mode when linked to <audio>/<video>
-  - Throws bananas + shows funny thought bubbles on drops
-  - Click mascot for bananas + lines
+  Uses assets/mascot.png as the sprite.
 */
 
 ;(() => {
@@ -27,29 +22,38 @@
   let audioEl, audioCtx, analyser, dataArrayFreq, rafId, lastDrop = 0;
   let baseline = 0, alpha = 0.04;
   let passiveTimer = null, bubbleTimer = null;
+  let resizeRaf = 0;
 
   function init(userCfg = {}) {
+    // Breakpoints in px
+    const BP = { mobile: 640, tablet: 1024 };
+
     config = {
-      mode: 'passive',
-      audioSelector: null,
-      mascotImageUrl: null,
-      size: 100,
+      mode: 'passive',            // 'passive' | 'reactive'
+      audioSelector: null,        // CSS selector for <audio>/<video> when reactive
+      // Responsive sizes (in px) – tweak as desired
+      sizeMobile: 64,
+      sizeTablet: 80,
+      sizeDesktop: 96,
       position: 'bottom-right',
       bananaCountOnDrop: 6,
       dropCooldownMs: 1800,
       energyFactor: 2.15,
-      minVolumeGate: 4,  // avg freq magnitude threshold
+      minVolumeGate: 4,
       funnyLines: defaultLines,
       idleBubbleEveryMs: [20000, 40000],
       respectReducedMotion: true,
       zIndex: 9999,
       connectToDestination: false,
       lowBandHz: 180,
+      breakpoints: BP,
       ...userCfg,
     };
 
     injectStyles();
     createDOM();
+    applyResponsiveSize(); // set initial size
+    window.addEventListener('resize', onResize, { passive: true });
 
     if (config.mode === 'reactive' && config.audioSelector) {
       const el = document.querySelector(config.audioSelector);
@@ -60,10 +64,26 @@
     window.EbmarahMascot = API;
   }
 
+  function onResize(){
+    cancelAnimationFrame(resizeRaf);
+    resizeRaf = requestAnimationFrame(applyResponsiveSize);
+  }
+
+  function applyResponsiveSize(){
+    if (!root) return;
+    const w = window.innerWidth || document.documentElement.clientWidth;
+    const { breakpoints:BP, sizeMobile, sizeTablet, sizeDesktop } = config;
+
+    let px = sizeDesktop;
+    if (w < BP.mobile) px = sizeMobile;
+    else if (w < BP.tablet) px = sizeTablet;
+
+    root.style.setProperty('--ebm-size', px + 'px');
+  }
+
   function createDOM() {
     root = document.createElement('div');
     root.id = `${NS}-root`;
-    root.style.setProperty('--ebm-size', (config.size||100)+'px');
     root.style.zIndex = String(config.zIndex);
     document.body.appendChild(root);
 
@@ -73,11 +93,12 @@
 
     sprite = document.createElement('div');
     sprite.className = `${NS}-sprite idle`;
-    if (config.mascotImageUrl) {
-      sprite.style.backgroundImage = `url('${config.mascotImageUrl}')`;
-      sprite.setAttribute('role','img');
-      sprite.setAttribute('aria-label','Ebmarah gorilla');
-    } else sprite.textContent = '🦍';
+
+    // Always use mascot.png from assets folder
+    sprite.style.backgroundImage = "url('assets/mascot.png')";
+    sprite.setAttribute('role','img');
+    sprite.setAttribute('aria-label','Ebmarah mascot');
+
     wrap.appendChild(sprite);
 
     trail = document.createElement('div');
@@ -98,19 +119,19 @@
   }
 
   function injectStyles(){
-    if(document.getElementById(`${NS}-styles`))return;
+    if(document.getElementById(`${NS}-styles`)) return;
     const style=document.createElement('style');
     style.id=`${NS}-styles`;
     style.textContent=`
       :root { --${NS}-shadow: 0 10px 30px rgba(0,0,0,.35); }
       #${NS}-root { position: fixed; inset:auto 0 0 0; pointer-events:none; }
+
       .${NS}-wrap { position:absolute; pointer-events:none; }
       .${NS}-wrap.bottom-right{ right:16px; bottom:12px; }
       .${NS}-wrap.bottom-left{ left:16px; bottom:12px; }
 
       .${NS}-sprite {
         height:var(--ebm-size); width:var(--ebm-size);
-        font-size:calc(var(--ebm-size)*.9);
         line-height:var(--ebm-size);
         text-align:center; user-select:none;
         filter:drop-shadow(var(--${NS}-shadow));
@@ -119,13 +140,15 @@
         display:grid; place-items:center;
         will-change:transform;
         animation:ebm-walk 8s linear infinite;
-        background-size:contain; background-position:center; background-repeat:no-repeat;
+        background-size:contain;
+        background-position:center;
+        background-repeat:no-repeat;
       }
       .${NS}-sprite.drop{ animation:ebm-bob .5s ease 0s 4 alternate; }
       .${NS}-sprite.curious{ transform:scale(1.08) rotate(-4deg);}
       .${NS}-sprite.idle{ transform:none;}
 
-      @keyframes ebm-walk{0%{transform:translateX(0)}50%{transform:translateX(-10px)}100%{transform:translateX(0)}}
+      @keyframes ebm-walk{0%{transform:translateX(0)}50%{transform:translateX(-6px)}100%{transform:translateX(0)}}
       @keyframes ebm-bob{from{transform:translateY(0)}to{transform:translateY(-10%)}}
 
       .${NS}-bubble{
@@ -247,6 +270,7 @@
 
   function destroy(){
     cancelAnimationFrame(rafId);
+    window.removeEventListener('resize', onResize);
     if(root) root.remove();
     clearTimeout(bubbleTimer); clearTimeout(passiveTimer);
     if(audioCtx) audioCtx.close();
@@ -255,3 +279,4 @@
   // Expose globally
   window.EbmarahMascot=API;
 })();
+
