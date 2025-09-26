@@ -1,197 +1,310 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Ebmarah – Digital Gorilla Forest</title>
-  <link rel="icon" type="image/png" href="assets/favicon.png">
+  <link rel="icon" type="image/png" href="assets/favicon.png" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&display=swap');
-    :root { --neon:#00ff99; --bg:#020d07; --ink:#e0ffe8; }
+    :root { --neon:#00ff99; --bg:#020d07; --ink:#e0ffe8; --glass:rgba(2,13,7,.75); }
 
-    *{box-sizing:border-box}
-    body{
-      margin:0;
-      font-family:'Orbitron',sans-serif;
-      color:var(--ink);
-      background:#020d07;
-      overflow-x:hidden;
+    * { box-sizing:border-box }
+    html, body { height:100% }
+    body {
+      margin:0; font-family:'Orbitron',sans-serif; color:var(--ink);
+      background:#020d07; overflow-x:hidden;
     }
 
-    /* ==== Video Background ==== */
-    .video-bg {
-      position: fixed;
-      inset: 0;
-      z-index: -3; /* behind everything */
-      overflow: hidden;
-    }
-    .video-bg video {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
+    /* ===== Video Background (fills any screen) ===== */
+    .video-bg{ position:fixed; inset:0; z-index:-3; overflow:hidden }
+    .video-bg video{
+      width:100%; height:100%; object-fit:cover; object-position:center;
+      /* save battery if user prefers reduced motion */
+      animation: none;
     }
 
-    /* Header */
+    /* ===== Header ===== */
     header{
-      position:fixed; top:0; left:0; right:0;
+      position:fixed; inset:0 0 auto 0;
       display:flex; align-items:center; justify-content:space-between;
-      padding:14px 24px;
-      background:rgba(2,13,7,.75);
+      padding:12px 18px; background:var(--glass);
       border-bottom:1px solid rgba(0,255,128,.2);
-      box-shadow:0 6px 24px rgba(0,0,0,.35);
-      z-index:1000;
+      box-shadow:0 6px 24px rgba(0,0,0,.35); z-index:1000;
+      backdrop-filter: blur(10px);
     }
     .brand{display:flex; align-items:center; gap:10px; font-weight:800; letter-spacing:.02em}
     .brand img{height:40px; width:auto}
-    nav{display:flex; align-items:center; gap:22px}
-    nav a{color:#76ffb2; text-decoration:none; font-weight:700; font-size:clamp(12px,1.6vw,14px)}
-    nav a:hover{color:#00ffea}
-    .menu-btn{display:none; background:none; border:0; color:#b9ffdf; font-size:18px; font-weight:700; padding:6px 10px; border:1px solid rgba(0,255,128,.35); border-radius:8px}
-    .menu{display:flex}
+    .brand span{font-size:clamp(16px,2.6vw,22px)}
 
-    /* Hero + content */
-    .spacer{height:72px}
-    .hero{text-align:center; padding: clamp(64px, 12vw, 128px) 16px 32px; background:linear-gradient(180deg, rgba(0,255,128,.05), transparent);}
-    .hero h1{font-size:clamp(28px, 6.5vw, 64px); margin:0 0 8px; text-shadow:0 0 20px var(--neon)}
-    .hero p{font-size:clamp(12px, 2.3vw, 16px); opacity:.9; margin:0}
-    .soundcloud-embed{width:min(940px, 92vw); margin: 24px auto 64px; border:2px solid rgba(0,255,128,.3); border-radius:12px; overflow:hidden; box-shadow:0 0 30px rgba(0,255,128,.2); background:rgba(0,0,0,.25);}
-    .soundcloud-embed iframe{display:block; width:100%; height:166px; border:0}
+    /* Desktop nav */
+    nav.site-nav{display:flex; align-items:center; gap:22px}
+    nav.site-nav a{
+      color:#76ffb2; text-decoration:none; font-weight:700; font-size:clamp(13px,1.6vw,14px)
+    }
+    nav.site-nav a:hover{ color:#00ffea }
 
-    /* Reveal animations */
-    .page--hidden{opacity:0; filter:blur(8px); transition:opacity .6s ease, filter .6s ease}
-    .intro-out{animation:fadeOut .7s ease forwards, unblur .7s ease forwards}
-    @keyframes fadeOut{to{opacity:0}} @keyframes unblur{to{filter:blur(0)}}
+    /* Mobile trigger */
+    .menu-btn{
+      display:none; background:none; border:1px solid rgba(0,255,128,.35);
+      color:#b9ffdf; font-size:16px; font-weight:700; padding:8px 12px; border-radius:10px
+    }
 
-    /* Intro video */
-    #intro{position:fixed; inset:0; z-index:9999; display:flex; justify-content:center; align-items:center; background:#000; overflow:hidden;}
-    #intro video{width:100%; height:100%; object-fit:cover;}
+    /* ===== Offcanvas (Mobile) ===== */
+    .drawer-overlay{
+      position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:999; opacity:0; pointer-events:none; transition:.25s;
+    }
+    .drawer{
+      position:fixed; top:0; right:-320px; width:min(80vw,320px); height:100%;
+      background:#03140c; border-left:1px solid rgba(0,255,128,.25);
+      box-shadow:-12px 0 40px rgba(0,0,0,.45); z-index:1000; transition: right .25s ease;
+      display:flex; flex-direction:column; padding:18px;
+    }
+    .drawer header{ all:unset; display:flex; align-items:center; justify-content:space-between; margin-bottom:8px }
+    .drawer h2{ margin:0; font-size:18px; color:#9dffd2 }
+    .drawer .close{
+      background:none; border:1px solid rgba(0,255,128,.35); color:#b9ffdf; padding:6px 10px; border-radius:10px
+    }
+    .drawer nav{ display:flex; flex-direction:column; margin-top:12px }
+    .drawer nav a{
+      padding:14px 10px; border-bottom:1px solid rgba(0,255,128,.15);
+      color:#b9ffdf; text-decoration:none; font-weight:800; letter-spacing:.02em;
+      font-size:16px;
+    }
+    .drawer nav a:last-child{ border-bottom:0 }
+    .drawer nav a:active{ background:rgba(0,255,128,.08) }
+
+    .drawer-open .drawer{ right:0 }
+    .drawer-open .drawer-overlay{ opacity:1; pointer-events:auto }
+
+    /* ===== Page content ===== */
+    .spacer{ height:70px }
+    .hero{
+      text-align:center;
+      padding: clamp(72px, 14vw, 140px) 16px 36px;
+      background:linear-gradient(180deg, rgba(0,255,128,.05), transparent);
+    }
+    .hero h1{
+      margin:0 0 8px; text-shadow:0 0 20px var(--neon);
+      font-size:clamp(28px, 6.5vw, 64px);
+    }
+    .hero p{ margin:0; opacity:.9; font-size:clamp(12px, 2.4vw, 16px) }
+
+    /* ===== Audio widget (kept) ===== */
+    .ebm-audio{
+      position:fixed; left:50%; bottom:16px; transform:translateX(-50%);
+      z-index:1100; display:flex; align-items:center; gap:10px;
+      background:rgba(0,0,0,.55); border:1px solid rgba(0,255,128,.35);
+      border-radius:12px; padding:8px 12px; font-family:'Orbitron',sans-serif;
+      box-shadow:0 8px 24px rgba(0,0,0,.35);
+    }
+    .ebm-audio button{
+      border:1px solid rgba(0,255,128,.45); background:transparent;
+      color:#b9ffdf; font-weight:700; padding:8px 12px; border-radius:10px; cursor:pointer;
+    }
+    .ebm-audio input[type="range"]{ width:140px; accent-color:#00ff99 }
+    .ebm-audio .status{ color:#76ffb2; font-size:12px; letter-spacing:.02em; opacity:.9 }
+    .ebm-audio .dot{ display:inline-block; width:6px; height:6px; border-radius:50%; background:#ff5c5c; margin-left:6px; box-shadow:0 0 8px #ff5c5c }
+    .ebm-audio.playing .dot{ background:#00ffa0; box-shadow:0 0 8px #00ffa0 }
+
+    /* ===== Intro video (resizes like bg) ===== */
+    #intro{ position:fixed; inset:0; z-index:9999; display:flex; justify-content:center; align-items:center; background:#000; overflow:hidden }
+    #intro video{ width:100%; height:100%; object-fit:cover; }
     #tapToPlay{
       position:absolute; inset:0; display:none; justify-content:center; align-items:center;
-      background:rgba(0,0,0,.7); color:#00ff99; font-family:'Orbitron',sans-serif;
-      font-size:20px; font-weight:700; letter-spacing:2px; cursor:pointer;
+      background:rgba(0,0,0,.7); color:#00ff99; font-size:18px; font-weight:700; letter-spacing:2px; cursor:pointer;
+      padding:24px; text-align:center;
+    }
+
+    /* ===== Responsive ===== */
+    @media (max-width: 960px){
+      nav.site-nav{ display:none }         /* hide desktop links */
+      .menu-btn{ display:inline-flex }     /* show hamburger */
+      .ebm-audio input[type="range"]{ width:110px }
+    }
+    @media (max-width: 520px){
+      .ebm-audio{ left:12px; transform:none; right:12px; justify-content:space-between; width:auto }
+      .ebm-audio input[type="range"]{ width:90px }
     }
   </style>
 </head>
 <body>
 
-  <!-- Video Background -->
+  <!-- Background video (auto-resizes) -->
   <div class="video-bg" aria-hidden="true">
-    <video id="bgVideo" autoplay loop muted playsinline>
-      <source src="video/bg.mp4" type="video/mp4">
+    <video id="bgVideo" autoplay loop muted playsinline preload="auto">
+      <source src="video/bg.mp4" type="video/mp4" />
     </video>
   </div>
 
-  <!-- Intro Video -->
+  <!-- Intro video (auto-resizes) -->
   <div id="intro" aria-hidden="true">
-    <video id="introVideo" src="video/intro.mp4" autoplay playsinline></video>
+    <video id="introVideo" src="video/intro.mp4" autoplay playsinline preload="auto"></video>
     <div id="tapToPlay">Tap to start intro</div>
   </div>
 
-  <!-- Main Page -->
-  <div id="page" class="page--hidden">
+  <!-- Top bar -->
+  <header>
+    <div class="brand">
+      <img src="assets/favicon.png" alt="Ebmarah" />
+      <span>Ebmarah</span>
+    </div>
+
+    <!-- Desktop nav -->
+    <nav class="site-nav" aria-label="Primary">
+      <a href="index.html">Home</a>
+      <a href="music.html">Music</a>
+      <a href="sample-packs.html">Sample Packs</a>
+      <a href="about.html">About</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+
+    <!-- Mobile trigger -->
+    <button class="menu-btn" id="menuBtn" aria-haspopup="true" aria-expanded="false" aria-controls="drawer">Menu</button>
+  </header>
+
+  <!-- Offcanvas drawer (mobile) -->
+  <div class="drawer-overlay" id="drawerOverlay"></div>
+  <aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-label="Site menu">
     <header>
-      <div class="brand">
-        <img src="assets/favicon.png" alt="Ebmarah">
-        <span style="font-size:clamp(16px,2.6vw,22px)">Ebmarah</span>
-      </div>
-      <button class="menu-btn" id="menuBtn">Menu</button>
-      <nav class="menu" id="menu">
-        <a href="index.html">Home</a>
-        <a href="music.html">Music</a>
-        <a href="sample-packs.html">Sample Packs</a>
-        <a href="about.html">About</a>
-        <a href="contact.html">Contact</a>
-      </nav>
+      <h2>Menu</h2>
+      <button class="close" id="drawerClose" aria-label="Close menu">Close</button>
     </header>
+    <nav aria-label="Mobile">
+      <a href="index.html">Home</a>
+      <a href="music.html">Music</a>
+      <a href="sample-packs.html">Sample Packs</a>
+      <a href="about.html">About</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+  </aside>
 
-    <div class="spacer"></div>
-    <section class="hero">
-      <h1>Welcome to the Digital Gorilla Forest</h1>
-      <p>Stream my latest dubstep tracks & explore the digital jungle.</p>
-    </section>
+  <div class="spacer"></div>
 
-    <!-- Mascot -->
-    <script src="js/ebmarah-mascot.js"></script>
-    <script>
-      // Init mascot only after intro finishes, positioned on the LEFT
-      window.addEventListener('intro-finished', () => {
+  <!-- Hero -->
+  <section class="hero" id="page" class="page--hidden">
+    <h1>Welcome to the Digital Gorilla Forest</h1>
+    <p>Stream my latest dubstep tracks & explore the digital jungle.</p>
+  </section>
+
+  <!-- Mascot (appears after intro, pinned left) -->
+  <script src="js/ebmarah-mascot.js"></script>
+  <script>
+    // Run mascot only when intro ends (left position)
+    window.addEventListener('intro-finished', () => {
+      if (window.EbmarahMascot?.init) {
         EbmarahMascot.init({
           mode:'passive',
           position:'bottom-left',
           funnyLines:['BASS INCOMING','sub-bass handshake!','gorilla certified 🔊','who threw this banana?','i smell a DROP...']
         });
-      }, { once: true });
-    </script>
-  </div>
-
-  <!-- Intro Script -->
-  <script>
-  (function(){
-    const intro = document.getElementById('intro');
-    const video = document.getElementById('introVideo');
-    const tap   = document.getElementById('tapToPlay');
-    const page  = document.getElementById('page');
-
-    function endIntro(){
-      intro.classList.add('intro-out');
-      page.classList.remove('page--hidden');
-      page.style.opacity='1';
-      window.dispatchEvent(new Event('intro-finished'));
-      setTimeout(()=> intro.style.display='none',700);
-    }
-
-    video.play().catch(()=>{ tap.style.display='flex'; });
-    tap.addEventListener('click',()=>{ tap.style.display='none'; video.play(); });
-    video.addEventListener('ended',endIntro,{once:true});
-    intro.addEventListener('click',e=>{ if(e.target===intro) endIntro(); });
-
-    const btn=document.getElementById('menuBtn'), menu=document.getElementById('menu');
-    if(btn&&menu){ btn.addEventListener('click',()=> menu.classList.toggle('open')); }
-  })();
+      }
+    }, { once:true });
   </script>
 
   <!-- Background Music -->
   <audio id="bgm" src="music/Enemy.mp3" preload="auto" loop playsinline></audio>
   <script>
-  (()=>{const css=`
-    .ebm-audio{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);
-      z-index:1100;display:flex;align-items:center;gap:10px;
-      background:rgba(0,0,0,.55);border:1px solid rgba(0,255,128,.35);
-      border-radius:12px;padding:8px 12px;font-family:'Orbitron',sans-serif;
-      box-shadow:0 8px 24px rgba(0,0,0,.35);}
-    .ebm-audio button{border:1px solid rgba(0,255,128,.45);background:transparent;
-      color:#b9ffdf;font-weight:700;padding:6px 10px;border-radius:10px;cursor:pointer;}
-    .ebm-audio button:hover{color:#00ffea;border-color:#00ffea}
-    .ebm-audio input[type="range"]{width:140px;accent-color:#00ff99}
-    .ebm-audio .status{color:#76ffb2;font-size:12px;letter-spacing:.02em;opacity:.9}
-    .ebm-audio .dot{display:inline-block;width:6px;height:6px;border-radius:50%;
-      background:#ff5c5c;margin-left:6px;box-shadow:0 0 8px #ff5c5c}
-    .ebm-audio.playing .dot{background:#00ffa0;box-shadow:0 0 8px #00ffa0}
-    @media(max-width:520px){.ebm-audio input[type="range"]{width:100px}}`;
-    const s=document.createElement('style');s.textContent=css;document.head.appendChild(s);
-    const wrap=document.createElement('div');wrap.className='ebm-audio';
-    wrap.innerHTML=`<button id="ebmPlay" disabled>Play</button><button id="ebmMute" disabled>Mute</button>
-      <input id="ebmVol" type="range" min="0" max="1" step="0.01" disabled />
-      <span class="status" id="ebmStatus">waiting for intro<span class="dot"></span></span>`;
-    document.body.appendChild(wrap);
-    const audio=document.getElementById('bgm'),playBtn=wrap.querySelector('#ebmPlay'),
-    muteBtn=wrap.querySelector('#ebmMute'),vol=wrap.querySelector('#ebmVol'),status=wrap.querySelector('#ebmStatus');
-    const keyVol='ebm_enemy_vol',keyMute='ebm_enemy_mute';
-    const savedVol=parseFloat(localStorage.getItem(keyVol));const savedMute=localStorage.getItem(keyMute)==='true';
-    audio.volume=Number.isFinite(savedVol)?savedVol:0.4;audio.muted=savedMute;vol.value=audio.volume;
-    function setControls(on){playBtn.disabled=!on;muteBtn.disabled=!on;vol.disabled=!on}
-    function updateUI(){playBtn.textContent=audio.paused?'Play':'Pause';muteBtn.textContent=audio.muted?'Unmute':'Mute';
-      status.textContent=audio.paused?'paused':'playing';wrap.classList.toggle('playing',!audio.paused);
-      status.insertAdjacentHTML('beforeend','<span class="dot"></span>');}
-    async function startBGM(){setControls(true);try{await audio.play();}catch{status.textContent='tap to play';
-      status.insertAdjacentHTML('beforeend','<span class="dot"></span>');}updateUI();}
-    addEventListener('intro-finished',startBGM,{once:true});
-    playBtn.addEventListener('click',async()=>{if(audio.paused){await audio.play().catch(()=>{});}else audio.pause();updateUI()});
-    muteBtn.addEventListener('click',()=>{audio.muted=!audio.muted;localStorage.setItem(keyMute,String(audio.muted));updateUI()});
-    vol.addEventListener('input',()=>{audio.volume=Number(vol.value);localStorage.setItem(keyVol,String(audio.volume));
-      if(audio.volume>0&&audio.muted){audio.muted=false;localStorage.setItem(keyMute,'false')}updateUI()});
-    audio.addEventListener('play',updateUI);audio.addEventListener('pause',updateUI);audio.addEventListener('volumechange',updateUI);
-  })();
+    /* ========= Intro handling + Drawer + Audio ========= */
+    (function(){
+      const intro = document.getElementById('intro');
+      const introVid = document.getElementById('introVideo');
+      const tap = document.getElementById('tapToPlay');
+
+      function endIntro(){
+        // reveal content + signal mascot/audio
+        window.dispatchEvent(new Event('intro-finished'));
+        intro.style.display='none';
+      }
+
+      // Mobile autoplay fallback
+      introVid.play().catch(()=>{ tap.style.display='flex'; });
+      tap.addEventListener('click',()=>{ tap.style.display='none'; introVid.play(); });
+      introVid.addEventListener('ended', endIntro, { once:true });
+      // Allow tap outside video to skip
+      intro.addEventListener('click', e => { if(e.target === intro) endIntro(); });
+
+      // Drawer
+      const root = document.documentElement;
+      const btn = document.getElementById('menuBtn');
+      const drawer = document.getElementById('drawer');
+      const overlay = document.getElementById('drawerOverlay');
+      const closeBtn = document.getElementById('drawerClose');
+
+      const openDrawer = () => {
+        root.classList.add('drawer-open');
+        btn.setAttribute('aria-expanded','true');
+        drawer.querySelector('a')?.focus();
+      };
+      const closeDrawer = () => {
+        root.classList.remove('drawer-open');
+        btn.setAttribute('aria-expanded','false');
+        btn.focus();
+      };
+
+      btn.addEventListener('click', openDrawer);
+      closeBtn.addEventListener('click', closeDrawer);
+      overlay.addEventListener('click', closeDrawer);
+      window.addEventListener('keydown', e => { if(e.key === 'Escape') closeDrawer(); });
+
+      // Audio widget (kept from your page)
+      const audio = document.getElementById('bgm');
+      const keyVol='ebm_enemy_vol', keyMute='ebm_enemy_mute';
+      const savedVol = parseFloat(localStorage.getItem(keyVol));
+      const savedMute = localStorage.getItem(keyMute)==='true';
+      audio.volume = Number.isFinite(savedVol)? savedVol : 0.4;
+      audio.muted = !!savedMute;
+
+      // Build minimal controls
+      const wrap=document.createElement('div'); wrap.className='ebm-audio';
+      wrap.innerHTML = `
+        <button id="ebmPlay" disabled>Play</button>
+        <button id="ebmMute" disabled>Mute</button>
+        <input id="ebmVol" type="range" min="0" max="1" step="0.01" />
+        <span class="status" id="ebmStatus">waiting for intro<span class="dot"></span></span>`;
+      document.body.appendChild(wrap);
+
+      const playBtn=wrap.querySelector('#ebmPlay');
+      const muteBtn=wrap.querySelector('#ebmMute');
+      const vol=wrap.querySelector('#ebmVol');
+      const status=wrap.querySelector('#ebmStatus');
+
+      const setControls = on => { playBtn.disabled=!on; muteBtn.disabled=!on; vol.disabled=!on; };
+      const updateUI = () => {
+        playBtn.textContent = audio.paused ? 'Play' : 'Pause';
+        muteBtn.textContent = audio.muted ? 'Unmute' : 'Mute';
+        status.textContent = audio.paused ? 'paused' : 'playing';
+        wrap.classList.toggle('playing', !audio.paused);
+        status.insertAdjacentHTML('beforeend','<span class="dot"></span>');
+      };
+
+      async function startBGM(){
+        setControls(true);
+        try{ await audio.play(); }catch{ status.textContent='tap to play'; status.insertAdjacentHTML('beforeend','<span class="dot"></span>'); }
+        updateUI();
+      }
+      window.addEventListener('intro-finished', startBGM, { once:true });
+
+      playBtn.addEventListener('click', async()=>{
+        if(audio.paused){ await audio.play().catch(()=>{}); } else { audio.pause(); }
+        updateUI();
+      });
+      muteBtn.addEventListener('click', ()=>{
+        audio.muted = !audio.muted;
+        localStorage.setItem(keyMute, String(audio.muted));
+        updateUI();
+      });
+      vol.value = audio.volume;
+      vol.addEventListener('input', ()=>{
+        audio.volume = Number(vol.value);
+        localStorage.setItem(keyVol, String(audio.volume));
+        if(audio.volume>0 && audio.muted){ audio.muted=false; localStorage.setItem(keyMute,'false'); }
+        updateUI();
+      });
+      audio.addEventListener('play',updateUI);
+      audio.addEventListener('pause',updateUI);
+      audio.addEventListener('volumechange',updateUI);
+    })();
   </script>
 </body>
 </html>
