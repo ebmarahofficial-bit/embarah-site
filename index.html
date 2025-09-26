@@ -153,12 +153,24 @@
         src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/ebmarah/enemy"></iframe>
     </section>
 
-    <!-- Mascot -->
-    <script src="js/ebmarah-mascot.js"></script>
-    <script>
-      EbmarahMascot.init({mode:'passive',position:'bottom-right',
-        funnyLines:['BASS INCOMING','sub-bass handshake!','gorilla certified 🔊','who threw this banana?','i smell a DROP...']});
-    </script>
+   <!-- Mascot -->
+<script src="js/ebmarah-mascot.js"></script>
+<script>
+  // Initialize the mascot only AFTER the intro video is done
+  window.addEventListener('intro-finished', () => {
+    EbmarahMascot.init({
+      mode: 'passive',
+      position: 'bottom-right',
+      funnyLines: [
+        'BASS INCOMING',
+        'sub-bass handshake!',
+        'gorilla certified 🔊',
+        'who threw this banana?',
+        'i smell a DROP...'
+      ]
+    });
+  }, { once: true });
+</script>
   </div>
 
   <!-- Intro Script -->
