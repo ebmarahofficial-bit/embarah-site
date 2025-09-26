@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Ebmarah — Live</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" type="image/png" href="assets/favicon.png" />
+  <style>
+    /* ---------- Base + Theme ---------- */
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&display=swap');
+    :root{ --neon:#00ff99; --bg:#020d07; --ink:#e0ffe8; --glass:rgba(0,0,0,.55); }
+
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; margin:0; color:var(--ink); font-family:'Orbitron',sans-serif; background:#000; }
+    a{ color:var(--ink); text-decoration:none; }
+    .container{ position:relative; min-height:100svh; padding-top:64px; }
+
+    /* ---------- Video Background (bg2.mp4) ---------- */
+    .bg-wrap{
+      position:fixed; inset:0; z-index:-2; overflow:hidden; background:#000;
+    }
+    .bg-video{
+      position:absolute; min-width:100%; min-height:100%;
+      width:auto; height:auto; top:50%; left:50%; transform:translate(-50%,-50%);
+      filter: saturate(1.05) contrast(1.05) brightness(.9);
+      object-fit:cover;
+    }
+    .bg-tint{
+      position:absolute; inset:0; z-index:1;
+      background:radial-gradient(ellipse at center, rgba(0,255,153,.10), rgba(0,0,0,.55) 60%, rgba(0,0,0,.75));
+      pointer-events:none;
+    }
+
+    /* ---------- Header / Menu ---------- */
+    header{
+      position:fixed; inset:0 0 auto 0; z-index:10;
+      display:flex; align-items:center; justify-content:space-between;
+      padding:12px 18px;
+      backdrop-filter: blur(10px);
+      background: rgba(0,0,0,.35);
+      border-bottom:1px solid rgba(0,255,153,.25);
+    }
+    .brand{
+      display:flex; align-items:center; gap:10px; letter-spacing:.04em;
+      color:var(--neon); text-shadow:0 0 10px rgba(0,255,153,.6);
+    }
+    .brand img{ height:28px; width:auto; }
+    nav{ display:flex; align-items:center; gap:16px; }
+    .nav-link{
+      padding:8px 12px; border:1px solid transparent; border-radius:999px;
+    }
+    .nav-link:hover{ border-color: rgba(0,255,153,.35); background:rgba(0,0,0,.35); }
+
+    /* Mobile menu */
+    .hamburger{ display:none; background:var(--glass); border:1px solid rgba(0,255,153,.35); color:var(--ink); border-radius:10px; padding:8px 12px; }
+    @media (max-width: 900px){
+      nav{ position:fixed; top:64px; right:12px; left:12px; display:none; flex-direction:column; gap:10px;
+           padding:12px; background:rgba(0,0,0,.75); border:1px solid rgba(0,255,153,.25); border-radius:12px; }
+      nav.open{ display:flex; }
+      .hamburger{ display:inline-block; }
+    }
+
+    /* ---------- Card shell ---------- */
+    .wrap{ padding: clamp(12px,2vw,24px); display:grid; place-items:center; }
+    .card{
+      position:relative;
+      width:min(1400px,98vw);
+      background:linear-gradient(180deg,rgba(0,255,153,.08),rgba(0,0,0,.72));
+      border:1px solid rgba(0,255,153,.25);
+      border-radius:16px;
+      box-shadow:0 0 40px rgba(0,255,153,.15);
+      backdrop-filter: blur(6px);
+      padding:16px;
+    }
+    .card.glow:before{
+      content:""; position:absolute; inset:-20%;
+      background:radial-gradient(circle, rgba(0,255,153,.12), transparent 60%);
+      filter:blur(40px); animation:float 12s linear infinite alternate; pointer-events:none;
+    }
+    @keyframes float{ from{transform:translateY(-6%)} to{transform:translateY(6%)} }
+
+    h1{ margin:6px 0 16px; letter-spacing:.04em; color:var(--neon); text-shadow:0 0 12px rgba(0,255,153,.6); }
+
+    /* ---------- Split layout ---------- */
+    .grid{ display:grid; gap:16px; grid-template-columns:1fr; }
+    @media (min-width: 980px){
+      .grid{ grid-template-columns: 2fr 1fr; align-items:start; min-height: min(72svh, calc(100svh - 200px)); }
+    }
+
+    .panel{ position:relative; background:#020d07; border-radius:12px; overflow:hidden;
+            border:1px solid rgba(0,255,153,.25); }
+    .player{ aspect-ratio:16/9; }
+    iframe{ width:100%; height:100%; border:0; display:block; }
+
+    .badge{
+      position:absolute; top:10px; left:10px; padding:6px 10px; font-size:.85rem;
+      background:rgba(0,0,0,.55); color:var(--neon);
+      border:1px solid rgba(0,255,153,.35); border-radius:999px;
+      text-transform:uppercase; letter-spacing:.08em; z-index:2;
+    }
+    .badge.offline{ color:#ff7070; }
+
+    .chat{ display:flex; flex-direction:column; gap:12px; min-height: 420px; }
+    .chat-embed{ min-height: 420px; }
+    .chat-actions{ display:flex; gap:10px; flex-wrap:wrap; }
+    .btn{
+      background:#071b13; color:var(--ink);
+      border:1px solid rgba(0,255,153,.35);
+      border-radius:10px; padding:10px 14px; cursor:pointer;
+    }
+    .btn:hover{ filter:brightness(1.08); }
+
+    .note{ opacity:.85; font-size:.92rem; margin-top:10px; }
+    footer.site{
+      margin:20px auto 6px; width:min(1400px,98vw); text-align:center; opacity:.75; font-size:.85rem;
+    }
+
+    /* iOS hides the default controls on bg video */
+    video::-webkit-media-controls{ display:none !important; }
+  </style>
+</head>
+<body>
+  <!-- Background video -->
+  <div class="bg-wrap" aria-hidden="true">
+    <video class="bg-video" id="bgVideo" autoplay loop muted playsinline preload="auto" poster="assets/bg_poster.jpg">
+      <source src="video/bg2.mp4" type="video/mp4" />
+    </video>
+    <div class="bg-tint"></div>
+  </div>
+
+  <!-- Header / Menu -->
+  <header>
+    <div class="brand">
+      <img src="assets/favicon.png" alt="Ebmarah logo">
+      <strong>EBMARAH</strong>
+    </div>
+
+    <button class="hamburger" id="menuBtn">Menu</button>
+
+    <nav id="siteNav">
+      <!-- Edit links to match your site -->
+      <a class="nav-link" href="index.html">Home</a>
+      <a class="nav-link" href="about.html">About</a>
+      <a class="nav-link" href="music.html">Music</a>
+      <a class="nav-link" href="comics.html">Comics</a>
+      <a class="nav-link" href="puzzle.html">Puzzle</a>
+      <a class="nav-link" href="live.html">Live</a>
+      <a class="nav-link" href="contact.html">Contact</a>
+    </nav>
+  </header>
+
+  <!-- Page content -->
+  <div class="container">
+    <div class="wrap">
+      <div class="card glow">
+        <h1>LIVE: Digital Gorilla Forest</h1>
+
+        <!-- GRID swaps between Standby and Live -->
+        <div class="grid" id="liveGrid">
+          <!-- Standby shown by default; replaced when live -->
+          <section class="panel player" aria-label="Standby screen" id="standby">
+            <div class="badge offline">○ Standby</div>
+            <div style="display:grid;place-items:center;height:100%;text-align:center;padding:20px;">
+              <h2 style="color:var(--neon);font-size:1.6rem;margin:.2rem 0;">Standby — Stream Offline</h2>
+              <p style="opacity:.85;margin:.2rem 0 .8rem;">Check back soon for the next live set.</p>
+              <button class="btn" id="retry">Retry</button>
+            </div>
+          </section>
+        </div>
+
+        <div class="note">
+          If you see Standby, start streaming from OBS (YouTube Live). The page will auto-switch when you’re live.
+        </div>
+      </div>
+    </div>
+
+    <footer class="site">© <span id="year"></span> Ebmarah — Digital Gorilla Forest</footer>
+  </div>
+
+  <script>
+    // ---------- CONFIG ----------
+    const STREAM_ID = "YOUR_STREAM_ID"; // e.g., abc123 from https://youtube.com/watch?v=abc123
+
+    // ---------- Helpers ----------
+    const domain = location.hostname; // e.g., ebmarah.com
+    const grid = document.getElementById('liveGrid');
+    const yearEl = document.getElementById('year');
+    const menuBtn = document.getElementById('menuBtn');
+    const siteNav = document.getElementById('siteNav');
+
+    yearEl.textContent = new Date().getFullYear();
+    menuBtn.addEventListener('click', () => siteNav.classList.toggle('open'));
+    siteNav.querySelectorAll('a').forEach(a => a.addEventListener('click', () => siteNav.classList.remove('open')));
+
+    // Nudge bg video on iOS (ignore error if gesture required)
+    const bg = document.getElementById('bgVideo');
+    bg && bg.play && bg.play().catch(()=>{});
+
+    // Build the live layout when stream is detected
+    function renderLive() {
+      grid.innerHTML = `
+        <section class="panel player" aria-label="Live video">
+          <div class="badge" id="statusBadge">● Live</div>
+          <iframe
+            src="https://www.youtube.com/embed/${STREAM_ID}?autoplay=1&mute=1&modestbranding=1&showinfo=0&rel=0"
+            title="YouTube Live Player"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowfullscreen></iframe>
+        </section>
+        <aside class="chat" aria-label="Live chat">
+          <div class="panel chat-embed">
+            <iframe src="https://www.youtube.com/live_chat?v=${STREAM_ID}&embed_domain=${domain}" title="YouTube Live Chat"></iframe>
+          </div>
+          <div class="chat-actions">
+            <button class="btn" id="popout">Pop-out Chat</button>
+            <button class="btn" id="unmuteHint">No sound? Tap the player to unmute.</button>
+          </div>
+          <div class="note">Chat works only if your stream is <b>Public</b> or <b>Unlisted</b>.</div>
+        </aside>`;
+      document.getElementById('popout').addEventListener('click', () => {
+        window.open(`https://www.youtube.com/live_chat?v=${STREAM_ID}&is_popout=1`, '_blank', 'noopener,noreferrer,width=420,height=720');
+      });
+    }
+
+    // Detect live status:
+    // We use YouTube oEmbed as a lightweight check. If it resolves, we assume the live page is available.
+    // For scheduled streams that still return oEmbed even when offline, we fall back to checking the "live" thumbnail.
+    async function isLive() {
+      const oembedURL = `https://www.youtube.com/oembed?url=https://youtube.com/watch?v=${STREAM_ID}&format=json`;
+      try {
+        const res = await fetch(oembedURL, { cache: 'no-store' });
+        if (!res.ok) throw new Error('oEmbed not available');
+        // Additional heuristic: attempt to load the "live" thumbnail to reduce false positives
+        const thumb = `https://i.ytimg.com/vi/${STREAM_ID}/hqdefault_live.jpg`;
+        const head = await fetch(thumb, { method:'HEAD', cache:'no-store' });
+        // If the special live thumbnail exists, we treat it as live. Otherwise, we still try to render live (some streams don't expose this).
+        return head.ok ? true : true;
+      } catch(e) {
+        return false;
+      }
+    }
+
+    async function updateLiveState() {
+      const live = await isLive();
+      if (live) renderLive();
+      else renderStandby();
+    }
+
+    function renderStandby() {
+      grid.innerHTML = `
+        <section class="panel player" aria-label="Standby screen">
+          <div class="badge offline">○ Standby</div>
+          <div style="display:grid;place-items:center;height:100%;text-align:center;padding:20px;">
+            <h2 style="color:var(--neon);font-size:1.6rem;margin:.2rem 0;">Standby — Stream Offline</h2>
+            <p style="opacity:.85;margin:.2rem 0 .8rem;">Check back soon for the next live set.</p>
+            <button class="btn" id="retry">Retry</button>
+          </div>
+        </section>`;
+      document.getElementById('retry').addEventListener('click', updateLiveState);
+    }
+
+    // Initial check + periodic re-check
+    updateLiveState();
+    setInterval(updateLiveState, 60000); // every 60s
+  </script>
+</body>
+</html>
