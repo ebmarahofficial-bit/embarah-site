@@ -7,189 +7,172 @@
   <link rel="icon" type="image/png" href="assets/favicon.png" />
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&display=swap');
-    :root { --neon:#00ff99; --ink:#e0ffe8; --bg:#020d07; }
+    :root { --neon:#00ff99; --bg:#020d07; --ink:#e0ffe8; --glass:rgba(2,13,7,.75); }
 
     * { box-sizing: border-box; }
     html, body { height:100%; }
     body {
-      margin:0;
-      font-family:'Orbitron', sans-serif;
-      color:var(--ink);
-      overflow-x:hidden;
-      background:var(--bg); /* fallback */
+      margin:0; font-family:'Orbitron', sans-serif; color:var(--ink);
+      background:var(--bg); overflow-x:hidden;
     }
 
-    /* === Parallax Background === */
-    #parallax-scene{
-      position: fixed; inset: 0;
-      perspective: 1200px;
-      overflow: hidden;
-      z-index: -3; /* behind everything */
-    }
-    #parallax-scene .layer{
-      position: absolute; inset: -6%; /* bleed for movement */
-      will-change: transform;
-      transform-style: preserve-3d;
-      backface-visibility: hidden;
-    }
-    /* Deep jungle layer (base image, slowest) */
-    .layer-deep{
-      background: url("assets/bg.png") center / cover no-repeat;
-      filter: saturate(1.05) contrast(1.05);
-      transform: translateZ(-200px) scale(1.2);
-    }
-    /* Mid jungle layer (same image, slightly blurred & darker) */
-    .layer-mid{
-      background: url("assets/bg.png") center / cover no-repeat;
-      filter: blur(1.2px) brightness(.98);
-      opacity: .95;
-      transform: translateZ(-100px) scale(1.1);
-      mix-blend-mode: normal;
-    }
-    /* Stars layer */
-    .layer-stars{
-      background: transparent url('https://www.transparenttextures.com/patterns/stardust.png') repeat;
-      opacity: .18;
-      transform: translateZ(-60px) scale(1.05);
-      animation: moveStars 200s linear infinite;
-    }
-    @keyframes moveStars {
-      from { transform: translateZ(-60px) translate(0,0) }
-      to   { transform: translateZ(-60px) translate(-200px,-200px) }
-    }
-    /* Mist layer */
-    .layer-mist{
-      background: radial-gradient(circle, rgba(0,255,128,0.08), transparent 70%);
-      mix-blend-mode: screen;
-      transform: translateZ(0px);
-      animation: drift 40s linear infinite;
-      opacity: 1;
-    }
-    @keyframes drift {
-      from { transform: translateZ(0px) translate(-25%, -25%) scale(1) }
-      to   { transform: translateZ(0px) translate( 25%,  25%) scale(1.2) }
-    }
-    /* Reduced motion: keep layered look but no movement */
-    @media (prefers-reduced-motion: reduce) {
-      #parallax-scene .layer {
-        animation: none !important;
-        transform: none !important;
-      }
+    /* ===== Video Background (fills any screen) ===== */
+    .video-bg{ position:fixed; inset:0; z-index:-3; overflow:hidden }
+    .video-bg video{
+      width:100%; height:100%; object-fit:cover; object-position:center;
     }
 
-    /* ---------- Header (no blur, responsive) ---------- */
+    /* ===== Header (same pattern as index) ===== */
     header{
       position:fixed; inset:0 0 auto 0;
-      display:flex; justify-content:space-between; align-items:center;
-      padding:14px 24px;
-      background:rgba(2,13,7,.75);
+      display:flex; align-items:center; justify-content:space-between;
+      padding:12px 18px; background:var(--glass);
       border-bottom:1px solid rgba(0,255,128,.2);
-      box-shadow:0 6px 24px rgba(0,0,0,.35);
-      z-index:1000;
+      box-shadow:0 6px 24px rgba(0,0,0,.35); z-index:1000;
+      backdrop-filter: blur(10px);
     }
-    .brand{ display:flex; gap:10px; align-items:center; font-weight:800; letter-spacing:.02em; }
-    .brand img{ height:40px; width:auto; }
-    nav{ display:flex; align-items:center; gap:22px; }
-    nav a{ color:#76ffb2; text-decoration:none; font-weight:700; font-size:clamp(12px,1.6vw,14px); }
-    nav a:hover{ color:#00ffea; }
+    .brand{display:flex; align-items:center; gap:10px; font-weight:800; letter-spacing:.02em}
+    .brand img{height:40px; width:auto}
+    .brand span{font-size:clamp(16px,2.6vw,22px)}
 
-    /* Mobile menu toggle */
-    .menu-btn{display:none; background:none; border:0; color:#b9ffdf; font-size:18px; font-weight:700; padding:6px 10px; border:1px solid rgba(0,255,128,.35); border-radius:8px}
-    .menu{display:flex}
+    /* Desktop nav */
+    nav.site-nav{display:flex; align-items:center; gap:22px}
+    nav.site-nav a{
+      color:#76ffb2; text-decoration:none; font-weight:700; font-size:clamp(13px,1.6vw,14px)
+    }
+    nav.site-nav a:hover{ color:#00ffea }
 
-    /* ---------- Page Content ---------- */
-    .spacer{ height:72px; } /* pushes content below fixed header */
+    /* Mobile trigger */
+    .menu-btn{
+      display:none; background:none; border:1px solid rgba(0,255,128,.35);
+      color:#b9ffdf; font-size:16px; font-weight:700; padding:8px 12px; border-radius:10px
+    }
+
+    /* ===== Offcanvas (Mobile) ===== */
+    .drawer-overlay{
+      position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:999; opacity:0; pointer-events:none; transition:.25s;
+    }
+    .drawer{
+      position:fixed; top:0; right:-320px; width:min(80vw,320px); height:100%;
+      background:#03140c; border-left:1px solid rgba(0,255,128,.25);
+      box-shadow:-12px 0 40px rgba(0,0,0,.45); z-index:1000; transition:right .25s ease;
+      display:flex; flex-direction:column; padding:18px;
+    }
+    .drawer header{ all:unset; display:flex; align-items:center; justify-content:space-between; margin-bottom:8px }
+    .drawer h2{ margin:0; font-size:18px; color:#9dffd2 }
+    .drawer .close{
+      background:none; border:1px solid rgba(0,255,128,.35); color:#b9ffdf; padding:6px 10px; border-radius:10px
+    }
+    .drawer nav{ display:flex; flex-direction:column; margin-top:12px }
+    .drawer nav a{
+      padding:14px 10px; border-bottom:1px solid rgba(0,255,128,.15);
+      color:#b9ffdf; text-decoration:none; font-weight:800; letter-spacing:.02em; font-size:16px;
+    }
+    .drawer nav a:last-child{ border-bottom:0 }
+    .drawer nav a:active{ background:rgba(0,255,128,.08) }
+
+    .drawer-open .drawer{ right:0 }
+    .drawer-open .drawer-overlay{ opacity:1; pointer-events:auto }
+
+    /* ===== Page content ===== */
+    .spacer{ height:70px }
+
     main{
       position:relative; z-index:1;
-      max-width:1100px; margin:0 auto 40px auto; padding:22px;
+      max-width:1100px; margin:0 auto; padding:22px;
+      display:flex; flex-direction:column; justify-content:flex-start;
+      min-height:calc(100vh - 70px);
     }
+    /* Center card vertically on desktop for a nice balance */
+    @media (min-width: 961px){
+      main{ justify-content:center; }
+    }
+
     .card{
       background:rgba(0,0,0,0.6);
       border:2px solid rgba(0,255,128,0.25);
       border-radius:12px;
       box-shadow:0 0 30px rgba(0,255,128,0.2);
       padding: clamp(18px, 3vw, 28px);
-      margin-bottom:22px;
+      margin:0 auto 22px;
+      width:min(100%, 960px);
+      text-align:center;
     }
     h1{
       font-size:clamp(24px, 4.5vw, 40px);
       margin:0 0 12px 0;
       color:var(--neon); text-shadow:0 0 18px var(--neon);
-      text-align:center;
     }
     p{
       font-size:clamp(14px, 2.2vw, 16px);
       margin:0 0 12px 0;
       color:#c8fadc;
-      text-align:center;
     }
     .email a{
       color:#e0ffe8; text-decoration:none; border-bottom:1px dashed rgba(0,255,153,.4);
     }
     .email a:hover{ color:#00ffea; }
 
-    /* Google Form frame (responsive height) */
+    /* Responsive form frame */
     .frame{
       width:100%;
-      height: clamp(720px, 80vh, 1100px);
+      height: clamp(640px, 70vh, 1100px);
       min-height: 520px;
       border:0; border-radius:10px; overflow:hidden;
-      background:#0b120f;
-      display:block;
+      background:#0b120f; display:block;
     }
 
-    /* ---------- Breakpoints ---------- */
-    /* Tablet */
-    @media (max-width: 1024px){
-      header{ padding:12px 18px; }
-      .brand img{ height:36px; }
-      nav{ gap:16px; }
-      .spacer{ height:64px; }
-      main{ padding:18px; }
-    }
-
-    /* Phone */
-    @media (max-width: 720px){
-      .brand img{ height:30px; }
-      .menu-btn{ display:inline-flex; }
-      /* turn nav into a dropdown panel */
-      .menu{ display:none; position:fixed; top:64px; right:12px; flex-direction:column; gap:10px;
-             background:rgba(2,13,7,.92); border:1px solid rgba(0,255,128,.25); border-radius:10px;
-             padding:12px; box-shadow:0 14px 40px rgba(0,0,0,.45); z-index:1001; }
-      .menu.open{ display:flex; }
-    }
-
-    /* Tiny phones */
-    @media (max-width: 380px){
-      nav a{ font-size:13px; }
+    /* ===== Responsive tweaks ===== */
+    @media (max-width: 960px){
+      nav.site-nav{ display:none }
+      .menu-btn{ display:inline-flex }
     }
   </style>
 </head>
 <body>
 
-  <!-- Parallax Background Scene -->
-  <div id="parallax-scene" aria-hidden="true">
-    <div class="layer layer-deep"></div>
-    <div class="layer layer-mid"></div>
-    <div class="layer layer-stars"></div>
-    <div class="layer layer-mist"></div>
+  <!-- Background video (auto-resizes) -->
+  <div class="video-bg" aria-hidden="true">
+    <video id="bgVideo" autoplay loop muted playsinline preload="auto">
+      <source src="video/bg2.mp4" type="video/mp4" />
+    </video>
   </div>
 
+  <!-- Top bar -->
   <header>
     <div class="brand">
-      <img src="assets/favicon.png" alt="Ebmarah">
-      <span style="font-size:clamp(16px,2.6vw,22px)">Ebmarah</span>
+      <img src="assets/favicon.png" alt="Ebmarah" />
+      <span>Ebmarah</span>
     </div>
 
-    <button class="menu-btn" id="menuBtn">Menu</button>
-    <nav class="menu" id="menu">
+    <!-- Desktop nav -->
+    <nav class="site-nav" aria-label="Primary">
       <a href="index.html">Home</a>
       <a href="music.html">Music</a>
       <a href="sample-packs.html">Sample Packs</a>
       <a href="about.html">About</a>
       <a href="contact.html">Contact</a>
     </nav>
+
+    <!-- Mobile trigger -->
+    <button class="menu-btn" id="menuBtn" aria-haspopup="true" aria-expanded="false" aria-controls="drawer">Menu</button>
   </header>
+
+  <!-- Offcanvas drawer (mobile) -->
+  <div class="drawer-overlay" id="drawerOverlay"></div>
+  <aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-label="Site menu">
+    <header>
+      <h2>Menu</h2>
+      <button class="close" id="drawerClose" aria-label="Close menu">Close</button>
+    </header>
+    <nav aria-label="Mobile">
+      <a href="index.html">Home</a>
+      <a href="music.html">Music</a>
+      <a href="sample-packs.html">Sample Packs</a>
+      <a href="about.html">About</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+  </aside>
 
   <div class="spacer"></div>
 
@@ -211,81 +194,40 @@
   <!-- Mascot -->
   <script src="js/ebmarah-mascot.js"></script>
   <script>
-    EbmarahMascot.init({
-      mode: 'passive',
-      position: 'bottom-right',
-      funnyLines: [
-        'welcome to the jungle 🌴',
-        'bananas > drama',
-        'bass life forever',
-        'gorilla certified 🔊'
-      ]
-    });
+    if (window.EbmarahMascot?.init) {
+      EbmarahMascot.init({
+        mode:'passive',
+        position:'bottom-right',
+        funnyLines:['welcome to the jungle 🌴','bananas > drama','bass life forever','gorilla certified 🔊']
+      });
+    }
   </script>
 
-  <!-- Mobile menu toggle -->
+  <!-- Drawer logic -->
   <script>
     (function(){
+      const root = document.documentElement;
       const btn = document.getElementById('menuBtn');
-      const menu = document.getElementById('menu');
-      if(btn && menu){
-        btn.addEventListener('click', ()=> menu.classList.toggle('open'));
-      }
+      const drawer = document.getElementById('drawer');
+      const overlay = document.getElementById('drawerOverlay');
+      const closeBtn = document.getElementById('drawerClose');
+
+      const openDrawer = () => {
+        root.classList.add('drawer-open');
+        btn.setAttribute('aria-expanded','true');
+        drawer.querySelector('a')?.focus();
+      };
+      const closeDrawer = () => {
+        root.classList.remove('drawer-open');
+        btn.setAttribute('aria-expanded','false');
+        btn.focus();
+      };
+
+      btn.addEventListener('click', openDrawer);
+      closeBtn.addEventListener('click', closeDrawer);
+      overlay.addEventListener('click', closeDrawer);
+      window.addEventListener('keydown', e => { if(e.key === 'Escape') closeDrawer(); });
     })();
-  </script>
-
-  <!-- Parallax Script -->
-  <script>
-  (function(){
-    const scene = document.getElementById('parallax-scene');
-    if(!scene) return;
-
-    const deep  = scene.querySelector('.layer-deep');
-    const mid   = scene.querySelector('.layer-mid');
-    const stars = scene.querySelector('.layer-stars');
-    const mist  = scene.querySelector('.layer-mist');
-
-    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if(prefersReduced) return;
-
-    let mx = 0, my = 0, tx = 0, ty = 0, rafId = 0;
-
-    function onPointerMove(e){
-      const p = e.touches ? e.touches[0] : e;
-      const x = p.clientX / (window.innerWidth  || 1);
-      const y = p.clientY / (window.innerHeight || 1);
-      mx = (x - 0.5) * 2;   // -1 .. 1
-      my = (y - 0.5) * 2;
-    }
-
-    function frame(){
-      // ease toward target
-      tx += (mx - tx) * 0.06;
-      ty += (my - ty) * 0.06;
-
-      const dx = tx * 12,  dy = ty * 8;
-
-      if(deep)  deep .style.transform = `translateZ(-200px) translate3d(${dx}px,${dy}px,0) scale(1.2)`;
-      if(mid)   mid  .style.transform = `translateZ(-100px) translate3d(${dx*1.6}px,${dy*1.2}px,0) scale(1.1)`;
-      if(stars) stars.style.transform = `translateZ(-60px)  translate3d(${dx*2.2}px,${dy*1.8}px,0)`;
-      if(mist)  mist .style.transform = `translateZ(0px)   translate3d(${dx*3}px,${dy*2.2}px,0)`;
-
-      rafId = requestAnimationFrame(frame);
-    }
-
-    // Pointer parallax
-    window.addEventListener('mousemove', onPointerMove, { passive: true });
-    window.addEventListener('touchmove', onPointerMove, { passive: true });
-
-    // Tiny scroll parallax to accent depth
-    window.addEventListener('scroll', () => {
-      const s = window.scrollY * 0.02;
-      scene.style.transform = `translateY(${s}px)`;
-    }, { passive: true });
-
-    frame();
-  })();
   </script>
 </body>
 </html>
-
