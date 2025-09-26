@@ -67,13 +67,11 @@
     .soundcloud-embed iframe{display:block; width:100%; height:166px; border:0}
 
     /* ---- Breakpoints ---- */
-    /* Tablet */
     @media (max-width: 1024px){
       header{padding:12px 18px}
       .brand img{height:36px}
       nav{gap:16px}
     }
-    /* Phone */
     @media (max-width: 720px){
       .brand img{height:30px}
       .menu-btn{display:inline-flex}
@@ -86,13 +84,12 @@
       .soundcloud-embed{margin:18px auto 48px}
       .soundcloud-embed iframe{height:148px}
     }
-    /* Tiny phones */
     @media (max-width: 380px){
       nav a{font-size:13px}
       .soundcloud-embed iframe{height:140px}
     }
 
-    /* Intro overlay (unchanged) */
+    /* Intro overlay */
     #intro{
       position:fixed; inset:0; display:grid; place-items:center;
       background:radial-gradient(80% 60% at 50% 40%, #03150e 0%, #010503 70%);
@@ -116,11 +113,20 @@
 
     .progress{height:10px; border-radius:999px; overflow:hidden; border:1px solid rgba(0,255,153,.35);
       background:linear-gradient(90deg, rgba(0,255,153,.06), rgba(0,255,153,.02)); position:relative; margin:10px auto 0; max-width:560px}
-    .bar{width:0%; height:100%; background:linear-gradient(90deg, var(--neon), #7affc7); box-shadow:0 0 18px rgba(0,255,153,.6); transition:width .2s ease}
+    .bar{width:0%; height:100%; background:linear-gradient(90deg, var(--neon), #7affc7); box-shadow:0 0 18px rgba(0,255,153,.6); transition:width .12s linear}
     .pct{position:absolute; right:10px; bottom:-26px; font:600 12px monospace; color:rgba(230,255,230,.65)}
 
     .scanlines{pointer-events:none; position:absolute; inset:0; background:repeating-linear-gradient(0deg, rgba(255,255,255,.04), rgba(255,255,255,.04) 1px, transparent 1px, transparent 3px); mix-blend-mode:soft-light; opacity:.25}
-    .tap-hint{margin-top:16px; font:700 12px/1.4 ui-monospace,monospace; opacity:.7; letter-spacing:.08em; text-transform:uppercase; display:none}
+
+    .tap-hint{
+      margin-top:16px; font:700 12px/1.4 ui-monospace,monospace; opacity:.9;
+      letter-spacing:.08em; text-transform:uppercase; display:none;
+    }
+    .tap-actions{margin-top:10px}
+    .tap-actions button{
+      padding:.5rem .8rem; border:1px solid rgba(0,255,153,.35);
+      border-radius:10px; background:transparent; color:#ccffe8; font-weight:800;
+    }
 
     /* Page reveal */
     .page--hidden{opacity:0; filter:blur(8px); transition:opacity .6s ease, filter .6s ease}
@@ -147,9 +153,16 @@
         <div class="line hidden" data-text="loading stage: RAVE_CORE"></div>
       </div>
       <div class="progress"><div class="bar"></div><div class="pct">0%</div></div>
-      <div id="tapHint" class="tap-hint">click / tap / any key to enter</div>
+
+      <div id="tapHint" class="tap-hint">
+        tap to start audio
+        <div class="tap-actions">
+          <button id="tapBtn" type="button">Play</button>
+        </div>
+      </div>
     </div>
     <div class="scanlines"></div>
+    <!-- playsinline is critical for mobile -->
     <audio id="introAudio" src="assets/intro.mp3" preload="auto" playsinline></audio>
   </div>
 
@@ -195,7 +208,7 @@
         position:'bottom-right',
         funnyLines:[
           'BASS INCOMING','sub-bass handshake!','gorilla certified 🔊',
-          'who threw this banana?','i smell a DROP...', 'Shut up Justin xP'
+          'who threw this banana?','i smell a DROP...','shut up justin'
         ]
       });
     </script>
@@ -224,40 +237,136 @@
   <!-- Intro Script -->
   <script>
   (function(){
-    const SEEN_KEY="ebmarah_intro_seen_v2";
-    const intro=document.getElementById('intro'), page=document.getElementById('page');
-    const bar=intro.querySelector('.bar'), pct=intro.querySelector('.pct');
+    // Always gate entry behind the audio finishing (every visit).
+    const intro=document.getElementById('intro');
+    const page=document.getElementById('page');
+    const bar=intro.querySelector('.bar');
+    const pct=intro.querySelector('.pct');
     const lines=[...intro.querySelectorAll('.terminal .line')];
     const audio=document.getElementById('introAudio');
     const tap=document.getElementById('tapHint');
+    const tapBtn=document.getElementById('tapBtn');
 
-    if(localStorage.getItem(SEEN_KEY)){
-      intro.style.display='none'; page.classList.remove('page--hidden'); page.style.opacity='1'; return;
+    let started=false, raf=0, duration=0;
+
+    function setProgress(p){
+      const val=Math.max(0, Math.min(100, p|0));
+      bar.style.width=val+'%';
+      pct.textContent=val+'%';
     }
 
-    let started=false;
-    async function begin(){
-      if(started) return; started=true;
-      try{ await audio.play(); }catch(e){}
-      const type=(el,txt,s=18)=>new Promise(r=>{ let i=0; el.textContent=''; el.style.visibility='visible'; (function tick(){ if(i<txt.length){ el.textContent+=txt[i++]; setTimeout(tick,s);} else r();})();});
-      const first=lines[0]; const caret=first.querySelector('.caret'); if(caret) caret.remove();
+    const type=(el,txt,s=18)=>new Promise(res=>{
+      let i=0; el.textContent=''; el.style.visibility='visible';
+      (function tick(){ if(i<txt.length){ el.textContent+=txt[i++]; setTimeout(tick,s);} else res(); })();
+    });
+
+    async function showBootText(){
+      const first=lines[0];
+      const caret=first.querySelector('.caret'); if(caret) caret.remove();
       await type(first,'>> INIT EBS LOADER');
       for(let i=1;i<lines.length;i++){ await type(lines[i], lines[i].dataset.text); }
-      let p=0; (function step(){ p=Math.min(100, p + Math.max(1, Math.min(7, 20*Math.random()))); bar.style.width=p+'%'; pct.textContent=p+'%'; if(p<100) setTimeout(step, 100+Math.random()*160); else done(); })();
     }
-    function done(){ localStorage.setItem(SEEN_KEY,'1'); intro.classList.add('intro-out'); page.classList.remove('page--hidden'); page.style.opacity='1'; try{ audio.pause(); audio.currentTime=0; }catch(e){} setTimeout(()=>intro.style.display='none',700); }
-    (async function(){
-      try{ await audio.play(); audio.pause(); audio.currentTime=0; begin(); }
-      catch(err){
-        tap.style.display='block';
-        const go=()=>{ tap.style.display='none'; begin(); window.removeEventListener('pointerdown',go); window.removeEventListener('keydown',go); };
-        window.addEventListener('pointerdown',go,{once:true}); window.addEventListener('keydown',go,{once:true});
-      }
-    })();
 
-    // Mobile menu toggle
+    function trackProgress(){
+      cancelAnimationFrame(raf);
+      raf=requestAnimationFrame(function loop(){
+        if(duration>0){
+          const pctNow=(audio.currentTime/duration)*100;
+          setProgress(pctNow);
+        }else{
+          setProgress(0);
+        }
+        raf=requestAnimationFrame(loop);
+      });
+    }
+
+    function unlock(){
+      intro.classList.add('intro-out');
+      page.classList.remove('page--hidden');
+      page.style.opacity='1';
+      try{ audio.pause(); }catch(e){}
+      cancelAnimationFrame(raf);
+      setTimeout(()=>{ intro.style.display='none'; },700);
+    }
+
+    async function startAudio(){
+      if(started) return;
+      started=true;
+      tap.style.display='none';
+      await showBootText();
+
+      try{
+        // ensure metadata is available for accurate duration
+        if(audio.readyState < 1){
+          await audio.play().catch(()=>{});
+          audio.pause();
+        }
+        await new Promise(res=>{
+          if(audio.readyState >= 1) res();
+          else audio.addEventListener('loadedmetadata', res, { once:true });
+        });
+        duration = isFinite(audio.duration) ? audio.duration : 0;
+
+        audio.currentTime = 0;
+        await audio.play();
+        trackProgress();
+        audio.addEventListener('ended', unlock, { once:true });
+      }catch(err){
+        // If something goes wrong, allow retry
+        started=false;
+        tap.style.display='block';
+      }
+    }
+
+    function isMobile(){
+      return (('ontouchstart' in window) || navigator.maxTouchPoints>0) &&
+             /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    }
+
+    // Behavior:
+    // - On mobile: ALWAYS require tap (no autoplay attempt).
+    // - On desktop: try autoplay; if blocked, show tap.
+    if(isMobile()){
+      tap.style.display='block';
+    }else{
+      // Try autoplay on desktop
+      (async () => {
+        try{
+          await showBootText();
+
+          if(audio.readyState < 1){
+            await audio.play().catch(()=>{});
+            audio.pause();
+          }
+          await new Promise(res=>{
+            if(audio.readyState >= 1) res();
+            else audio.addEventListener('loadedmetadata', res, { once:true });
+          });
+          duration = isFinite(audio.duration) ? audio.duration : 0;
+
+          audio.currentTime = 0;
+          await audio.play();
+          started=true;
+          trackProgress();
+          audio.addEventListener('ended', unlock, { once:true });
+        }catch(err){
+          tap.style.display='block';
+          started=false;
+        }
+      })();
+    }
+
+    // Tap to begin (works for both mobile and desktop fallback)
+    const go = ()=> startAudio();
+    tapBtn.addEventListener('click', go);
+    // Also start on first pointerdown anywhere in the overlay
+    intro.addEventListener('pointerdown', (e)=>{
+      if(!started && (e.target===intro || e.target.closest('#tapHint'))) startAudio();
+    });
+
+    // Mobile menu toggle (page)
     const btn=document.getElementById('menuBtn'), menu=document.getElementById('menu');
-    btn.addEventListener('click', ()=> menu.classList.toggle('open'));
+    if(btn && menu){ btn.addEventListener('click', ()=> menu.classList.toggle('open')); }
   })();
   </script>
 </body>
