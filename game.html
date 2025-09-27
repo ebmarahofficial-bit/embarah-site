@@ -7,31 +7,131 @@
   <title>Ebmarah – Dubstep Tower</title>
   <link rel="icon" type="image/png" href="assets/favicon.png" />
   <link rel="stylesheet" href="game/assets/css/game.css">
+  <style>
+    /* ===== Styles adopted from index for consistent look ===== */
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&display=swap');
+    :root { --neon:#00ff99; --bg:#020d07; --ink:#e0ffe8; --glass:rgba(2,13,7,.75) }
+    /* Header + Desktop/Mobile Nav (matches index.html) */
+    header{
+      position:fixed; inset:0 0 auto 0;
+      display:flex; align-items:center; justify-content:space-between;
+      padding:12px 18px; background:var(--glass);
+      border-bottom:1px solid rgba(0,255,128,.2);
+      box-shadow:0 6px 24px rgba(0,0,0,.35); z-index:1000;
+      backdrop-filter: blur(10px);
+    }
+    .brand{display:flex; align-items:center; gap:10px; font-weight:800; letter-spacing:.02em}
+    .brand img{height:40px; width:auto}
+    .brand span{font-size:clamp(16px,2.6vw,22px)}
+    nav.site-nav{display:flex; align-items:center; gap:22px}
+    nav.site-nav a{ color:#76ffb2; text-decoration:none; font-weight:700; font-size:clamp(13px,1.6vw,14px) }
+    nav.site-nav a:hover{ color:#00ffea }
+    .menu-btn{
+      display:none; background:none; border:1px solid rgba(0,255,128,.35);
+      color:#b9ffdf; font-size:16px; font-weight:700; padding:8px 12px; border-radius:10px
+    }
+    .drawer-overlay{
+      position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:999; opacity:0; pointer-events:none; transition:.25s;
+    }
+    .drawer{
+      position:fixed; top:0; right:-320px; width:min(80vw,320px); height:100%;
+      background:#03140c; border-left:1px solid rgba(0,255,128,.25);
+      box-shadow:-12px 0 40px rgba(0,0,0,.45); z-index:1000; transition: right .25s ease;
+      display:flex; flex-direction:column; padding:18px;
+    }
+    .drawer header{ all:unset; display:flex; align-items:center; justify-content:space-between; margin-bottom:8px }
+    .drawer h2{ margin:0; font-size:18px; color:#9dffd2 }
+    .drawer .close{
+      background:none; border:1px solid rgba(0,255,128,.35); color:#b9ffdf; padding:6px 10px; border-radius:10px
+    }
+    .drawer nav{ display:flex; flex-direction:column; margin-top:12px }
+    .drawer nav a{
+      padding:14px 10px; border-bottom:1px solid rgba(0,255,128,.15);
+      color:#b9ffdf; text-decoration:none; font-weight:800; letter-spacing:.02em;
+      font-size:16px;
+    }
+    .drawer nav a:last-child{ border-bottom:0 }
+    .drawer nav a:active{ background:rgba(0,255,128,.08) }
+    .drawer-open .drawer{ right:0 }
+    .drawer-open .drawer-overlay{ opacity:1; pointer-events:auto }
+
+    /* Make main panel sit below fixed header */
+    main{ position:fixed; inset:70px 0 0 0; display:grid; place-items:center; padding:10px }
+
+    /* ===== Background audio widget (matches index) ===== */
+    .ebm-audio{
+      position:fixed; left:50%; bottom:16px; transform:translateX(-50%);
+      z-index:1100; display:flex; align-items:center; gap:10px;
+      background:rgba(0,0,0,.55); border:1px solid rgba(0,255,128,.35);
+      border-radius:12px; padding:8px 12px; font-family:'Orbitron',sans-serif;
+      box-shadow:0 8px 24px rgba(0,0,0,.35);
+    }
+    .ebm-audio button{
+      border:1px solid rgba(0,255,128,.45); background:transparent;
+      color:#b9ffdf; font-weight:700; padding:8px 12px; border-radius:10px; cursor:pointer;
+    }
+    .ebm-audio input[type="range"]{ width:140px; accent-color:#00ff99 }
+    .ebm-audio .status{ color:#76ffb2; font-size:12px; letter-spacing:.02em; opacity:.9 }
+    .ebm-audio .dot{ display:inline-block; width:6px; height:6px; border-radius:50%; background:#ff5c5c; margin-left:6px; box-shadow:0 0 8px #ff5c5c }
+    .ebm-audio.playing .dot{ background:#00ffa0; box-shadow:0 0 8px #00ffa0 }
+    @media (max-width: 960px){
+      nav.site-nav{ display:none }
+      .menu-btn{ display:inline-flex }
+      .ebm-audio input[type="range"]{ width:110px }
+    }
+    @media (max-width: 520px){
+      .ebm-audio{ left:12px; transform:none; right:12px; justify-content:space-between; width:auto }
+      .ebm-audio input[type="range"]{ width:90px }
+    }
+  </style>
 </head>
 <body>
+  <!-- Background video (auto-resizes) -->
   <div class="bg" aria-hidden="true">
     <video src="video/bg2.mp4" autoplay muted loop playsinline></video>
   </div>
 
+  <!-- Header (copied structure from index for consistency) -->
   <header>
-    <div class="brand" aria-label="Site brand">
-      <div class="logo" aria-hidden="true"></div>
-      <div class="title">EBMARAH</div>
+    <div class="brand">
+      <img src="assets/favicon.png" alt="Ebmarah" />
+      <span>Ebmarah</span>
     </div>
-    <div class="burger" id="burger" aria-label="Open menu" role="button" tabindex="0"><span></span></div>
-    <nav class="nav" id="nav">
+
+    <!-- Desktop nav -->
+    <nav class="site-nav" aria-label="Primary">
       <a href="index.html">Home</a>
       <a href="music.html">Music</a>
       <a href="live.html">Live</a>
       <a href="sample-packs.html">Sample Packs</a>
       <a href="about.html">About</a>
-      <a href="game.html" aria-current="page" style="border-color:rgba(0,255,128,.45)">Game</a>
+      <a href="game.html" aria-current="page">Game</a>
       <a href="contact.html">Contact</a>
-      
     </nav>
-    </nav>
+
+    <!-- Mobile trigger -->
+    <button class="menu-btn" id="menuBtn" aria-haspopup="true" aria-expanded="false" aria-controls="drawer">Menu</button>
   </header>
 
+  <!-- Offcanvas drawer (mobile) -->
+  <div class="drawer-overlay" id="drawerOverlay"></div>
+  <aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-label="Site menu">
+    <header>
+      <h2>Menu</h2>
+      <button class="close" id="drawerClose" aria-label="Close menu">Close</button>
+    </header>
+    <nav aria-label="Mobile">
+      <a href="index.html">Home</a>
+      <a href="music.html">Music</a>
+      <a href="live.html">Live</a>
+      <a href="sample-packs.html">Sample Packs</a>
+      <a href="about.html">About</a>
+      <a href="game.html" aria-current="page">Game</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+  </aside>
+
+  <!-- Game Panel -->
   <main>
     <section class="panel">
       <div class="glass" style="position:relative">
@@ -49,6 +149,7 @@
           <button onclick="restart()">Retry</button>
         </div>
 
+        <!-- Mobile on-screen controls -->
         <div class="controls">
           <div class="btn" id="left">◀</div>
           <div class="btn" id="jump">▲</div>
@@ -60,254 +161,97 @@
     </section>
   </main>
 
+  <!-- Background Music: Enemy track from index -->
+  <audio id="bgm" src="music/Enemy.mp3" preload="auto" loop playsinline></audio>
+
   <script>
-  // ====== Menu toggle (mobile) ======
-  const burger = document.getElementById('burger');
-  const nav = document.getElementById('nav');
-  const toggle = ()=> nav.classList.toggle('open');
-  burger.addEventListener('click', toggle);
-  burger.addEventListener('keydown', e=>{ if(e.key==='Enter' || e.key===' ') toggle() });
+    // ===== Drawer + BGM controls (consistent with index) =====
+    (function(){
+      // Drawer
+      const root = document.documentElement;
+      const btn = document.getElementById('menuBtn');
+      const drawer = document.getElementById('drawer');
+      const overlay = document.getElementById('drawerOverlay');
+      const closeBtn = document.getElementById('drawerClose');
 
-  // ====== GAME ENGINE ======
-  const W = 960, H = 540;
-  const ctx = document.getElementById('game').getContext('2d');
-  ctx.canvas.width = W; ctx.canvas.height = H;
+      const openDrawer = () => {
+        root.classList.add('drawer-open');
+        btn.setAttribute('aria-expanded','true');
+        drawer.querySelector('a')?.focus();
+      };
+      const closeDrawer = () => {
+        root.classList.remove('drawer-open');
+        btn.setAttribute('aria-expanded','false');
+        btn.focus();
+      };
+      btn.addEventListener('click', openDrawer);
+      closeBtn.addEventListener('click', closeDrawer);
+      overlay.addEventListener('click', closeDrawer);
+      window.addEventListener('keydown', e => { if(e.key === 'Escape') closeDrawer(); });
 
-  // --- Asset paths (from your zip) ---
-  const ART = {
-    player: 'game/assets/sprites/player.png',
-    boss: 'game/assets/sprites/boss.png',
-    enemy: 'game/assets/sprites/enemy_speaker.png',
-    particles: 'game/assets/sprites/particles.png'
-  };
-  const SFX = {
-    jump: new Audio('game/assets/audio/jump.mp3'),
-    hit:  new Audio('game/assets/audio/hit.mp3'),
-    throw:new Audio('game/assets/audio/throw.mp3'),
-    win:  new Audio('game/assets/audio/win.mp3'),
-  };
-  for (const k of Object.keys(SFX)) { SFX[k].volume = 0.5; }
+      // Audio widget
+      const audio = document.getElementById('bgm');
+      const keyVol='ebm_enemy_vol', keyMute='ebm_enemy_mute';
+      const savedVol = parseFloat(localStorage.getItem(keyVol));
+      const savedMute = localStorage.getItem(keyMute)==='true';
+      audio.volume = Number.isFinite(savedVol)? savedVol : 0.4;
+      audio.muted = !!savedMute;
 
-  // Images
-  const IM = {};
-  for (const [k,src] of Object.entries(ART)) {
-    IM[k] = new Image();
-    IM[k].src = src;
-  }
+      const wrap=document.createElement('div'); wrap.className='ebm-audio';
+      wrap.innerHTML = `
+        <button id="ebmPlay" disabled>Play</button>
+        <button id="ebmMute" disabled>Mute</button>
+        <input id="ebmVol" type="range" min="0" max="1" step="0.01" />
+        <span class="status" id="ebmStatus">ready<span class="dot"></span></span>`;
+      document.body.appendChild(wrap);
 
-  // --- Levels ---
-  const LEVEL_PATHS = ['game/assets/levels/level1.json','game/assets/levels/level2.json'];
-  let currentLevelIndex = 0;
-  let L = null; // loaded level data
+      const playBtn=wrap.querySelector('#ebmPlay');
+      const muteBtn=wrap.querySelector('#ebmMute');
+      const vol=wrap.querySelector('#ebmVol');
+      const status=wrap.querySelector('#ebmStatus');
 
-  // Player
-  const P = { x:0,y:0,vx:0,vy:0,w:28,h:34,onGround:false,climbing:false,lives:3 };
-  const keys = { left:false,right:false,up:false };
+      const setControls = on => { playBtn.disabled=!on; muteBtn.disabled=!on; vol.disabled=!on; };
+      const updateUI = () => {
+        playBtn.textContent = audio.paused ? 'Play' : 'Pause';
+        muteBtn.textContent = audio.muted ? 'Unmute' : 'Mute';
+        status.textContent = audio.paused ? 'paused' : 'playing';
+        wrap.classList.toggle('playing', !audio.paused);
+        status.insertAdjacentHTML('beforeend','<span class="dot"></span>');
+      };
 
-  // Boss + projectiles
-  let boss = null;
-  const subs = []; // thrown speakers
-
-  // Enemies
-  let enemies = [];
-
-  // Time
-  let won=false,lost=false,elapsed=0;
-
-  // Input
-  addEventListener('keydown', e=>{
-    if(e.code==='ArrowLeft') keys.left=true;
-    if(e.code==='ArrowRight') keys.right=true;
-    if(e.code==='ArrowUp') keys.up=true;
-    if(e.code==='KeyR') restart();
-    if(e.code==='KeyN') nextLevel();
-  });
-  addEventListener('keyup', e=>{
-    if(e.code==='ArrowLeft') keys.left=false;
-    if(e.code==='ArrowRight') keys.right=false;
-    if(e.code==='ArrowUp') keys.up=false;
-  });
-
-  // Mobile controls
-  const hold = (el, key)=>{ const on=()=>{keys[key]=true}; const off=()=>{keys[key]=false}; el.addEventListener('pointerdown',on); el.addEventListener('pointerup',off); el.addEventListener('pointerleave',off); el.addEventListener('pointercancel',off); }
-  hold(document.getElementById('left'),'left');
-  hold(document.getElementById('right'),'right');
-  hold(document.getElementById('jump'),'up');
-
-  function aabb(a,b){ return a.x < b.x+b.w && a.x+a.w > b.x && a.y < b.y+b.h && a.y+a.h > b.y; }
-
-  async function loadLevel(i){
-    const res = await fetch(LEVEL_PATHS[i]);
-    L = await res.json();
-    document.getElementById('levelName').textContent = L.name || `Level ${i+1}`;
-    // Reset state
-    P.x = L.spawn.x; P.y = L.spawn.y; P.vx=0; P.vy=0; P.onGround=false; P.climbing=false;
-    P.lives = 3; elapsed=0; won=false; lost=false; subs.length=0;
-    enemies = JSON.parse(JSON.stringify(L.enemies||[]));
-    boss = L.boss ? {...L.boss, t:0} : null;
-    document.getElementById('overlayWin').classList.remove('show');
-    document.getElementById('overlayLose').classList.remove('show');
-  }
-
-  function restart(){
-    loadLevel(currentLevelIndex);
-  }
-  function nextLevel(){
-    currentLevelIndex = (currentLevelIndex + 1) % LEVEL_PATHS.length;
-    loadLevel(currentLevelIndex);
-  }
-
-  function spawnSub(){
-    if(!boss) return;
-    subs.push({ x: boss.x + boss.w*0.2, y: boss.y + boss.h*0.5, w:22,h:22, vx: - (120 + Math.random()*80), vy: 0, spin: 0 });
-    try { SFX.throw.currentTime = 0; SFX.throw.play(); } catch(e){}
-  }
-
-  function step(dt){
-    if(!L || won || lost) return;
-    elapsed += dt;
-
-    const accel = 900;
-    if(keys.left) P.vx -= accel*dt;
-    if(keys.right) P.vx += accel*dt;
-
-    // Ladder check
-    P.climbing = false;
-    for(const LZ of (L.ladders||[])){ if(aabb(P,{x:LZ.x,y:LZ.y,w:LZ.w,h:LZ.h})){ P.climbing = true; break; } }
-
-    if(P.climbing){ P.vy *= 0.6; if(keys.up){ P.vy = -220; } }
-    else { P.vy += (L.gravity||1600) * dt; }
-
-    if(P.onGround && !P.climbing && keys.up){ P.vy = -480; P.onGround=false; try{ SFX.jump.currentTime=0; SFX.jump.play(); }catch(e){} }
-
-    // Integrate
-    P.x += P.vx*dt; P.y += P.vy*dt; P.vx *= (L.friction||0.86);
-
-    // Collisions with platforms (top-only)
-    P.onGround = false;
-    for(const s of (L.platforms||[])){
-      if(P.x < 0) P.x=0; if(P.x+P.w > W) P.x = W-P.w;
-      if(P.y+P.h > s.y && P.y+P.h < s.y+20 && P.x+P.w> s.x && P.x < s.x+s.w && P.vy>=0){
-        P.y = s.y - P.h; P.vy = 0; P.onGround = true;
+      async function tryAutoplay(){
+        setControls(true);
+        try { await audio.play(); }
+        catch { status.textContent='tap Play to start'; status.insertAdjacentHTML('beforeend','<span class="dot"></span>'); }
+        updateUI();
       }
-    }
+      // Try immediately (no intro on game page)
+      tryAutoplay();
 
-    // Enemies
-    for(const e of enemies){
-      e.x += e.vx*dt;
-      if(e.x < e.range[0]){ e.x = e.range[0]; e.vx *= -1; }
-      if(e.x+e.w > e.range[1]){ e.x = e.range[1]-e.w; e.vx *= -1; }
-      if(aabb(P,e)) damage();
-    }
-
-    // Boss
-    if(boss){
-      boss.t += dt;
-      if(boss.t >= boss.throwEvery){ boss.t = 0; spawnSub(); }
-    }
-
-    // Subs update
-    for(const s of subs){
-      s.vy += (L.gravity||1600)*dt*0.55;
-      s.x  += s.vx*dt;
-      s.y  += s.vy*dt;
-      s.spin += dt*8;
-      for(const p of (L.platforms||[])){
-        if(s.y+s.h > p.y && s.y+s.h < p.y+18 && s.x+s.w>p.x && s.x<p.x+p.w && s.vy>=0){
-          s.y = p.y - s.h; s.vy *= -0.45; s.vx *= 0.98;
-        }
-      }
-      if(aabb(P,s)) damage();
-    }
-    // cull
-    for(let i=subs.length-1;i>=0;i--){ if(subs[i].y>H+80 || subs[i].x<-80) subs.splice(i,1); }
-
-    // Fall off screen
-    if(P.y > H+80) damage(true);
-
-    // Win condition
-    const G = L.goal;
-    if(aabb(P, G)){ win(); }
-    document.getElementById('lives').textContent = P.lives;
-    document.getElementById('time').textContent = elapsed.toFixed(1);
-  }
-
-  function win(){ won=true; document.getElementById('overlayWin').classList.add('show'); try{ SFX.win.currentTime=0; SFX.win.play(); }catch(e){} }
-  function lose(){ lost=true; document.getElementById('overlayLose').classList.add('show'); }
-  let screenFlash = 0;
-  function damage(fell=false){
-    if(won || lost) return;
-    P.lives--; screenFlash = 1.0;
-    try{ SFX.hit.currentTime=0; SFX.hit.play(); }catch(e){}
-    if(P.lives<=0) { lose(); } else { P.x=L.spawn.x; P.y=L.spawn.y; P.vx=0; P.vy = fell ? -200 : 0; }
-  }
-
-  function draw(){
-    if(!L) return;
-    // Background grid
-    const g = ctx.createLinearGradient(0,0,W,H); g.addColorStop(0,'#00120a'); g.addColorStop(1,'#000');
-    ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
-    ctx.globalAlpha = 0.25; ctx.strokeStyle = '#0f6';
-    for(let y=0;y<H;y+=24){ ctx.beginPath(); ctx.moveTo(0,y+.5); ctx.lineTo(W,y+.5); ctx.stroke(); }
-    for(let x=0;x<W;x+=24){ ctx.beginPath(); ctx.moveTo(x+.5,0); ctx.lineTo(x+.5,H); ctx.stroke(); }
-    ctx.globalAlpha = 1;
-
-    // Goal beacon
-    const G = L.goal; ctx.shadowColor = '#0f8'; ctx.shadowBlur = 18; ctx.fillStyle = '#00ff99'; ctx.fillRect(G.x, G.y, G.w, G.h); ctx.shadowBlur = 0;
-
-    // Platforms
-    for(const s of (L.platforms||[])){
-      const lg = ctx.createLinearGradient(s.x,s.y,s.x,s.y+s.h);
-      lg.addColorStop(0,'#072'); lg.addColorStop(1,'#0a3');
-      ctx.fillStyle = lg; ctx.fillRect(s.x,s.y,s.w,s.h);
-      ctx.strokeStyle = '#0e6'; ctx.strokeRect(s.x+.5,s.y+.5,s.w-1,s.h-1);
-    }
-
-    // Ladders
-    for(const LZ of (L.ladders||[])){
-      ctx.fillStyle = '#0c6'; ctx.fillRect(LZ.x, LZ.y, LZ.w, LZ.h);
-      ctx.strokeStyle = '#9ff'; ctx.globalAlpha=.4; ctx.strokeRect(LZ.x+.5,LZ.y+.5,LZ.w-1,LZ.h-1); ctx.globalAlpha=1;
-    }
-
-    // Enemies as neon speakers (sprite)
-    for(const e of enemies){
-      if(IM.enemy.complete) ctx.drawImage(IM.enemy, e.x, e.y-4, e.w+8, e.h+8);
-      else { ctx.fillStyle = '#061'; ctx.fillRect(e.x, e.y, e.w, e.h); }
-    }
-
-    // Boss
-    if(boss){
-      if(IM.boss.complete) ctx.drawImage(IM.boss, boss.x, boss.y, boss.w, boss.h);
-      else { ctx.fillStyle = '#061'; ctx.fillRect(boss.x, boss.y, boss.w, boss.h); }
-    }
-
-    // Subs (thrown speakers) as circles
-    for(const s of subs){
-      const cx = s.x+s.w/2, cy = s.y+s.h/2, r = s.w/2;
-      ctx.save(); ctx.translate(cx,cy); ctx.rotate(s.spin);
-      const grad = ctx.createRadialGradient(0,0,2,0,0,r); grad.addColorStop(0,'#222'); grad.addColorStop(1,'#444');
-      ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.fill();
-      ctx.strokeStyle = '#00ff99'; ctx.lineWidth = 2; ctx.stroke();
-      ctx.beginPath(); ctx.arc(0,0,r*0.65,0,Math.PI*2); ctx.stroke();
-      ctx.beginPath(); ctx.arc(0,0,r*0.35,0,Math.PI*2); ctx.stroke();
-      ctx.restore();
-    }
-
-    // Player sprite
-    if(IM.player.complete) ctx.drawImage(IM.player, P.x-6, P.y-8, P.w+12, P.h+16);
-    else { ctx.fillStyle = '#061'; ctx.fillRect(P.x, P.y, P.w, P.h); ctx.strokeStyle = '#9ff'; ctx.strokeRect(P.x+.5,P.y+.5,P.w-1,P.h-1); }
-
-    // Hit flash
-    if(screenFlash>0){ ctx.fillStyle = 'rgba(255,60,60,'+screenFlash*0.35+')'; ctx.fillRect(0,0,W,H); screenFlash*=0.92; }
-  }
-
-  // Loop
-  let last = performance.now();
-  function loop(now){ const dt = Math.min(1/30,(now-last)/1000); last=now; step(dt); draw(); requestAnimationFrame(loop); }
-  requestAnimationFrame(loop);
-
-  // boot
-  loadLevel(currentLevelIndex);
+      playBtn.addEventListener('click', async()=>{
+        if(audio.paused){ await audio.play().catch(()=>{}); } else { audio.pause(); }
+        updateUI();
+      });
+      muteBtn.addEventListener('click', ()=>{
+        audio.muted = !audio.muted;
+        localStorage.setItem(keyMute, String(audio.muted));
+        updateUI();
+      });
+      vol.value = audio.volume;
+      vol.addEventListener('input', ()=>{
+        audio.volume = Number(vol.value);
+        localStorage.setItem(keyVol, String(audio.volume));
+        if(audio.volume>0 && audio.muted){ audio.muted=false; localStorage.setItem(keyMute,'false'); }
+        updateUI();
+      });
+      audio.addEventListener('play',updateUI);
+      audio.addEventListener('pause',updateUI);
+      audio.addEventListener('volumechange',updateUI);
+    })();
   </script>
+
+  <!-- Levels + Engine -->
+  <script src="game/assets/js/levels.js"></script>
+  <script src="game/assets/js/engine.js"></script>
 </body>
 </html>
