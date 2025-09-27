@@ -11,49 +11,83 @@
 
     * { box-sizing: border-box; }
     html, body { height:100%; margin:0; }
-    body { font-family:'Orbitron', sans-serif; color:var(--ink); background:var(--bg); overflow-x:hidden; }
+    body {
+      font-family:'Orbitron', sans-serif; color:var(--ink);
+      background:var(--bg); overflow-x:hidden;
+    }
 
-    /* BG video */
+    /* ===== Video Background ===== */
     .video-bg{ position:fixed; inset:0; z-index:-3; overflow:hidden }
-    .video-bg video{ width:100%; height:100%; object-fit:cover; object-position:center }
+    .video-bg video{
+      width:100%; height:100%; object-fit:cover; object-position:center;
+    }
 
-    /* Header (from game.html) */
+    /* ===== Header ===== */
     header{
       position:fixed; inset:0 0 auto 0;
       display:flex; align-items:center; justify-content:space-between;
       padding:12px 18px; background:var(--glass);
       border-bottom:1px solid rgba(0,255,128,.2);
-      box-shadow:0 6px 24px rgba(0,0,0,.35); z-index:1000; backdrop-filter: blur(10px);
+      box-shadow:0 6px 24px rgba(0,0,0,.35); z-index:1000;
+      backdrop-filter: blur(10px);
     }
     .brand{display:flex; align-items:center; gap:10px; font-weight:800; letter-spacing:.02em}
     .brand img{height:40px; width:auto}
     .brand span{font-size:clamp(16px,2.6vw,22px)}
+
+    /* Desktop nav */
     nav.site-nav{display:flex; align-items:center; gap:22px}
-    nav.site-nav a{ color:#76ffb2; text-decoration:none; font-weight:700; font-size:clamp(13px,1.6vw,14px) }
+    nav.site-nav a{
+      color:#76ffb2; text-decoration:none; font-weight:700; font-size:clamp(13px,1.6vw,14px)
+    }
     nav.site-nav a:hover{ color:#00ffea }
-    .menu-btn{ display:none; background:none; border:1px solid rgba(0,255,128,.35); color:#b9ffdf; font-size:16px; font-weight:700; padding:8px 12px; border-radius:10px }
-    .drawer-overlay{ position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:999; opacity:0; pointer-events:none; transition:.25s }
+
+    /* Mobile trigger */
+    .menu-btn{
+      display:none; background:none; border:1px solid rgba(0,255,128,.35);
+      color:#b9ffdf; font-size:16px; font-weight:700; padding:8px 12px; border-radius:10px
+    }
+
+    /* ===== Offcanvas (Mobile) ===== */
+    .drawer-overlay{
+      position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:999; opacity:0; pointer-events:none; transition:.25s;
+    }
     .drawer{
-      position:fixed; top:0; right:-320px; width:min(80vw,320px); height:100%; background:#03140c; border-left:1px solid rgba(0,255,128,.25);
-      box-shadow:-12px 0 40px rgba(0,0,0,.45); z-index:1000; transition: right .25s ease; display:flex; flex-direction:column; padding:18px;
+      position:fixed; top:0; right:-320px; width:min(80vw,320px); height:100%;
+      background:#03140c; border-left:1px solid rgba(0,255,128,.25);
+      box-shadow:-12px 0 40px rgba(0,0,0,.45); z-index:1000; transition: right .25s ease;
+      display:flex; flex-direction:column; padding:18px;
     }
     .drawer header{ all:unset; display:flex; align-items:center; justify-content:space-between; margin-bottom:8px }
     .drawer h2{ margin:0; font-size:18px; color:#9dffd2 }
-    .drawer .close{ background:none; border:1px solid rgba(0,255,128,.35); color:#b9ffdf; padding:6px 10px; border-radius:10px }
+    .drawer .close{
+      background:none; border:1px solid rgba(0,255,128,.35); color:#b9ffdf; padding:6px 10px; border-radius:10px
+    }
     .drawer nav{ display:flex; flex-direction:column; margin-top:12px }
-    .drawer nav a{ padding:14px 10px; border-bottom:1px solid rgba(0,255,128,.15); color:#b9ffdf; text-decoration:none; font-weight:800; letter-spacing:.02em; font-size:16px; }
+    .drawer nav a{
+      padding:14px 10px; border-bottom:1px solid rgba(0,255,128,.15);
+      color:#b9ffdf; text-decoration:none; font-weight:800; letter-spacing:.02em;
+      font-size:16px;
+    }
     .drawer nav a:last-child{ border-bottom:0 }
     .drawer nav a:active{ background:rgba(0,255,128,.08) }
+
     .drawer-open .drawer{ right:0 }
     .drawer-open .drawer-overlay{ opacity:1; pointer-events:auto }
 
-    .spacer{ height:70px }
+    /* ===== Page content ===== */
+    .spacer{ height:70px } /* keeps header off content */
 
     main{
-      position:relative; z-index:1; max-width:1100px; margin:0 auto; padding:22px;
+      position:relative; z-index:1;
+      max-width:1100px; margin:0 auto; padding:22px;
       display:flex; flex-direction:column; justify-content:flex-start; min-height:calc(100vh - 70px);
     }
-    @media (min-width: 961px){ main{ justify-content:center; } }
+
+    /* Center the about card vertically on desktop */
+    @media (min-width: 961px){
+      main{ justify-content:center; }
+    }
 
     .card{
       background:rgba(0,0,0,0.6);
@@ -64,40 +98,86 @@
       margin-bottom:22px;
       text-align:center;
     }
-    h1{ font-size:clamp(24px, 4.5vw, 40px); margin:0 0 12px; color:var(--neon); text-shadow:0 0 18px var(--neon) }
-    p{ font-size:clamp(14px, 2.2vw, 16px); margin:0 0 12px; color:#c8fadc }
+    h1{
+      font-size:clamp(24px, 4.5vw, 40px);
+      margin:0 0 12px 0;
+      color:var(--neon); text-shadow:0 0 18px var(--neon);
+    }
+    p{
+      font-size:clamp(14px, 2.2vw, 16px);
+      margin:0 0 12px 0;
+      color:#c8fadc;
+    }
 
-    @media (max-width: 960px){ nav.site-nav{ display:none } .menu-btn{ display:inline-flex } }
+    /* ===== Bottom audio widget ===== */
+    .ebm-audio{
+      position:fixed; left:50%; bottom:16px; transform:translateX(-50%);
+      z-index:1100; display:flex; align-items:center; gap:10px;
+      background:rgba(0,0,0,.55); border:1px solid rgba(0,255,128,.35);
+      border-radius:12px; padding:8px 12px; font-family:'Orbitron',sans-serif;
+      box-shadow:0 8px 24px rgba(0,0,0,.35);
+    }
+    .ebm-audio button{
+      border:1px solid rgba(0,255,128,.45); background:transparent;
+      color:#b9ffdf; font-weight:700; padding:8px 12px; border-radius:10px; cursor:pointer;
+    }
+    .ebm-audio input[type="range"]{ width:140px; accent-color:#00ff99 }
+    .ebm-audio .status{ color:#76ffb2; font-size:12px; letter-spacing:.02em; opacity:.9 }
+    .ebm-audio .dot{ display:inline-block; width:6px; height:6px; border-radius:50%; background:#ff5c5c; margin-left:6px; box-shadow:0 0 8px #ff5c5c }
+    .ebm-audio.playing .dot{ background:#00ffa0; box-shadow:0 0 8px #00ffa0 }
+
+    /* ===== Responsive tweaks ===== */
+    @media (max-width: 960px){
+      nav.site-nav{ display:none }
+      .menu-btn{ display:inline-flex }
+      .ebm-audio input[type="range"]{ width:110px }
+    }
+    @media (max-width: 520px){
+      .ebm-audio{ left:12px; transform:none; right:12px; justify-content:space-between; width:auto }
+      .ebm-audio input[type="range"]{ width:90px }
+    }
   </style>
 </head>
 <body>
+
+  <!-- Background video -->
   <div class="video-bg" aria-hidden="true">
-    <video autoplay loop muted playsinline preload="auto"><source src="video/bg2.mp4" type="video/mp4" /></video>
+    <video autoplay loop muted playsinline preload="auto">
+      <source src="video/bg2.mp4" type="video/mp4" />
+    </video>
   </div>
 
+  <!-- Top bar -->
   <header>
-    <div class="brand"><img src="assets/favicon.png" alt="Ebmarah" /><span>Ebmarah</span></div>
+    <div class="brand">
+      <img src="assets/favicon.png" alt="Ebmarah" />
+      <span>Ebmarah</span>
+    </div>
     <nav class="site-nav" aria-label="Primary">
       <a href="index.html">Home</a>
       <a href="music.html">Music</a>
-      <a href="live.html">Live</a>
+      <a class="nav-link" href="live.html">Live</a>
       <a href="sample-packs.html">Sample Packs</a>
-      <a href="about.html" aria-current="page">About</a>
+      <a href="about.html">About</a>
       <a href="game.html">Game</a>
       <a href="contact.html">Contact</a>
     </nav>
     <button class="menu-btn" id="menuBtn">Menu</button>
   </header>
 
+  <!-- Offcanvas drawer -->
   <div class="drawer-overlay" id="drawerOverlay"></div>
   <aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-label="Site menu">
-    <header><h2>Menu</h2><button class="close" id="drawerClose">Close</button></header>
+    <header>
+      <h2>Menu</h2>
+      <button class="close" id="drawerClose">Close</button>
+    </header>
     <nav>
       <a href="index.html">Home</a>
       <a href="music.html">Music</a>
-      <a href="live.html">Live</a>
+      <a class="nav-link" href="live.html">Live</a>
       <a href="sample-packs.html">Sample Packs</a>
-      <a href="about.html" aria-current="page">About</a>
+      <a href="about.html">About</a>
       <a href="game.html">Game</a>
       <a href="contact.html">Contact</a>
     </nav>
@@ -114,17 +194,22 @@
     </div>
   </main>
 
-  <!-- Mascot (optional) -->
+  <!-- Audio -->
+  <audio id="bgm" src="music/ebmarahabout.mp3" preload="auto" loop playsinline></audio>
+
+  <!-- Mascot -->
   <script src="js/ebmarah-mascot.js"></script>
   <script>
     if (window.EbmarahMascot?.init) {
-      EbmarahMascot.init({ mode:'passive', position:'bottom-right',
+      EbmarahMascot.init({
+        mode:'passive',
+        position:'bottom-right',
         funnyLines:['welcome to the jungle 🌴','bananas > drama','bass life forever','gorilla certified 🔊']
       });
     }
   </script>
 
-  <!-- Drawer logic (from game.html) -->
+  <!-- Drawer + audio controls -->
   <script>
     (function(){
       const root=document.documentElement;
@@ -136,6 +221,26 @@
       const closeDrawer=()=>{root.classList.remove('drawer-open');btn.setAttribute('aria-expanded','false');btn.focus();}
       btn.addEventListener('click',openDrawer);closeBtn.addEventListener('click',closeDrawer);overlay.addEventListener('click',closeDrawer);
       window.addEventListener('keydown',e=>{if(e.key==='Escape')closeDrawer();});
+
+      const audio=document.getElementById('bgm');
+      const keyVol='ebm_about_vol', keyMute='ebm_about_mute';
+      const savedVol=parseFloat(localStorage.getItem(keyVol));
+      const savedMute=localStorage.getItem(keyMute)==='true';
+      audio.volume=Number.isFinite(savedVol)? savedVol:0.4; audio.muted=!!savedMute;
+
+      const wrap=document.createElement('div');wrap.className='ebm-audio';
+      wrap.innerHTML=`<button id="ebmPlay" disabled>Play</button><button id="ebmMute" disabled>Mute</button><input id="ebmVol" type="range" min="0" max="1" step="0.01" /><span class="status" id="ebmStatus">loading<span class="dot"></span></span>`;
+      document.body.appendChild(wrap);
+
+      const playBtn=wrap.querySelector('#ebmPlay'),muteBtn=wrap.querySelector('#ebmMute'),vol=wrap.querySelector('#ebmVol'),status=wrap.querySelector('#ebmStatus');
+      const setControls=on=>{playBtn.disabled=!on;muteBtn.disabled=!on;vol.disabled=!on;}
+      const updateUI=()=>{playBtn.textContent=audio.paused?'Play':'Pause';muteBtn.textContent=audio.muted?'Unmute':'Mute';status.textContent=audio.paused?'paused':'playing';wrap.classList.toggle('playing',!audio.paused);status.insertAdjacentHTML('beforeend','<span class="dot"></span>');}
+      async function startBGM(){setControls(true);try{await audio.play();}catch{status.textContent='tap to play';status.insertAdjacentHTML('beforeend','<span class="dot"></span>');}updateUI();}
+      audio.addEventListener('canplay',()=>{setControls(true);updateUI();},{once:true});startBGM();
+      playBtn.addEventListener('click',async()=>{if(audio.paused){await audio.play().catch(()=>{});}else{audio.pause();}updateUI();});
+      muteBtn.addEventListener('click',()=>{audio.muted=!audio.muted;localStorage.setItem(keyMute,String(audio.muted));updateUI();});
+      vol.value=audio.volume;vol.addEventListener('input',()=>{audio.volume=Number(vol.value);localStorage.setItem(keyVol,String(audio.volume));if(audio.volume>0&&audio.muted){audio.muted=false;localStorage.setItem(keyMute,'false');}updateUI();});
+      audio.addEventListener('play',updateUI);audio.addEventListener('pause',updateUI);audio.addEventListener('volumechange',updateUI);
     })();
   </script>
 </body>
