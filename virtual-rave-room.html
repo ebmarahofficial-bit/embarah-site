@@ -7,22 +7,17 @@
   <link rel="icon" type="image/png" href="assets/favicon.png" />
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&display=swap');
-    :root { --neon:#00ff99; --bg:#020d07; --ink:#e0ffe8; --glass:rgba(2,13,7,.75); }
+    :root { --neon:#00ff99; --bg:#020d07; --ink:#e0ffe8; --glass:rgba(2,13,7,.65); }
 
     *{box-sizing:border-box;}
     html,body{height:100%; margin:0;}
-    body{
-      font-family:'Orbitron',sans-serif;
-      color:var(--ink);
-      background:var(--bg);
-      overflow-x:hidden;
-    }
+    body{font-family:'Orbitron',sans-serif; color:var(--ink); background:var(--bg); overflow-x:hidden;}
 
-    /* ===== Video Background ===== */
+    /* Background video */
     .video-bg{position:fixed; inset:0; z-index:-3; overflow:hidden;}
     .video-bg video{width:100%; height:100%; object-fit:cover; object-position:center;}
 
-    /* ===== Header (from music.html) ===== */
+    /* Header */
     header{
       position:fixed; inset:0 0 auto 0;
       display:flex; justify-content:space-between; align-items:center;
@@ -34,9 +29,8 @@
       backdrop-filter: blur(10px);
     }
     .brand{display:flex; gap:10px; align-items:center; font-weight:800; letter-spacing:.02em;}
-    .brand img{height:40px; width:auto;}
+    .brand img{height:40px;}
     .brand span{font-size:clamp(16px,2.6vw,22px)}
-
     nav.site-nav{display:flex; align-items:center; gap:22px;}
     nav.site-nav a{color:#76ffb2; text-decoration:none; font-weight:700; font-size:clamp(13px,1.6vw,14px);}
     nav.site-nav a:hover{color:#00ffea;}
@@ -45,7 +39,7 @@
       color:#b9ffdf; font-size:16px; font-weight:700; padding:8px 12px; border-radius:10px
     }
 
-    /* ===== Drawer (mobile) ===== */
+    /* Drawer (mobile) */
     .drawer-overlay{position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:999; opacity:0; pointer-events:none; transition:.25s;}
     .drawer{
       position:fixed; top:0; right:-320px; width:min(80vw,320px); height:100%;
@@ -56,131 +50,94 @@
     }
     .drawer header{all:unset; display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;}
     .drawer h2{margin:0; font-size:18px; color:#9dffd2;}
-    .drawer .close{
-      background:none; border:1px solid rgba(0,255,128,.35); color:#b9ffdf; padding:6px 10px; border-radius:10px
-    }
+    .drawer .close{background:none; border:1px solid rgba(0,255,128,.35); color:#b9ffdf; padding:6px 10px; border-radius:10px}
     .drawer nav{display:flex; flex-direction:column; margin-top:12px}
     .drawer nav a{
       padding:14px 10px; border-bottom:1px solid rgba(0,255,128,.15);
       color:#b9ffdf; text-decoration:none; font-weight:800; letter-spacing:.02em; font-size:16px;
     }
-    .drawer nav a:last-child{border-bottom:0;}
-    .drawer nav a:active{background:rgba(0,255,128,.08)}
     .drawer-open .drawer{right:0;}
     .drawer-open .drawer-overlay{opacity:1; pointer-events:auto;}
 
-    /* ===== Page spacer ===== */
+    /* Page spacing */
     .spacer{height:70px;}
 
-    /* ===== Layout for Rave Room ===== */
-    .rave-wrap{
-      max-width:1400px; margin:0 auto; padding:18px; display:flex; flex-direction:column; gap:18px;
-    }
-    .panes{
-      display:flex; flex-direction:column; gap:18px;
-    }
-    .pane{
-      background:rgba(0,0,0,.30);
+    /* Centered chat-only layout */
+    .wrap{max-width:1000px; margin:0 auto; padding:18px;}
+    .chat-pane{
+      margin: 0 auto 100px; /* leave space for bottom mini-player */
+      background: rgba(0,0,0,.25); /* transparent glassy frame */
       border:1px solid rgba(0,255,128,.25);
+      border-radius:14px;
       box-shadow:0 10px 30px rgba(0,0,0,.35);
-      border-radius:14px; overflow:hidden;
       backdrop-filter:saturate(110%) blur(2px);
+      overflow:hidden;
     }
-    .pane h2{
-      margin:0; padding:12px 14px; font-size:16px; color:#9dffd2; border-bottom:1px solid rgba(0,255,128,.15);
+    .chat-pane h2{
+      margin:0; padding:12px 14px; font-size:16px; color:#9dffd2;
+      border-bottom:1px solid rgba(0,255,128,.15);
       background:rgba(0,255,128,.06);
     }
-    .pane-body{ padding:0; }
+    .chat-body{padding:0;}
+    .chat-body iframe{
+      display:block; width:100%; height:65vh; border:0; background:transparent;
+    }
 
-    /* Music browser (visual SC player you can scroll) */
-    .sc-visual iframe{ width:100%; height:520px; border:0; display:block; }
-
-    /* tlk.io chat */
-    .chat iframe{ width:100%; height:600px; border:0; display:block; background:#000; }
-
-    /* ===== Hidden SoundCloud driver (mini controls control this) ===== */
+    /* Hidden SC driver iframe (no visual UI) */
     .sc-driver{
       position:absolute; width:1px; height:1px; opacity:0; pointer-events:none; left:-9999px; top:auto; border:0;
     }
 
-    /* ===== Minimal bottom-center player (from music.html) ===== */
+    /* Mini player */
     .mini-player{
       position:fixed; left:50%; bottom:16px; transform:translateX(-50%);
-      z-index:1100;
-      display:flex; align-items:center; gap:10px;
-      padding:8px 12px;
-      border:1px solid rgba(0,255,128,.35);
-      border-radius:12px;
-      background:rgba(0,0,0,.30);
-      box-shadow:0 8px 24px rgba(0,0,0,.35);
+      z-index:1100; display:flex; align-items:center; gap:10px;
+      padding:8px 12px; border:1px solid rgba(0,255,128,.35); border-radius:12px;
+      background:rgba(0,0,0,.30); box-shadow:0 8px 24px rgba(0,0,0,.35);
       backdrop-filter:saturate(110%) blur(2px);
     }
     .mini-player button{
-      border:1px solid rgba(0,255,128,.45);
-      background:transparent;
-      color:#b9ffdf;
-      font-weight:800;
-      padding:6px 10px;
-      border-radius:10px;
-      cursor:pointer;
+      border:1px solid rgba(0,255,128,.45); background:transparent; color:#b9ffdf;
+      font-weight:800; padding:6px 10px; border-radius:10px; cursor:pointer;
     }
     .mini-player button:hover{ color:#00ffea; border-color:#00ffea; }
     .mini-player .title{
-      max-width:min(48vw,520px);
-      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+      max-width:min(48vw,520px); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
       font-size:12px; letter-spacing:.02em; color:#76ffb2;
     }
-    .mini-player .dot{
-      width:6px; height:6px; border-radius:50%; margin-left:2px;
-      background:#ff5c5c; box-shadow:0 0 8px #ff5c5c; display:inline-block;
-    }
-    .mini-player.playing .dot{
-      background:#00ffa0; box-shadow:0 0 8px #00ffa0;
-    }
-    .volume { display:flex; align-items:center; gap:8px; margin-left:6px; }
+    .mini-player .dot{ width:6px; height:6px; border-radius:50%; margin-left:2px;
+      background:#ff5c5c; box-shadow:0 0 8px #ff5c5c; display:inline-block; }
+    .mini-player.playing .dot{ background:#00ffa0; box-shadow:0 0 8px #00ffa0; }
+    .volume{ display:flex; align-items:center; gap:8px; margin-left:6px; }
     .volume input[type="range"]{
-      -webkit-appearance:none; appearance:none;
-      width:110px; height:8px; background:rgba(0,255,128,.18);
-      border:1px solid rgba(0,255,128,.35); border-radius:999px; outline:none;
+      -webkit-appearance:none; appearance:none; width:110px; height:8px;
+      background:rgba(0,255,128,.18); border:1px solid rgba(0,255,128,.35); border-radius:999px; outline:none;
     }
     .volume input[type="range"]::-webkit-slider-thumb{
-      -webkit-appearance:none; appearance:none;
-      width:16px; height:16px; border-radius:50%;
-      background:#00ff99; border:1px solid #0b3; cursor:pointer;
-      box-shadow:0 0 12px rgba(0,255,153,.6);
+      -webkit-appearance:none; width:16px; height:16px; border-radius:50%;
+      background:#00ff99; border:1px solid #0b3; cursor:pointer; box-shadow:0 0 12px rgba(0,255,153,.6);
     }
     .volume input[type="range"]::-moz-range-thumb{
       width:16px; height:16px; border-radius:50%;
-      background:#00ff99; border:1px solid #0b3; cursor:pointer;
-      box-shadow:0 0 12px rgba(0,255,153,.6);
+      background:#00ff99; border:1px solid #0b3; cursor:pointer; box-shadow:0 0 12px rgba(0,255,153,.6);
     }
     .vol-label{font-size:11px; color:#9dffd2; opacity:.9}
 
-    /* ===== Responsive ===== */
+    /* Responsive */
     @media (max-width: 960px){
       nav.site-nav{ display:none; }
       .menu-btn{ display:inline-flex; }
       .mini-player .title{ max-width:50vw; }
       .volume input[type="range"]{ width:90px; }
-      .chat iframe{ height:520px; }
-    }
-    @media (min-width: 1100px){
-      .panes{ flex-direction:row; }
-      .pane.music { flex: 1.2; }
-      .pane.chat  { flex: 1;  }
-      .sc-visual iframe{ height: calc(100vh - 170px); }
-      .chat iframe{ height: calc(100vh - 170px); }
+      .chat-body iframe{ height:60vh; }
     }
     @media (max-width: 520px){
-      .mini-player{
-        left:12px; right:12px; transform:none; justify-content:space-between;
-        padding:10px 12px; gap:8px;
-      }
+      .mini-player{left:12px; right:12px; transform:none; justify-content:space-between; padding:10px 12px; gap:8px;}
       .mini-player .title{ max-width:44vw; }
       .volume input[type="range"]{ width:78px; }
       header{ padding:10px 12px; }
       .brand img{ height:34px; }
-      .btn-text{ display:none; } /* icon-only labels on tiny screens */
+      .btn-text{ display:none; }
     }
     @supports (padding: max(0px)){
       .mini-player{ bottom: max(16px, env(safe-area-inset-bottom)); }
@@ -188,7 +145,7 @@
   </style>
 </head>
 <body>
-  <!-- Background video -->
+  <!-- Background -->
   <div class="video-bg" aria-hidden="true">
     <video autoplay loop muted playsinline preload="auto">
       <source src="video/visual.mp4" type="video/mp4" />
@@ -198,27 +155,22 @@
   <!-- Header -->
   <header>
     <div class="brand">
-      <img src="assets/favicon.png" alt="Ebmarah">
-      <span>Ebmarah</span>
+      <img src="assets/favicon.png" alt="Ebmarah"><span>Ebmarah</span>
     </div>
-
-    <!-- Desktop nav -->
     <nav class="site-nav" aria-label="Primary">
       <a href="index.html">Home</a>
       <a href="music.html">Music</a>
-      <a class="nav-link" href="live.html">Live</a>
+      <a href="live.html">Live</a>
       <a href="sample-packs.html">Sample Packs</a>
       <a href="about.html">About</a>
       <a href="virtual-rave-room.html">Virtual Rave Room</a>
       <a href="game.html">Game</a>
       <a href="contact.html">Contact</a>
     </nav>
-
-    <!-- Mobile trigger -->
     <button class="menu-btn" id="menuBtn" aria-haspopup="true" aria-expanded="false" aria-controls="drawer">Menu</button>
   </header>
 
-  <!-- Drawer menu -->
+  <!-- Drawer -->
   <div class="drawer-overlay" id="drawerOverlay"></div>
   <aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-label="Site menu">
     <header>
@@ -228,7 +180,7 @@
     <nav aria-label="Mobile">
       <a href="index.html">Home</a>
       <a href="music.html">Music</a>
-      <a class="nav-link" href="live.html">Live</a>
+      <a href="live.html">Live</a>
       <a href="sample-packs.html">Sample Packs</a>
       <a href="about.html">About</a>
       <a href="virtual-rave-room.html">Virtual Rave Room</a>
@@ -239,76 +191,53 @@
 
   <div class="spacer"></div>
 
-  <main class="rave-wrap">
-    <div class="panes">
-      <!-- MUSIC PANE -->
-      <section class="pane music">
-        <h2>🎧 Now Playing / Browse</h2>
-        <div class="pane-body sc-visual">
-          <!-- Visual SoundCloud browser (users can pick tracks). This is separate from the hidden driver. -->
-          <iframe
-            scrolling="no"
-            frameborder="no"
-            allow="autoplay"
-            src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/ebmarah&color=%2300ff99&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true&visual=true">
-          </iframe>
-        </div>
-      </section>
-
-      <!-- CHAT PANE -->
-      <section class="pane chat">
-        <h2>💬 Live Chat</h2>
-        <div class="pane-body">
-          <!-- tlk.io room -->
-          <iframe id="tlkFrame" title="Live chat"></iframe>
-        </div>
-      </section>
-    </div>
+  <!-- Centered tlk.io chat -->
+  <main class="wrap">
+    <section class="chat-pane">
+      <h2>💬 Live Chat</h2>
+      <div class="chat-body">
+        <!-- tlk.io room -->
+        <iframe
+          id="tlkFrame"
+          title="Live chat"
+          src="https://tlk.io/ebmarah-rave">
+        </iframe>
+      </div>
+    </section>
   </main>
 
-  <!-- Hidden SoundCloud driver iframe (no visual UI) -->
+  <!-- Hidden SoundCloud driver (no visible embed) -->
   <iframe
     class="sc-driver"
     allow="autoplay"
     src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/ebmarah&visual=false&show_artwork=false&show_user=false&show_comments=false&sharing=false&buying=false&download=false&liking=false&auto_play=false&hide_related=true&single_active=true&color=%2300ff99&theme_color=transparent"
-    title="Ebmarah on SoundCloud (driver)"
-  ></iframe>
+    title="Ebmarah SoundCloud Driver">
+  </iframe>
 
-  <!-- Minimal bottom-center controls -->
+  <!-- Bottom mini-player -->
   <div class="mini-player" id="miniPlayer" aria-live="polite">
     <button id="scPrev" aria-label="Previous track">⏮ <span class="btn-text">Prev</span></button>
     <button id="scToggle" aria-label="Play/Pause">▶ <span class="btn-text">Play</span></button>
     <button id="scNext" aria-label="Next track">⏭ <span class="btn-text">Next</span></button>
-
-    <span class="title" id="scTitle">Loading…</span>
-    <span class="dot" aria-hidden="true"></span>
-
+    <span class="title" id="scTitle">Loading…</span><span class="dot" aria-hidden="true"></span>
     <div class="volume" aria-label="Volume">
       <span class="vol-label">VOL</span>
-      <input id="scVol" type="range" min="0" max="100" step="1" value="70" aria-valuemin="0" aria-valuemax="100" aria-valuenow="70" />
+      <input id="scVol" type="range" min="0" max="100" step="1" value="70"
+             aria-valuemin="0" aria-valuemax="100" aria-valuenow="70" />
     </div>
   </div>
 
-  <!-- Mascot (optional; comment out if not needed here) -->
+  <!-- OPTIONAL Mascot -->
   <script src="js/ebmarah-mascot.js"></script>
   <script>
-    EbmarahMascot.init({
-      mode:'passive',
-      position:'bottom-right',
-      funnyLines:[
-        'BASS INCOMING',
-        'sub-bass handshake!',
-        'gorilla certified 🔊',
-        'who threw this banana?',
-        'i smell a DROP...'
-      ]
-    });
+    EbmarahMascot?.init?.({ mode:'passive', position:'bottom-right',
+      funnyLines:['BASS INCOMING','sub-bass handshake!','gorilla certified 🔊','who threw this banana?','i smell a DROP...'] });
   </script>
 
   <!-- SoundCloud API -->
   <script src="https://w.soundcloud.com/player/api.js"></script>
 
-  <!-- Player wiring (from music.html) -->
+  <!-- Mini-player wiring -->
   <script>
     (function(){
       const frame = document.querySelector('.sc-driver');
@@ -321,29 +250,23 @@
       const bar      = document.getElementById('miniPlayer');
       const volInput = document.getElementById('scVol');
 
-      let ready = false;
-      let isPlaying = false;
-      let hasMultiple = true;
+      let ready = false, isPlaying = false, hasMultiple = true;
 
       function updateTitle(){
         widget.getCurrentSound(function(s){
           titleEl.textContent = (s && s.title) ? s.title : 'Ready';
         });
       }
-
       function updateState(playing){
         isPlaying = playing;
         btnPlay.innerHTML = playing ? '⏸ <span class="btn-text">Pause</span>' : '▶ <span class="btn-text">Play</span>';
         bar.classList.toggle('playing', playing);
       }
-
       function setButtonsEnabled(enabled){
         [btnPrev, btnPlay, btnNext, volInput].forEach(el => el.disabled = !enabled);
       }
-
       function setSkipEnabled(enabled){
-        btnPrev.disabled = !enabled;
-        btnNext.disabled = !enabled;
+        btnPrev.disabled = !enabled; btnNext.disabled = !enabled;
       }
 
       widget.bind(SC.Widget.Events.READY, function(){
@@ -360,9 +283,7 @@
       widget.bind(SC.Widget.Events.PLAY,  function(){ updateState(true);  updateTitle(); });
       widget.bind(SC.Widget.Events.PAUSE, function(){ updateState(false); });
       widget.bind(SC.Widget.Events.FINISH,function(){ updateState(false); });
-      widget.bind(SC.Widget.Events.PLAY_PROGRESS, function(e){
-        if(e.currentPosition < 1200){ updateTitle(); }
-      });
+      widget.bind(SC.Widget.Events.PLAY_PROGRESS, function(e){ if(e.currentPosition < 1200){ updateTitle(); } });
 
       btnPlay.addEventListener('click', function(){ if(!ready) return; isPlaying ? widget.pause() : widget.play(); });
       btnPrev.addEventListener('click', function(){ if(!ready || !hasMultiple) return; widget.prev(); });
@@ -394,25 +315,6 @@
       closeBtn.addEventListener('click',closeDrawer);
       overlay.addEventListener('click',closeDrawer);
       window.addEventListener('keydown',e=>{ if(e.key==='Escape') closeDrawer(); });
-    })();
-  </script>
-
-  <!-- tlk.io room boot -->
-  <script>
-    (function(){
-      // Change this to rename your room
-      const TLK_ROOM = 'ebmarah-rave';
-      const frame = document.getElementById('tlkFrame');
-      frame.src = 'https://tlk.io/' + encodeURIComponent(TLK_ROOM);
-
-      // Optional: attempt to set a default nickname from localStorage
-      try{
-        const nick = localStorage.getItem('ebm_nick');
-        if(!nick){
-          const fallback = 'guest' + Math.floor(1000 + Math.random()*9000);
-          localStorage.setItem('ebm_nick', fallback);
-        }
-      }catch(e){}
     })();
   </script>
 </body>
