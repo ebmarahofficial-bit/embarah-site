@@ -16,14 +16,11 @@
       background:#020d07; overflow-x:hidden;
     }
 
-    /* ===== Video Background (fills any screen) ===== */
+    /* ===== Video Background ===== */
     .video-bg{ position:fixed; inset:0; z-index:-3; overflow:hidden }
-    .video-bg video{
-      width:100%; height:100%; object-fit:cover; object-position:center;
-      animation: none;
-    }
+    .video-bg video{ width:100%; height:100%; object-fit:cover; object-position:center }
 
-    /* ===== Header ===== */
+    /* ===== Header (copied from game.html) ===== */
     header{
       position:fixed; inset:0 0 auto 0;
       display:flex; align-items:center; justify-content:space-between;
@@ -35,19 +32,13 @@
     .brand{display:flex; align-items:center; gap:10px; font-weight:800; letter-spacing:.02em}
     .brand img{height:40px; width:auto}
     .brand span{font-size:clamp(16px,2.6vw,22px)}
-
     nav.site-nav{display:flex; align-items:center; gap:22px}
-    nav.site-nav a{
-      color:#76ffb2; text-decoration:none; font-weight:700; font-size:clamp(13px,1.6vw,14px)
-    }
+    nav.site-nav a{ color:#76ffb2; text-decoration:none; font-weight:700; font-size:clamp(13px,1.6vw,14px) }
     nav.site-nav a:hover{ color:#00ffea }
-
     .menu-btn{
       display:none; background:none; border:1px solid rgba(0,255,128,.35);
       color:#b9ffdf; font-size:16px; font-weight:700; padding:8px 12px; border-radius:10px
     }
-
-    /* ===== Offcanvas (Mobile) ===== */
     .drawer-overlay{
       position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:999; opacity:0; pointer-events:none; transition:.25s;
     }
@@ -70,7 +61,6 @@
     }
     .drawer nav a:last-child{ border-bottom:0 }
     .drawer nav a:active{ background:rgba(0,255,128,.08) }
-
     .drawer-open .drawer{ right:0 }
     .drawer-open .drawer-overlay{ opacity:1; pointer-events:auto }
 
@@ -78,14 +68,10 @@
     .spacer{ height:70px }
     .hero{
       text-align:center;
-      /* moved up (reduced top padding) */
-      padding: clamp(36px, 8vw, 80px) 16px 36px;
+      padding: clamp(36px, 8vw, 80px) 16px 36px; /* raised hero */
       background:linear-gradient(180deg, rgba(0,255,128,.05), transparent);
     }
-    .hero h1{
-      margin:0 0 8px; text-shadow:0 0 20px var(--neon);
-      font-size:clamp(28px, 6.5vw, 64px);
-    }
+    .hero h1{ margin:0 0 8px; text-shadow:0 0 20px var(--neon); font-size:clamp(28px, 6.5vw, 64px) }
     .hero p{ margin:0; opacity:.9; font-size:clamp(12px, 2.4vw, 16px) }
 
     /* ===== Audio widget ===== */
@@ -105,6 +91,7 @@
     .ebm-audio .dot{ display:inline-block; width:6px; height:6px; border-radius:50%; background:#ff5c5c; margin-left:6px; box-shadow:0 0 8px #ff5c5c }
     .ebm-audio.playing .dot{ background:#00ffa0; box-shadow:0 0 8px #00ffa0 }
 
+    /* Intro overlay */
     #intro{ position:fixed; inset:0; z-index:9999; display:flex; justify-content:center; align-items:center; background:#000; overflow:hidden }
     #intro video{ width:100%; height:100%; object-fit:cover; }
     #tapToPlay{
@@ -126,26 +113,29 @@
 </head>
 <body>
 
+  <!-- BG video -->
   <div class="video-bg" aria-hidden="true">
     <video id="bgVideo" autoplay loop muted playsinline preload="auto">
       <source src="video/bg.mp4" type="video/mp4" />
     </video>
   </div>
 
+  <!-- Intro -->
   <div id="intro" aria-hidden="true">
     <video id="introVideo" src="video/intro.mp4" autoplay playsinline preload="auto"></video>
     <div id="tapToPlay">Tap to start intro</div>
   </div>
 
+  <!-- Unified header/nav -->
   <header>
     <div class="brand">
       <img src="assets/favicon.png" alt="Ebmarah" />
       <span>Ebmarah</span>
     </div>
     <nav class="site-nav" aria-label="Primary">
-      <a href="index.html">Home</a>
+      <a href="index.html" aria-current="page">Home</a>
       <a href="music.html">Music</a>
-      <a class="nav-link" href="live.html">Live</a>
+      <a href="live.html">Live</a>
       <a href="sample-packs.html">Sample Packs</a>
       <a href="about.html">About</a>
       <a href="game.html">Game</a>
@@ -154,16 +144,14 @@
     <button class="menu-btn" id="menuBtn" aria-haspopup="true" aria-expanded="false" aria-controls="drawer">Menu</button>
   </header>
 
+  <!-- Drawer -->
   <div class="drawer-overlay" id="drawerOverlay"></div>
   <aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-label="Site menu">
-    <header>
-      <h2>Menu</h2>
-      <button class="close" id="drawerClose" aria-label="Close menu">Close</button>
-    </header>
+    <header><h2>Menu</h2><button class="close" id="drawerClose">Close</button></header>
     <nav aria-label="Mobile">
-      <a href="index.html">Home</a>
+      <a href="index.html" aria-current="page">Home</a>
       <a href="music.html">Music</a>
-      <a class="nav-link" href="live.html">Live</a>
+      <a href="live.html">Live</a>
       <a href="sample-packs.html">Sample Packs</a>
       <a href="about.html">About</a>
       <a href="game.html">Game</a>
@@ -173,39 +161,38 @@
 
   <div class="spacer"></div>
 
-  <section class="hero" id="page" class="page--hidden">
+  <section class="hero" id="page">
     <h1>Welcome to the Digital Gorilla Forest</h1>
     <p>Stream my latest dubstep tracks & explore the digital jungle.</p>
   </section>
 
+  <!-- Mascot -->
   <script src="js/ebmarah-mascot.js"></script>
   <script>
     window.addEventListener('intro-finished', () => {
       if (window.EbmarahMascot?.init) {
-        EbmarahMascot.init({
-          mode:'passive',
-          position:'bottom-left',
+        EbmarahMascot.init({ mode:'passive', position:'bottom-left',
           funnyLines:['BASS INCOMING','sub-bass handshake!','gorilla certified 🔊','who threw this banana?','i smell a DROP...']
         });
       }
     }, { once:true });
   </script>
 
+  <!-- Drawer + audio + intro logic -->
   <audio id="bgm" src="music/Enemy.mp3" preload="auto" loop playsinline></audio>
   <script>
     (function(){
+      // Intro handling
       const intro = document.getElementById('intro');
       const introVid = document.getElementById('introVideo');
       const tap = document.getElementById('tapToPlay');
-      function endIntro(){
-        window.dispatchEvent(new Event('intro-finished'));
-        intro.style.display='none';
-      }
+      function endIntro(){ window.dispatchEvent(new Event('intro-finished')); intro.style.display='none'; }
       introVid.play().catch(()=>{ tap.style.display='flex'; });
       tap.addEventListener('click',()=>{ tap.style.display='none'; introVid.play(); });
       introVid.addEventListener('ended', endIntro, { once:true });
       intro.addEventListener('click', e => { if(e.target === intro) endIntro(); });
 
+      // Drawer (exactly like game.html)
       const root = document.documentElement;
       const btn = document.getElementById('menuBtn');
       const drawer = document.getElementById('drawer');
@@ -218,16 +205,16 @@
       overlay.addEventListener('click', closeDrawer);
       window.addEventListener('keydown', e => { if(e.key === 'Escape') closeDrawer(); });
 
+      // Audio widget
       const audio = document.getElementById('bgm');
       const keyVol='ebm_enemy_vol', keyMute='ebm_enemy_mute';
       const savedVol = parseFloat(localStorage.getItem(keyVol));
       const savedMute = localStorage.getItem(keyMute)==='true';
       audio.volume = Number.isFinite(savedVol)? savedVol : 0.4;
       audio.muted = !!savedMute;
+
       const wrap=document.createElement('div'); wrap.className='ebm-audio';
-      wrap.innerHTML = `
-        <button id="ebmPlay" disabled>Play</button>
-        <button id="ebmMute" disabled>Mute</button>
+      wrap.innerHTML = `<button id="ebmPlay" disabled>Play</button><button id="ebmMute" disabled>Mute</button>
         <input id="ebmVol" type="range" min="0" max="1" step="0.01" />
         <span class="status" id="ebmStatus">waiting for intro<span class="dot"></span></span>`;
       document.body.appendChild(wrap);
@@ -235,6 +222,7 @@
       const muteBtn=wrap.querySelector('#ebmMute');
       const vol=wrap.querySelector('#ebmVol');
       const status=wrap.querySelector('#ebmStatus');
+
       const setControls = on => { playBtn.disabled=!on; muteBtn.disabled=!on; vol.disabled=!on; };
       const updateUI = () => {
         playBtn.textContent = audio.paused ? 'Play' : 'Pause';
@@ -249,13 +237,12 @@
         updateUI();
       }
       window.addEventListener('intro-finished', startBGM, { once:true });
+
       playBtn.addEventListener('click', async()=>{ if(audio.paused){ await audio.play().catch(()=>{}); } else { audio.pause(); } updateUI(); });
       muteBtn.addEventListener('click', ()=>{ audio.muted = !audio.muted; localStorage.setItem(keyMute, String(audio.muted)); updateUI(); });
       vol.value = audio.volume;
       vol.addEventListener('input', ()=>{ audio.volume = Number(vol.value); localStorage.setItem(keyVol, String(audio.volume)); if(audio.volume>0 && audio.muted){ audio.muted=false; localStorage.setItem(keyMute,'false'); } updateUI(); });
-      audio.addEventListener('play',updateUI);
-      audio.addEventListener('pause',updateUI);
-      audio.addEventListener('volumechange',updateUI);
+      audio.addEventListener('play',updateUI); audio.addEventListener('pause',updateUI); audio.addEventListener('volumechange',updateUI);
     })();
   </script>
 </body>
