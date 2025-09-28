@@ -14,15 +14,21 @@
     nav a{color:#76ffb2;text-decoration:none;margin-right:18px}
     h1{margin:16px 18px;text-shadow:0 0 14px var(--neon)}
     .wrap{width:min(1100px,94vw);margin:0 auto 40px}
-    .controls{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0}
-    input,select,button{padding:9px;border-radius:8px;border:1px solid rgba(0,255,128,.35);background:rgba(0,0,0,.4);color:var(--ink)}
+    .controls{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0;align-items:center}
+    input,select,button,label{padding:9px;border-radius:8px;border:1px solid rgba(0,255,128,.35);background:rgba(0,0,0,.4);color:var(--ink)}
+    input[type="checkbox"]{width:auto;accent-color:#00ff99}
+    label.cb{border:none;background:transparent;padding:0;display:flex;align-items:center;gap:8px}
     button{cursor:pointer;font-weight:700}
     .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
     .card{background:rgba(0,0,0,.45);border:1px solid rgba(0,255,128,.25);border-radius:14px;padding:10px}
-    .meta{font-size:12px;opacity:.85;margin-top:6px;word-break:break-word}
+    .meta{font-size:12px;opacity:.9;margin-top:6px;word-break:break-word}
     .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
     .tiny{font-size:12px;opacity:.85}
     .empty{padding:16px;text-align:center;opacity:.8}
+    .group{grid-column:1 / -1;border:1px dashed rgba(0,255,128,.3);border-radius:16px;padding:8px 10px}
+    .group h3{margin:4px 6px 10px;font-size:16px;color:#76ffb2}
+    .group .grid{margin:0}
+    .note{margin-top:8px;opacity:.75}
   </style>
 </head>
 <body>
@@ -39,13 +45,21 @@
     <div class="controls">
       <input id="q" placeholder="Search title or credit">
       <input id="day" type="date">
+      <input id="sub" placeholder="Subfolder (e.g., Ebmarah)">
+      <label class="cb"><input id="autoDiscover" type="checkbox"> Auto-discover subfolders</label>
       <button id="btnSearch">Search</button>
       <button id="btnClear">Clear</button>
     </div>
+
     <div id="list" class="grid"></div>
+
     <div style="display:grid;place-items:center;margin-top:14px">
       <button id="more">Load more</button>
+      <div class="note tiny" id="pagingNote" style="display:none">
+        Note: Auto-discover shows grouped results and disables paging.
+      </div>
     </div>
+
     <p class="tiny" style="margin-top:10px">See something that breaks the rules? Click “Report” on the card to email the link for removal review.</p>
   </div>
 
@@ -61,32 +75,31 @@
     const listEl = document.getElementById('list');
     const qEl = document.getElementById('q');
     const dayEl = document.getElementById('day');
+    const subEl = document.getElementById('sub');
+    const autoEl = document.getElementById('autoDiscover');
     const moreBtn = document.getElementById('more');
+    const pagingNote = document.getElementById('pagingNote');
     const btnSearch = document.getElementById('btnSearch');
     const btnClear = document.getElementById('btnClear');
 
     const BUCKET='fan-vocals';
-
-    // If you stored files at the root, set this to ''.
-    // If you used a 'public/' folder (recommended), leave as 'public/'.
+    // If your objects are at bucket root, set '' instead of 'public/'.
     const prefixBase='public/';
 
     let offset=0, currentPrefix=prefixBase, lastBatchCount=0;
 
-    // Fix #1: build a correct public URL (do NOT encode slashes)
+    // Build correct public URL (preserve slashes)
     function toPublicUrl(path){
-      // encode each segment, preserve slashes
       const safePath = path.split('/').map(encodeURIComponent).join('/');
       return `${window.SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${safePath}`;
     }
 
-    // Helper for list calls
+    // Basic list (one page)
     async function list(prefix=prefixBase, limit=24, off=0){
       const res = await fetch(`${window.SUPABASE_URL}/storage/v1/object/list/${BUCKET}`, {
         method:'POST',
         headers:{
           'Authorization': `Bearer ${window.SUPABASE_ANON_KEY}`,
-          // Fix #2: include apikey header
           'apikey': window.SUPABASE_ANON_KEY,
           'Content-Type': 'application/json'
         },
@@ -104,9 +117,9 @@
       return res.json();
     }
 
+    // Read sibling JSON metadata if present
     async function fetchMeta(audioPath){
-      // expect a sibling JSON: same name, .json
-      const jsonPath = audioPath.replace(/\.webm$/i, '.json');
+      const jsonPath = audioPath.replace(/\.(webm|mp3|m4a|wav)$/i, '.json');
       const url = toPublicUrl(jsonPath);
       try{
         const r = await fetch(url, {cache:'no-store'});
@@ -143,44 +156,8 @@
       `;
     }
 
-    async function load(reset=false){
-      if (reset){
-        offset=0;
-        lastBatchCount=0;
-        listEl.innerHTML='';
-      }
-
-      // Date -> folder like public/YYYY/MM/DD/
-      const dateFilter = dayEl.value ? new Date(dayEl.value+'T00:00:00Z') : null;
-      currentPrefix = prefixBase;
-      if (dateFilter){
-        const y=dateFilter.getUTCFullYear();
-        const m=String(dateFilter.getUTCMonth()+1).padStart(2,'0');
-        const d=String(dateFilter.getUTCDate()).padStart(2,'0');
-        currentPrefix = `${prefixBase}${y}/${m}/${d}/`;
-      }
-
-      const items = await list(currentPrefix, 24, offset);
-      lastBatchCount = items.length;
-
-      const audioItems = items.filter(it => /\.webm$/i.test(it.name));
-      if (reset && audioItems.length === 0){
-        listEl.insertAdjacentHTML('beforeend', `<div class="empty card">No recordings found for this filter.</div>`);
-      }
-
-      for (const it of audioItems){
-        const audioPath = `${currentPrefix}${it.name}`;
-        const audioUrl = toPublicUrl(audioPath);
-        const meta = await fetchMeta(audioPath);
-        const namePretty = it.name.replace(/_/g,' ');
-        listEl.insertAdjacentHTML('beforeend', card({audioUrl, name:namePretty, meta}));
-      }
-
-      offset += items.length;
-      moreBtn.disabled = lastBatchCount === 0;
-
-      // (re)wire copy buttons
-      listEl.querySelectorAll('.copy-btn').forEach(btn=>{
+    function wireCopyButtons(scope=document){
+      scope.querySelectorAll('.copy-btn').forEach(btn=>{
         btn.onclick = async () => {
           try { await navigator.clipboard.writeText(btn.dataset.url);
                 btn.textContent='Copied!'; setTimeout(()=>btn.textContent='Copy URL',1200); }
@@ -189,22 +166,144 @@
       });
     }
 
+    // Render a group with its cards
+    function renderGroup(title, cardsHtml){
+      return `
+        <div class="group">
+          <h3>${esc(title)}</h3>
+          <div class="grid">
+            ${cardsHtml}
+          </div>
+        </div>
+      `;
+    }
+
+    // MAIN LOAD
+    async function load(reset=false){
+      if (reset){
+        offset=0; lastBatchCount=0; listEl.innerHTML='';
+      }
+
+      // Build prefix: date + optional subfolder (unless auto-discover is on)
+      const dateFilter = dayEl.value ? new Date(dayEl.value + 'T00:00:00Z') : null;
+      const sub = (subEl.value || '').trim().replace(/^\/+|\/+$/g, ''); // sanitize
+      const auto = !!autoEl.checked;
+
+      currentPrefix = prefixBase; // 'public/' by default
+      if (dateFilter){
+        const y=dateFilter.getUTCFullYear();
+        const m=String(dateFilter.getUTCMonth()+1).padStart(2,'0');
+        const d=String(dateFilter.getUTCDate()).padStart(2,'0');
+        currentPrefix = `${prefixBase}${y}/${m}/${d}/`;
+      }
+      if (!auto && sub) currentPrefix = `${currentPrefix}${sub}/`;
+
+      // Auto mode disables paging (we load all in one go)
+      moreBtn.style.display = auto ? 'none' : '';
+      pagingNote.style.display = auto ? '' : 'none';
+
+      if (auto){
+        // Pull a generous number to cover a day’s worth; paginate until done or cap
+        const pageSize = 200;
+        let off = 0;
+        let all = [];
+        while (true){
+          const batch = await list(currentPrefix, pageSize, off);
+          all.push(...batch);
+          if (batch.length < pageSize) break;
+          off += batch.length;
+          if (all.length >= 2000) break; // safety cap
+        }
+
+        // Group by first path segment (subfolder). Files directly in the date folder go to "(root)"
+        const audioRe = /\.(webm|mp3|m4a|wav)$/i;
+        const groups = new Map(); // name -> [{name, path}]
+        const direct = [];
+
+        for (const it of all){
+          if (!audioRe.test(it.name)) continue;
+          if (it.name.includes('/')){
+            const [first, ...rest] = it.name.split('/');
+            const arr = groups.get(first) || [];
+            arr.push({ file: rest.join('/'), full: `${currentPrefix}${it.name}` });
+            groups.set(first, arr);
+          } else {
+            direct.push({ file: it.name, full: `${currentPrefix}${it.name}` });
+          }
+        }
+
+        if (groups.size === 0 && direct.length === 0){
+          listEl.insertAdjacentHTML('beforeend', `<div class="empty card">No recordings found under <code>${esc(currentPrefix)}</code>.</div>`);
+        } else {
+          // Render direct files first (if any)
+          if (direct.length){
+            let cards = '';
+            for (const it of direct){
+              const audioUrl = toPublicUrl(it.full);
+              const meta = await fetchMeta(it.full);
+              const namePretty = it.file.replace(/_/g,' ');
+              cards += card({audioUrl, name:namePretty, meta});
+            }
+            listEl.insertAdjacentHTML('beforeend', renderGroup('(root)', cards));
+          }
+          // Then render each subfolder group (alphabetical)
+          const names = Array.from(groups.keys()).sort((a,b)=>a.localeCompare(b));
+          for (const gName of names){
+            const files = groups.get(gName);
+            let cards = '';
+            for (const it of files){
+              const audioUrl = toPublicUrl(it.full);
+              const meta = await fetchMeta(it.full);
+              const namePretty = it.file.split('/').pop().replace(/_/g,' ');
+              cards += card({audioUrl, name:namePretty, meta});
+            }
+            listEl.insertAdjacentHTML('beforeend', renderGroup(gName, cards));
+          }
+          wireCopyButtons(listEl);
+        }
+        return;
+      }
+
+      // Non-auto (flat) mode with paging
+      const items = await list(currentPrefix, 24, offset);
+      lastBatchCount = items.length;
+
+      const audioItems = items.filter(it => /\.(webm|mp3|m4a|wav)$/i.test(it.name));
+      if (reset && audioItems.length === 0){
+        listEl.insertAdjacentHTML('beforeend', `<div class="empty card">No recordings found for this filter.</div>`);
+      }
+
+      for (const it of audioItems){
+        const audioPath = `${currentPrefix}${it.name}`;
+        const audioUrl = toPublicUrl(audioPath);
+        const meta = await fetchMeta(audioPath);
+        const namePretty = it.name.split('/').pop().replace(/_/g,' ');
+        listEl.insertAdjacentHTML('beforeend', card({audioUrl, name:namePretty, meta}));
+      }
+
+      offset += items.length;
+      moreBtn.disabled = lastBatchCount === 0;
+      wireCopyButtons(listEl);
+    }
+
+    // Search filter (client-side text match)
     btnSearch.addEventListener('click', async ()=>{
       await load(true);
       const q = (qEl.value||'').toLowerCase();
       if (!q) return;
-      Array.from(listEl.children).forEach(card=>{
-        const t = card.textContent.toLowerCase();
-        card.style.display = t.includes(q) ? '' : 'none';
+      Array.from(listEl.querySelectorAll('.card, .group')).forEach(node=>{
+        const t = node.textContent.toLowerCase();
+        node.style.display = t.includes(q) ? '' : 'none';
       });
     });
 
-    btnClear.addEventListener('click', ()=>{ qEl.value=''; dayEl.value=''; load(true); });
+    btnClear.addEventListener('click', ()=>{ qEl.value=''; dayEl.value=''; subEl.value=''; autoEl.checked=false; load(true); });
     moreBtn.addEventListener('click', ()=>load(false));
+    autoEl.addEventListener('change', ()=>load(true));
 
     // initial load
     load(true).catch(err=>{
-      listEl.innerHTML = `<div class="card">Error loading library:<br><code>${esc(err.message || String(err))}</code></div>`;
+      listEl.innerHTML = `<div class="card">Error loading library:<br><code>${(err?.message || String(err)).replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m]))}</code></div>`;
     });
   })();
   </script>
