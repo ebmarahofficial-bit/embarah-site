@@ -15,7 +15,7 @@
     h1{margin:16px 18px;text-shadow:0 0 14px var(--neon)}
     .wrap{width:min(1100px,94vw);margin:0 auto 40px}
     .controls{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0;align-items:center}
-    input,select,button,label{padding:9px;border-radius:8px;border:1px solid rgba(0,255,128,.35);background:rgba(0,0,0,.4);color:var(--ink)}
+    input,button,label{padding:9px;border-radius:8px;border:1px solid rgba(0,255,128,.35);background:rgba(0,0,0,.4);color:var(--ink)}
     input[type="checkbox"]{width:auto;accent-color:#00ff99}
     label.cb{border:none;background:transparent;padding:0;display:flex;align-items:center;gap:8px}
     button{cursor:pointer;font-weight:700}
@@ -45,7 +45,7 @@
     <div class="controls">
       <input id="q" placeholder="Search title or credit">
       <input id="day" type="date">
-      <input id="sub" placeholder="Subfolder (artist, e.g., Ebmarah)">
+      <input id="sub" placeholder="Artist subfolder (e.g., Ebmarah)">
       <label class="cb"><input id="autoDiscover" type="checkbox"> Auto-discover subfolders</label>
       <button id="btnSearch">Search</button>
       <button id="btnClear">Clear</button>
@@ -63,9 +63,8 @@
     <p class="tiny" style="margin-top:10px">See something that breaks the rules? Click “Report” on the card to email the link for removal review.</p>
   </div>
 
-  <!-- KEYS -->
+  <!-- Supabase project keys -->
   <script>
-    // Your Supabase project (as shared)
     window.SUPABASE_URL = "https://dcijcrwlxkxaexqmbtxu.supabase.co";
     window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRjaWpjcndseGt4YWV4cW1idHh1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkwOTA0MjAsImV4cCI6MjA3NDY2NjQyMH0.UmcHKU56ezlDpDs5emLgR0UkyWaa-VzdYr01bbeQ1cc";
   </script>
@@ -84,21 +83,18 @@
 
     const BUCKET='fan-vocals';
 
-    // In your bucket, paths start at root (no "public/" folder).
-    const prefixBase=''; // IMPORTANT: leave as empty string
+    // Your files are under "public/YYYY/MM/DD/Artist/"
+    const prefixRoot='public/';
 
-    let offset=0, currentPrefix=prefixBase, lastBatchCount=0;
-
+    let offset=0, currentPrefix=prefixRoot, lastBatchCount=0;
     const audioRe = /\.(webm|mp3|m4a|wav)$/i;
 
-    // Build correct public URL (preserve slashes)
     function toPublicUrl(path){
       const safePath = path.split('/').map(encodeURIComponent).join('/');
       return `${window.SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${safePath}`;
     }
 
-    // Single page list against Supabase Storage
-    async function list(prefix=prefixBase, limit=24, off=0){
+    async function list(prefix, limit=24, off=0){
       const res = await fetch(`${window.SUPABASE_URL}/storage/v1/object/list/${BUCKET}`, {
         method:'POST',
         headers:{
@@ -117,10 +113,9 @@
         const msg = await res.text().catch(()=>res.statusText);
         throw new Error(msg || `HTTP ${res.status}`);
       }
-      return res.json(); // array of items (files and folder "markers" ending with '/')
+      return res.json();
     }
 
-    // List ALL under a prefix by paging until done (safety capped)
     async function listAll(prefix, pageSize=200, cap=5000){
       let off=0, all=[];
       while(true){
@@ -133,7 +128,6 @@
       return all;
     }
 
-    // Read sibling JSON metadata if present
     async function fetchMeta(audioPath){
       const jsonPath = audioPath.replace(/\.(webm|mp3|m4a|wav)$/i, '.json');
       const url = toPublicUrl(jsonPath);
@@ -182,7 +176,6 @@
       });
     }
 
-    // Render a group with its cards
     function renderGroup(title, cardsHtml){
       return `
         <div class="group">
@@ -194,52 +187,57 @@
       `;
     }
 
-    // MAIN LOAD
     async function load(reset=false){
-      if (reset){
-        offset=0; lastBatchCount=0; listEl.innerHTML='';
-      }
+      if (reset){ offset=0; lastBatchCount=0; listEl.innerHTML=''; }
 
-      // Build prefix: artist (Subfolder) -> month/day
       const dateFilter = dayEl.value ? new Date(dayEl.value + 'T00:00:00Z') : null;
-      const sub = (subEl.value || '').trim().replace(/^\/+|\/+$/g, ''); // artist
+      const artist = (subEl.value || '').trim().replace(/^\/+|\/+$/g, '');
       const auto = !!autoEl.checked;
 
-      // Paging only in non-auto mode
+      // Auto mode: date REQUIRED; scan all artists under public/YYYY/MM/DD/
       moreBtn.style.display = auto ? 'none' : '';
       pagingNote.style.display = auto ? '' : 'none';
 
       if (auto){
-        // Auto mode: require a date; scan ALL top-level artist folders and look under MM/DD
         if (!dateFilter){
           listEl.insertAdjacentHTML('beforeend', `<div class="empty card">Pick a date, then enable Auto-discover to scan all artists for that day.</div>`);
           return;
         }
-
+        const y=dateFilter.getUTCFullYear();
         const m=String(dateFilter.getUTCMonth()+1).padStart(2,'0');
         const d=String(dateFilter.getUTCDate()).padStart(2,'0');
 
-        // List top-level (artists)
-        const top = await listAll(prefixBase, 500, 5000);
-        const artistFolders = top.filter(it => it.name.endsWith('/')).map(it => it.name.replace(/\/$/, ''));
+        const dayPrefix = `${prefixRoot}${y}/${m}/${d}/`; // public/YYYY/MM/DD/
+        const firstLevel = await listAll(dayPrefix, 400, 8000); // returns artist folders + any files
 
         const groups = new Map();
 
-        for (const artist of artistFolders){
-          const subPrefix = `${artist}/${m}/${d}/`;
-          const subItems = await listAll(subPrefix, 200, 4000);
-          const files = subItems.filter(f => !f.name.endsWith('/') && audioRe.test(f.name))
-                                .map(f => ({ file: f.name, full: subPrefix + f.name }));
-          if (files.length){
-            groups.set(artist, files);
-          }
+        // Artist folders at this level end with '/'
+        const artistFolders = firstLevel.filter(it => it.name.endsWith('/')).map(it => it.name.replace(/\/$/, ''));
+
+        // 1) files directly in the date folder (unlikely, but support it)
+        const rootFiles = firstLevel.filter(it => !it.name.endsWith('/') && audioRe.test(it.name))
+                                    .map(it => ({ file: it.name, full: dayPrefix + it.name }));
+        if (rootFiles.length) groups.set('(root)', rootFiles);
+
+        // 2) drill each artist folder and collect files
+        for (const a of artistFolders){
+          const aPrefix = `${dayPrefix}${a}/`; // public/YYYY/MM/DD/Artist/
+          const aItems = await listAll(aPrefix, 400, 8000);
+          const aFiles = aItems.filter(f => !f.name.endsWith('/') && audioRe.test(f.name))
+                               .map(f => ({ file: f.name, full: aPrefix + f.name }));
+          if (aFiles.length) groups.set(a, aFiles);
         }
 
         if (groups.size === 0){
-          listEl.insertAdjacentHTML('beforeend', `<div class="empty card">No recordings found for <code>${esc(m)}/${esc(d)}</code> across artists.</div>`);
+          listEl.insertAdjacentHTML('beforeend', `<div class="empty card">No recordings found for <code>${esc(m)}/${esc(d)}/${esc(y)}</code> across artists.</div>`);
         } else {
-          for (const artist of Array.from(groups.keys()).sort((a,b)=>a.localeCompare(b))){
-            const files = groups.get(artist);
+          const ordered = [];
+          if (groups.has('(root)')) ordered.push(['(root)', groups.get('(root)')]);
+          for (const k of Array.from(groups.keys()).filter(k=>k!=='(root)').sort((a,b)=>a.localeCompare(b))){
+            ordered.push([k, groups.get(k)]);
+          }
+          for (const [gName, files] of ordered){
             let cards = '';
             for (const it of files){
               const audioUrl = toPublicUrl(it.full);
@@ -247,24 +245,23 @@
               const namePretty = it.file.split('/').pop().replace(/_/g,' ');
               cards += card({audioUrl, name:namePretty, meta});
             }
-            listEl.insertAdjacentHTML('beforeend', renderGroup(artist, cards));
+            listEl.insertAdjacentHTML('beforeend', renderGroup(gName, cards));
           }
           wireCopyButtons(listEl);
         }
         return;
       }
 
-      // Non-auto (manual) mode: artist optional, date optional
-      currentPrefix = prefixBase;
-
-      if (sub) currentPrefix += `${sub}/`;            // Ebmarah/
+      // Manual mode: artist optional; date optional
+      currentPrefix = prefixRoot;                    // public/
       if (dateFilter){
+        const y=dateFilter.getUTCFullYear();
         const m=String(dateFilter.getUTCMonth()+1).padStart(2,'0');
         const d=String(dateFilter.getUTCDate()).padStart(2,'0');
-        currentPrefix += `${m}/${d}/`;                // Ebmarah/09/28/
+        currentPrefix += `${y}/${m}/${d}/`;          // public/YYYY/MM/DD/
       }
+      if (artist) currentPrefix += `${artist}/`;     // public/YYYY/MM/DD/Artist/
 
-      // Standard one-level list + paging
       const items = await list(currentPrefix, 24, offset);
       lastBatchCount = items.length;
 
@@ -286,7 +283,7 @@
       wireCopyButtons(listEl);
     }
 
-    // Search filter (client-side text match)
+    // UI hooks
     btnSearch.addEventListener('click', async ()=>{
       await load(true);
       const q = (qEl.value||'').toLowerCase();
@@ -301,7 +298,7 @@
     moreBtn.addEventListener('click', ()=>load(false));
     autoEl.addEventListener('change', ()=>load(true));
 
-    // initial load
+    // initial
     load(true).catch(err=>{
       listEl.innerHTML = `<div class="card">Error loading library:<br><code>${(err?.message || String(err)).replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m]))}</code></div>`;
     });
@@ -309,3 +306,4 @@
   </script>
 </body>
 </html>
+
