@@ -143,5 +143,5 @@
     "throwEvery": 3.2
   },
   "subTTL": 6.5,
-  "background": "game/assets/backgrounds/neon_jungle_1920x1080.png"
+  "background": "game/assets/sprites/neon_jungle_1920x1080.png"
 }
