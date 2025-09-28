@@ -255,19 +255,26 @@
   <!-- Drum pad logic -->
   <script>
   (() => {
+    // ===== Transport / sync =====
+    const BPM = 140;              // change if your project BPM differs
+    const BEAT = 60 / BPM;        // quarter-note in seconds
+    let transportStart = 0;       // set on unlock so all quantize to same grid
+    const HOLD_THRESHOLD_MS = 170; // how long to hold before we treat it as "hold to loop"
+
     // Paths
     const DRUM_LOOP = 'assets/audio/loops/eb_loop_140.mp3';
     const SAMPLES = [
-      { id: 'bass1',  label: '1/4th',  key: '1' },
-      { id: 'bass2',  label: '1/4th',  key: '2' },
-      { id: 'bass3',  label: '1/8th',  key: '3' },
-      { id: 'bass4',  label: '1/8th',  key: '4' },
-      { id: 'bass5',  label: '1/8t',  key: '5' },
-      { id: 'bass6',  label: '1/8t',  key: '6' },
-      { id: 'bass7',  label: '1/4th',  key: '7' },
-      { id: 'bass8',  label: '1/8th',  key: '8' },
-      { id: 'bass9',  label: '1/8th',  key: '9' },
-      { id: 'bass10', label: '1/8t', key: '0' },
+      // div is in BEATS (1 = quarter, 0.5 = eighth, 1/3 = eighth-triplet)
+      { id: 'bass1',  label: '1/4th', key: '1', div: 1     },
+      { id: 'bass2',  label: '1/4th', key: '2', div: 1     },
+      { id: 'bass3',  label: '1/8th', key: '3', div: 0.5   },
+      { id: 'bass4',  label: '1/8th', key: '4', div: 0.5   },
+      { id: 'bass5',  label: '1/8t',  key: '5', div: 1/3   },
+      { id: 'bass6',  label: '1/8t',  key: '6', div: 1/3   },
+      { id: 'bass7',  label: '1/4th', key: '7', div: 1     },
+      { id: 'bass8',  label: '1/8th', key: '8', div: 0.5   },
+      { id: 'bass9',  label: '1/8th', key: '9', div: 0.5   },
+      { id: 'bass10', label: '1/8t',  key: '0', div: 1/3   },
     ];
     const SAMPLE_BASE = 'assets/audio/pads/';
 
@@ -279,7 +286,7 @@
     const loopVol = document.getElementById('loopVol');
     const grid = document.getElementById('padGrid');
 
-    // Build pads
+    // Build pads (no UI text changes)
     const frag = document.createDocumentFragment();
     SAMPLES.forEach(s => {
       const btn = document.createElement('button');
@@ -288,38 +295,17 @@
       btn.dataset.key = s.key;
       btn.setAttribute('aria-label', s.label);
       btn.innerHTML = `<div class="label">${s.label}</div>`;
-      // Hold to loop; release/leave to stop (no UI changes)
-      btn.addEventListener('pointerdown', (e) => { e.preventDefault(); startHoldLoop(s.id, btn, e); });
-      btn.addEventListener('pointerup',   () => stopHoldLoop(btn));
-      btn.addEventListener('pointercancel',() => stopHoldLoop(btn));
-      btn.addEventListener('pointerleave',() => stopHoldLoop(btn));
+      // Gesture logic: quick tap = one-shot; hold = quantized loop
+      setupPadGestures(btn, s);
       frag.appendChild(btn);
     });
     grid.appendChild(frag);
 
-    // Keyboard mapping: keydown starts, keyup stops
+    // Keyboard mapping
     const keyToBtn = new Map();
     function mapKeys(){
       document.querySelectorAll('.pad').forEach(b => keyToBtn.set(b.dataset.key, b));
     }
-
-    window.addEventListener('keydown', (e) => {
-      if (!ctx) return;
-      let key = e.key;
-      if (key === ')') key = '0';
-      const btn = keyToBtn.get(key);
-      if (!btn) return;
-      if (e.repeat) return;
-      startHoldLoop(btn.dataset.id, btn);
-    });
-
-    window.addEventListener('keyup', (e) => {
-      let key = e.key;
-      if (key === ')') key = '0';
-      const btn = keyToBtn.get(key);
-      if (!btn) return;
-      stopHoldLoop(btn);
-    });
 
     // Web Audio
     let ctx = null, loopGain = null, loopSource = null, loopBuffer = null;
@@ -328,6 +314,7 @@
     unlockBtn.addEventListener('click', async () => {
       try {
         if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)({ latencyHint: 'interactive' });
+        transportStart = ctx.currentTime; // establish grid
         status('loading audio…');
 
         loopGain = ctx.createGain();
@@ -401,31 +388,50 @@
       }catch{ return null; }
     }
 
-    // ===== Hold-to-loop engine (smooth crossfade, no UI changes) =====
-    const holds = new WeakMap(); // btn -> { stop() }
-
-    // Tunables (kept neutral to avoid audible changes vs your one-shots)
-    const PAD_GAIN = 1.0;        // keep same perceived level as original trigger
-    const MIN_FADE = 0.02;       // 20ms fade for click-free edges
-    const MAX_OVERLAP = 0.08;    // up to 80ms overlap crossfade
-    const MAX_VOICES = 4;        // safety cap
-
-    function startHoldLoop(id, btn, evt){
+    // ===== One-shot playback (tap/click) =====
+    function playOneShot(id){
       if (!ctx) return;
-      if (holds.get(btn)) return;
+      const buf = padBuffers.get(id);
+      if (!buf) return;
+      const src = ctx.createBufferSource();
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(1.0, ctx.currentTime);
+      src.buffer = buf;
+      src.connect(g).connect(ctx.destination);
+      src.start(); // immediate (no quantize) for tap behavior "like before"
+    }
+
+    // ===== Quantize helper for holds =====
+    function quantizedStart(divBeats){
+      const grid = BEAT * divBeats; // seconds per division
+      const now = ctx.currentTime;
+      const phase = (now - transportStart) % grid;
+      const wait = grid - phase;
+      const jitter = 0.005; // tiny safety offset
+      return now + wait + jitter; // slight delay so it lands on-beat
+    }
+
+    // ===== Hold-to-loop engine (smooth crossfade) =====
+    const holds = new WeakMap(); // btn -> { stop(), holdTimer, isLooping }
+
+    const PAD_GAIN = 1.0;
+    const MIN_FADE = 0.02;
+    const MAX_OVERLAP = 0.08;
+    const MAX_VOICES = 4;
+
+    function startHoldLoop(id, btn, startAt){
+      if (!ctx) return;
+      if (holds.get(btn)?.isLooping) return;
 
       const buf = padBuffers.get(id);
-      if (!buf) { status(`missing: ${id}.wav`); flash(btn); return; } // message preserved
+      if (!buf) { status(`missing: ${id}.wav`); flash(btn); return; }
 
-      if (evt && btn.setPointerCapture) { try { btn.setPointerCapture(evt.pointerId); } catch {} }
       btn.classList.add('playing');
 
-      // timings based on buffer
       const period = Math.max(buf.duration, MIN_FADE * 3);
       const fade = Math.min(MIN_FADE, period * 0.2);
       const overlap = Math.min(MAX_OVERLAP, Math.max(fade * 1.5, period * 0.04));
 
-      // output node for this held pad
       const out = ctx.createGain();
       out.gain.value = 0;
       out.connect(ctx.destination);
@@ -433,7 +439,7 @@
       const level = PAD_GAIN;
 
       let alive = true;
-      let nextTime = ctx.currentTime + 0.002;
+      let nextTime = startAt ?? (ctx.currentTime + 0.002);
       const voices = new Set();
       let timer = null;
 
@@ -474,12 +480,10 @@
         timer = setTimeout(tick, 25);
       }
 
-      // fade in pad output
       out.gain.cancelScheduledValues(ctx.currentTime);
       out.gain.setValueAtTime(0, ctx.currentTime);
       out.gain.linearRampToValueAtTime(1, ctx.currentTime + fade);
 
-      // kick
       scheduleVoice(nextTime);
       nextTime += Math.max(0.01, period - overlap);
       tick();
@@ -499,12 +503,13 @@
         holds.delete(btn);
       };
 
-      holds.set(btn, { stop });
+      holds.set(btn, { stop, isLooping:true });
     }
 
     function stopHoldLoop(btn){
       const h = holds.get(btn);
-      if (h) h.stop();
+      if (!h) return;
+      h.stop?.();
     }
 
     function flash(btn){
@@ -512,7 +517,71 @@
       btn.classList.add('playing');
       setTimeout(() => btn.classList.remove('playing'), 110);
     }
+
+    // ===== Pad gesture wiring (tap vs hold) =====
+    function setupPadGestures(btn, spec){
+      let holdTimer = null;
+      let held = false;
+
+      const onDown = (e) => {
+        if (!ctx) return;
+        e.preventDefault?.();
+        held = true;
+
+        // Start a timer: if still held after threshold -> start quantized loop
+        holdTimer = setTimeout(() => {
+          if (!held) return;
+          // quantize to pad's division for a slight musical delay
+          const startAt = quantizedStart(spec.div);
+          startHoldLoop(spec.id, btn, startAt);
+        }, HOLD_THRESHOLD_MS);
+      };
+
+      const onUpCancel = () => {
+        // If released before hold threshold -> treat as tap (one-shot)
+        if (holdTimer) {
+          clearTimeout(holdTimer);
+          holdTimer = null;
+          if (held && !holds.get(btn)?.isLooping) {
+            playOneShot(spec.id);
+          }
+        }
+        // If it *was* looping, stop it
+        if (holds.get(btn)?.isLooping) {
+          stopHoldLoop(btn);
+        }
+        held = false;
+      };
+
+      // Pointer events
+      btn.addEventListener('pointerdown', onDown);
+      btn.addEventListener('pointerup', onUpCancel);
+      btn.addEventListener('pointercancel', onUpCancel);
+      btn.addEventListener('pointerleave', onUpCancel);
+
+      // Keyboard support: keydown starts gesture; keyup ends
+      window.addEventListener('keydown', (e) => {
+        if (!ctx) return;
+        let key = e.key === ')' ? '0' : e.key;
+        if (key !== spec.key) return;
+        if (e.repeat) return;
+        // mimic pointerdown
+        held = true;
+        holdTimer = setTimeout(() => {
+          if (!held) return;
+          const startAt = quantizedStart(spec.div);
+          startHoldLoop(spec.id, btn, startAt);
+        }, HOLD_THRESHOLD_MS);
+      });
+
+      window.addEventListener('keyup', (e) => {
+        let key = e.key === ')' ? '0' : e.key;
+        if (key !== spec.key) return;
+        onUpCancel();
+      });
+    }
   })();
   </script>
 </body>
 </html>
+
