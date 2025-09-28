@@ -65,7 +65,7 @@
 
   <!-- KEYS -->
   <script>
-    // Your project values (you shared these already)
+    // Your Supabase project (as shared)
     window.SUPABASE_URL = "https://dcijcrwlxkxaexqmbtxu.supabase.co";
     window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRjaWpjcndseGt4YWV4cW1idHh1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkwOTA0MjAsImV4cCI6MjA3NDY2NjQyMH0.UmcHKU56ezlDpDs5emLgR0UkyWaa-VzdYr01bbeQ1cc";
   </script>
@@ -88,13 +88,15 @@
 
     let offset=0, currentPrefix=prefixBase, lastBatchCount=0;
 
+    const audioRe = /\.(webm|mp3|m4a|wav)$/i;
+
     // Build correct public URL (preserve slashes)
     function toPublicUrl(path){
       const safePath = path.split('/').map(encodeURIComponent).join('/');
       return `${window.SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${safePath}`;
     }
 
-    // Basic list (one page)
+    // Single page list against Supabase Storage
     async function list(prefix=prefixBase, limit=24, off=0){
       const res = await fetch(`${window.SUPABASE_URL}/storage/v1/object/list/${BUCKET}`, {
         method:'POST',
@@ -114,7 +116,20 @@
         const msg = await res.text().catch(()=>res.statusText);
         throw new Error(msg || `HTTP ${res.status}`);
       }
-      return res.json();
+      return res.json(); // array of items (files and folder "markers" ending with '/')
+    }
+
+    // List ALL under a prefix by paging until done (safety capped)
+    async function listAll(prefix, pageSize=200, cap=5000){
+      let off=0, all=[];
+      while(true){
+        const batch = await list(prefix, pageSize, off);
+        all.push(...batch);
+        if (batch.length < pageSize) break;
+        off += batch.length;
+        if (all.length >= cap) break;
+      }
+      return all;
     }
 
     // Read sibling JSON metadata if present
@@ -203,53 +218,45 @@
       pagingNote.style.display = auto ? '' : 'none';
 
       if (auto){
-        // Pull a generous number to cover a day’s worth; paginate until done or cap
-        const pageSize = 200;
-        let off = 0;
-        let all = [];
-        while (true){
-          const batch = await list(currentPrefix, pageSize, off);
-          all.push(...batch);
-          if (batch.length < pageSize) break;
-          off += batch.length;
-          if (all.length >= 2000) break; // safety cap
-        }
+        // 1) List the date folder (first level). This returns file items and folder markers (end with '/').
+        const firstLevel = await listAll(currentPrefix, 200, 4000);
 
-        // Group by first path segment (subfolder). Files directly in the date folder go to "(root)"
-        const audioRe = /\.(webm|mp3|m4a|wav)$/i;
-        const groups = new Map(); // name -> [{name, path}]
-        const direct = [];
+        const groups = new Map();
 
-        for (const it of all){
-          if (!audioRe.test(it.name)) continue;
-          if (it.name.includes('/')){
-            const [first, ...rest] = it.name.split('/');
-            const arr = groups.get(first) || [];
-            arr.push({ file: rest.join('/'), full: `${currentPrefix}${it.name}` });
-            groups.set(first, arr);
-          } else {
-            direct.push({ file: it.name, full: `${currentPrefix}${it.name}` });
+        // 2) For each folder marker, list inside it and collect audio files.
+        for (const it of firstLevel){
+          if (it.name.endsWith('/')){
+            const folderName = it.name.replace(/\/$/, '');
+            const subPrefix = currentPrefix + it.name; // e.g., public/2025/09/28/Ebmarah/
+            const subFiles = await listAll(subPrefix, 200, 4000);
+            const audioFiles = subFiles
+              .filter(f => !f.name.endsWith('/') && audioRe.test(f.name))
+              .map(f => ({ file: f.name, full: subPrefix + f.name }));
+            if (audioFiles.length){
+              groups.set(folderName, audioFiles);
+            }
           }
         }
 
-        if (groups.size === 0 && direct.length === 0){
+        // 3) Also include any audio files directly in the date folder (no subfolder)
+        const rootAudio = firstLevel
+          .filter(it => !it.name.endsWith('/') && audioRe.test(it.name))
+          .map(it => ({ file: it.name, full: currentPrefix + it.name }));
+        if (rootAudio.length){
+          groups.set('(root)', rootAudio);
+        }
+
+        // 4) Render groups
+        if (groups.size === 0){
           listEl.insertAdjacentHTML('beforeend', `<div class="empty card">No recordings found under <code>${esc(currentPrefix)}</code>.</div>`);
         } else {
-          // Render direct files first (if any)
-          if (direct.length){
-            let cards = '';
-            for (const it of direct){
-              const audioUrl = toPublicUrl(it.full);
-              const meta = await fetchMeta(it.full);
-              const namePretty = it.file.replace(/_/g,' ');
-              cards += card({audioUrl, name:namePretty, meta});
-            }
-            listEl.insertAdjacentHTML('beforeend', renderGroup('(root)', cards));
+          // render (root) first if exists, then alphabetical folders
+          const ordered = [];
+          if (groups.has('(root)')) ordered.push(['(root)', groups.get('(root)')]);
+          for (const k of Array.from(groups.keys()).filter(k=>k!=='(root)').sort((a,b)=>a.localeCompare(b))){
+            ordered.push([k, groups.get(k)]);
           }
-          // Then render each subfolder group (alphabetical)
-          const names = Array.from(groups.keys()).sort((a,b)=>a.localeCompare(b));
-          for (const gName of names){
-            const files = groups.get(gName);
+          for (const [gName, files] of ordered){
             let cards = '';
             for (const it of files){
               const audioUrl = toPublicUrl(it.full);
@@ -261,14 +268,14 @@
           }
           wireCopyButtons(listEl);
         }
-        return;
+        return; // stop here in auto mode
       }
 
       // Non-auto (flat) mode with paging
       const items = await list(currentPrefix, 24, offset);
       lastBatchCount = items.length;
 
-      const audioItems = items.filter(it => /\.(webm|mp3|m4a|wav)$/i.test(it.name));
+      const audioItems = items.filter(it => !it.name.endsWith('/') && audioRe.test(it.name));
       if (reset && audioItems.length === 0){
         listEl.insertAdjacentHTML('beforeend', `<div class="empty card">No recordings found for this filter.</div>`);
       }
