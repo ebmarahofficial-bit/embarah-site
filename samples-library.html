@@ -45,7 +45,7 @@
     <div class="controls">
       <input id="q" placeholder="Search title or credit">
       <input id="day" type="date">
-      <input id="sub" placeholder="Subfolder (e.g., Ebmarah)">
+      <input id="sub" placeholder="Subfolder (artist, e.g., Ebmarah)">
       <label class="cb"><input id="autoDiscover" type="checkbox"> Auto-discover subfolders</label>
       <button id="btnSearch">Search</button>
       <button id="btnClear">Clear</button>
@@ -83,8 +83,9 @@
     const btnClear = document.getElementById('btnClear');
 
     const BUCKET='fan-vocals';
-    // If your objects are at bucket root, set '' instead of 'public/'.
-    const prefixBase='public/';
+
+    // In your bucket, paths start at root (no "public/" folder).
+    const prefixBase=''; // IMPORTANT: leave as empty string
 
     let offset=0, currentPrefix=prefixBase, lastBatchCount=0;
 
@@ -199,64 +200,46 @@
         offset=0; lastBatchCount=0; listEl.innerHTML='';
       }
 
-      // Build prefix: date + optional subfolder (unless auto-discover is on)
+      // Build prefix: artist (Subfolder) -> month/day
       const dateFilter = dayEl.value ? new Date(dayEl.value + 'T00:00:00Z') : null;
-      const sub = (subEl.value || '').trim().replace(/^\/+|\/+$/g, ''); // sanitize
+      const sub = (subEl.value || '').trim().replace(/^\/+|\/+$/g, ''); // artist
       const auto = !!autoEl.checked;
 
-      currentPrefix = prefixBase; // 'public/' by default
-      if (dateFilter){
-        const y=dateFilter.getUTCFullYear();
-        const m=String(dateFilter.getUTCMonth()+1).padStart(2,'0');
-        const d=String(dateFilter.getUTCDate()).padStart(2,'0');
-        currentPrefix = `${prefixBase}${y}/${m}/${d}/`;
-      }
-      if (!auto && sub) currentPrefix = `${currentPrefix}${sub}/`;
-
-      // Auto mode disables paging (we load all in one go)
+      // Paging only in non-auto mode
       moreBtn.style.display = auto ? 'none' : '';
       pagingNote.style.display = auto ? '' : 'none';
 
       if (auto){
-        // 1) List the date folder (first level). This returns file items and folder markers (end with '/').
-        const firstLevel = await listAll(currentPrefix, 200, 4000);
+        // Auto mode: require a date; scan ALL top-level artist folders and look under MM/DD
+        if (!dateFilter){
+          listEl.insertAdjacentHTML('beforeend', `<div class="empty card">Pick a date, then enable Auto-discover to scan all artists for that day.</div>`);
+          return;
+        }
+
+        const m=String(dateFilter.getUTCMonth()+1).padStart(2,'0');
+        const d=String(dateFilter.getUTCDate()).padStart(2,'0');
+
+        // List top-level (artists)
+        const top = await listAll(prefixBase, 500, 5000);
+        const artistFolders = top.filter(it => it.name.endsWith('/')).map(it => it.name.replace(/\/$/, ''));
 
         const groups = new Map();
 
-        // 2) For each folder marker, list inside it and collect audio files.
-        for (const it of firstLevel){
-          if (it.name.endsWith('/')){
-            const folderName = it.name.replace(/\/$/, '');
-            const subPrefix = currentPrefix + it.name; // e.g., public/2025/09/28/Ebmarah/
-            const subFiles = await listAll(subPrefix, 200, 4000);
-            const audioFiles = subFiles
-              .filter(f => !f.name.endsWith('/') && audioRe.test(f.name))
-              .map(f => ({ file: f.name, full: subPrefix + f.name }));
-            if (audioFiles.length){
-              groups.set(folderName, audioFiles);
-            }
+        for (const artist of artistFolders){
+          const subPrefix = `${artist}/${m}/${d}/`;
+          const subItems = await listAll(subPrefix, 200, 4000);
+          const files = subItems.filter(f => !f.name.endsWith('/') && audioRe.test(f.name))
+                                .map(f => ({ file: f.name, full: subPrefix + f.name }));
+          if (files.length){
+            groups.set(artist, files);
           }
         }
 
-        // 3) Also include any audio files directly in the date folder (no subfolder)
-        const rootAudio = firstLevel
-          .filter(it => !it.name.endsWith('/') && audioRe.test(it.name))
-          .map(it => ({ file: it.name, full: currentPrefix + it.name }));
-        if (rootAudio.length){
-          groups.set('(root)', rootAudio);
-        }
-
-        // 4) Render groups
         if (groups.size === 0){
-          listEl.insertAdjacentHTML('beforeend', `<div class="empty card">No recordings found under <code>${esc(currentPrefix)}</code>.</div>`);
+          listEl.insertAdjacentHTML('beforeend', `<div class="empty card">No recordings found for <code>${esc(m)}/${esc(d)}</code> across artists.</div>`);
         } else {
-          // render (root) first if exists, then alphabetical folders
-          const ordered = [];
-          if (groups.has('(root)')) ordered.push(['(root)', groups.get('(root)')]);
-          for (const k of Array.from(groups.keys()).filter(k=>k!=='(root)').sort((a,b)=>a.localeCompare(b))){
-            ordered.push([k, groups.get(k)]);
-          }
-          for (const [gName, files] of ordered){
+          for (const artist of Array.from(groups.keys()).sort((a,b)=>a.localeCompare(b))){
+            const files = groups.get(artist);
             let cards = '';
             for (const it of files){
               const audioUrl = toPublicUrl(it.full);
@@ -264,14 +247,24 @@
               const namePretty = it.file.split('/').pop().replace(/_/g,' ');
               cards += card({audioUrl, name:namePretty, meta});
             }
-            listEl.insertAdjacentHTML('beforeend', renderGroup(gName, cards));
+            listEl.insertAdjacentHTML('beforeend', renderGroup(artist, cards));
           }
           wireCopyButtons(listEl);
         }
-        return; // stop here in auto mode
+        return;
       }
 
-      // Non-auto (flat) mode with paging
+      // Non-auto (manual) mode: artist optional, date optional
+      currentPrefix = prefixBase;
+
+      if (sub) currentPrefix += `${sub}/`;            // Ebmarah/
+      if (dateFilter){
+        const m=String(dateFilter.getUTCMonth()+1).padStart(2,'0');
+        const d=String(dateFilter.getUTCDate()).padStart(2,'0');
+        currentPrefix += `${m}/${d}/`;                // Ebmarah/09/28/
+      }
+
+      // Standard one-level list + paging
       const items = await list(currentPrefix, 24, offset);
       lastBatchCount = items.length;
 
