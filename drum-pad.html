@@ -288,22 +288,37 @@
       btn.dataset.key = s.key;
       btn.setAttribute('aria-label', s.label);
       btn.innerHTML = `<div class="label">${s.label}</div>`;
-      btn.addEventListener('pointerdown', () => triggerPad(s.id, btn));
-      btn.addEventListener('pointerup',   () => btn.classList.remove('playing'));
-      btn.addEventListener('pointerleave',() => btn.classList.remove('playing'));
+      // Hold to loop; release/leave to stop (no UI changes)
+      btn.addEventListener('pointerdown', (e) => { e.preventDefault(); startHoldLoop(s.id, btn, e); });
+      btn.addEventListener('pointerup',   () => stopHoldLoop(btn));
+      btn.addEventListener('pointercancel',() => stopHoldLoop(btn));
+      btn.addEventListener('pointerleave',() => stopHoldLoop(btn));
       frag.appendChild(btn);
     });
     grid.appendChild(frag);
 
-    // Keyboard mapping
+    // Keyboard mapping: keydown starts, keyup stops
+    const keyToBtn = new Map();
+    function mapKeys(){
+      document.querySelectorAll('.pad').forEach(b => keyToBtn.set(b.dataset.key, b));
+    }
+
     window.addEventListener('keydown', (e) => {
       if (!ctx) return;
       let key = e.key;
       if (key === ')') key = '0';
-      const sample = SAMPLES.find(s => s.key === key);
-      if (!sample) return;
-      const btn = [...document.querySelectorAll('.pad')].find(b => b.dataset.id === sample.id);
-      triggerPad(sample.id, btn);
+      const btn = keyToBtn.get(key);
+      if (!btn) return;
+      if (e.repeat) return;
+      startHoldLoop(btn.dataset.id, btn);
+    });
+
+    window.addEventListener('keyup', (e) => {
+      let key = e.key;
+      if (key === ')') key = '0';
+      const btn = keyToBtn.get(key);
+      if (!btn) return;
+      stopHoldLoop(btn);
     });
 
     // Web Audio
@@ -335,6 +350,7 @@
         } catch {}
 
         setEnabled(true);
+        mapKeys();
         status('ready – tap pads or press keys');
       } catch (e) {
         console.error(e);
@@ -385,15 +401,110 @@
       }catch{ return null; }
     }
 
-    function triggerPad(id, btn){
+    // ===== Hold-to-loop engine (smooth crossfade, no UI changes) =====
+    const holds = new WeakMap(); // btn -> { stop() }
+
+    // Tunables (kept neutral to avoid audible changes vs your one-shots)
+    const PAD_GAIN = 1.0;        // keep same perceived level as original trigger
+    const MIN_FADE = 0.02;       // 20ms fade for click-free edges
+    const MAX_OVERLAP = 0.08;    // up to 80ms overlap crossfade
+    const MAX_VOICES = 4;        // safety cap
+
+    function startHoldLoop(id, btn, evt){
+      if (!ctx) return;
+      if (holds.get(btn)) return;
+
       const buf = padBuffers.get(id);
-      if (!buf) { status(`missing: ${id}.wav`); flash(btn); return; }
-      const src = ctx.createBufferSource();
-      src.buffer = buf;
-      const g = ctx.createGain(); g.gain.value = 1.0;
-      src.connect(g).connect(ctx.destination);
-      src.start(0);
-      flash(btn);
+      if (!buf) { status(`missing: ${id}.wav`); flash(btn); return; } // message preserved
+
+      if (evt && btn.setPointerCapture) { try { btn.setPointerCapture(evt.pointerId); } catch {} }
+      btn.classList.add('playing');
+
+      // timings based on buffer
+      const period = Math.max(buf.duration, MIN_FADE * 3);
+      const fade = Math.min(MIN_FADE, period * 0.2);
+      const overlap = Math.min(MAX_OVERLAP, Math.max(fade * 1.5, period * 0.04));
+
+      // output node for this held pad
+      const out = ctx.createGain();
+      out.gain.value = 0;
+      out.connect(ctx.destination);
+
+      const level = PAD_GAIN;
+
+      let alive = true;
+      let nextTime = ctx.currentTime + 0.002;
+      const voices = new Set();
+      let timer = null;
+
+      function scheduleVoice(at){
+        if (!alive) return;
+        if (voices.size > MAX_VOICES) {
+          const first = voices.values().next().value;
+          try { first.src.stop(); } catch {}
+          voices.delete(first);
+        }
+        const src = ctx.createBufferSource();
+        src.buffer = buf;
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(0, at);
+        g.gain.linearRampToValueAtTime(level, at + fade);
+
+        const outStart = at + Math.max(0, period - overlap);
+        g.gain.setValueAtTime(level, outStart);
+        g.gain.linearRampToValueAtTime(0, outStart + fade);
+
+        src.connect(g).connect(out);
+        src.start(at);
+        const stopAt = at + period + 0.25;
+        src.stop(stopAt);
+
+        const token = { src, g };
+        voices.add(token);
+        src.onended = () => voices.delete(token);
+      }
+
+      function tick(){
+        if (!alive) return;
+        const now = ctx.currentTime;
+        while (nextTime < now + 0.25) {
+          scheduleVoice(nextTime);
+          nextTime += Math.max(0.01, period - overlap);
+        }
+        timer = setTimeout(tick, 25);
+      }
+
+      // fade in pad output
+      out.gain.cancelScheduledValues(ctx.currentTime);
+      out.gain.setValueAtTime(0, ctx.currentTime);
+      out.gain.linearRampToValueAtTime(1, ctx.currentTime + fade);
+
+      // kick
+      scheduleVoice(nextTime);
+      nextTime += Math.max(0.01, period - overlap);
+      tick();
+
+      const stop = () => {
+        if (!alive) return;
+        alive = false;
+        clearTimeout(timer);
+        const t = ctx.currentTime;
+        out.gain.cancelScheduledValues(t);
+        out.gain.setValueAtTime(out.gain.value, t);
+        out.gain.linearRampToValueAtTime(0, t + fade);
+        setTimeout(() => { try { out.disconnect(); } catch {} }, (fade + 0.1) * 1000);
+        voices.forEach(v => { try { v.src.stop(); } catch {} });
+        voices.clear();
+        btn.classList.remove('playing');
+        holds.delete(btn);
+      };
+
+      holds.set(btn, { stop });
+    }
+
+    function stopHoldLoop(btn){
+      const h = holds.get(btn);
+      if (h) h.stop();
     }
 
     function flash(btn){
