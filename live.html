@@ -46,7 +46,7 @@
       color:#b9ffdf; font-size:16px; font-weight:700; padding:8px 12px; border-radius:10px
     }
 
-    /* ===== Offcanvas Drawer (matches index) ===== */
+    /* ===== Offcanvas Drawer ===== */
     .drawer-overlay{
       position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:999; opacity:0; pointer-events:none; transition:.25s;
     }
@@ -85,7 +85,6 @@
     .player{ aspect-ratio:16/9; position:relative; }
     .chat-embed{ min-height:420px; position:relative; }
 
-    /* Transparent iframes so bg video shows through edges */
     .player iframe, .chat-embed iframe{
       width:100%; height:100%; border:0; display:block; background:transparent !important;
     }
@@ -99,13 +98,11 @@
 
     footer.site{ margin:20px auto 6px; width:min(1400px,98vw); text-align:center; opacity:.75; font-size:.85rem; }
 
-    /* Responsive: show hamburger under 960px like index */
     @media (max-width: 960px){
       nav.site-nav{ display:none }
       .menu-btn{ display:inline-flex }
     }
 
-    /* iOS hides native controls for bg video */
     video::-webkit-media-controls{ display:none !important; }
   </style>
 </head>
@@ -118,14 +115,12 @@
     </video>
   </div>
 
-  <!-- Top bar (same as index) -->
+  <!-- Header -->
   <header>
     <div class="brand">
       <img src="assets/favicon.png" alt="Ebmarah" />
       <span>Ebmarah</span>
     </div>
-
-    <!-- Desktop nav -->
     <nav class="site-nav" aria-label="Primary">
       <a href="index.html">Home</a>
       <a href="music.html">Music</a>
@@ -136,19 +131,17 @@
       <a href="game.html">Game</a>
       <a href="contact.html">Contact</a>
     </nav>
-
-    <!-- Mobile trigger -->
-    <button class="menu-btn" id="menuBtn" aria-haspopup="true" aria-expanded="false" aria-controls="drawer">Menu</button>
+    <button class="menu-btn" id="menuBtn">Menu</button>
   </header>
 
-  <!-- Offcanvas drawer (mobile/tablet) -->
+  <!-- Offcanvas drawer -->
   <div class="drawer-overlay" id="drawerOverlay"></div>
-  <aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-label="Site menu">
+  <aside class="drawer" id="drawer">
     <header>
       <h2>Menu</h2>
-      <button class="close" id="drawerClose" aria-label="Close menu">Close</button>
+      <button class="close" id="drawerClose">Close</button>
     </header>
-    <nav aria-label="Mobile">
+    <nav>
       <a href="index.html">Home</a>
       <a href="music.html">Music</a>
       <a class="nav-link" href="live.html">Live</a>
@@ -165,16 +158,22 @@
   <div class="wrap">
     <div class="card">
       <h1>LIVE: Digital Gorilla Forest</h1>
-
-      <!-- Standby swaps to Live automatically -->
       <div class="grid" id="liveGrid">
-        <section class="player" aria-label="Standby" id="standby">
-          <div class="badge offline">○ Standby</div>
-          <div style="display:grid;place-items:center;height:100%;text-align:center;padding:20px;">
-            <h2 style="color:var(--neon);font-size:1.6rem;">Standby — Stream Offline</h2>
-            <p style="opacity:.85;">Check back soon for the next live set.</p>
-          </div>
+        <section class="player" aria-label="Live video">
+          <div class="badge">● Live</div>
+          <iframe
+            src="https://www.youtube.com/embed/live_stream?channel=UC4TFxZzu6BKLRfAWnsZFnRA&autoplay=1&mute=1&modestbranding=1&rel=0&wmode=transparent&enablejsapi=1"
+            title="YouTube Live Player"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowfullscreen></iframe>
         </section>
+        <aside class="chat" aria-label="Live chat">
+          <div class="chat-embed">
+            <iframe
+              src="https://www.youtube.com/live_chat?channel=UC4TFxZzu6BKLRfAWnsZFnRA&embed_domain=${location.hostname}"
+              title="YouTube Live Chat"></iframe>
+          </div>
+        </aside>
       </div>
     </div>
   </div>
@@ -182,69 +181,29 @@
   <footer class="site">© <span id="year"></span> Ebmarah — Digital Gorilla Forest</footer>
 
   <script>
-    const STREAM_ID = "YOUR_STREAM_ID"; // persistent ID recommended
-    const domain = location.hostname;
-    const liveGrid = document.getElementById('liveGrid');
     document.getElementById('year').textContent = new Date().getFullYear();
 
-    /* ===== Drawer behavior (exactly like index) ===== */
+    // Drawer behavior
     const root = document.documentElement;
     const menuBtn = document.getElementById('menuBtn');
     const drawer = document.getElementById('drawer');
     const overlay = document.getElementById('drawerOverlay');
     const closeBtn = document.getElementById('drawerClose');
 
-    const firstLink = () => drawer.querySelector('a');
-
     const openDrawer = () => {
       root.classList.add('drawer-open');
       menuBtn.setAttribute('aria-expanded','true');
-      firstLink()?.focus();
     };
     const closeDrawer = () => {
       root.classList.remove('drawer-open');
       menuBtn.setAttribute('aria-expanded','false');
-      menuBtn.focus();
     };
 
     menuBtn.addEventListener('click', openDrawer);
     closeBtn.addEventListener('click', closeDrawer);
     overlay.addEventListener('click', closeDrawer);
     window.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
-
-    /* ===== Live / Standby swap ===== */
-    function renderLive(){
-      liveGrid.innerHTML = `
-        <section class="player" aria-label="Live video">
-          <div class="badge">● Live</div>
-          <iframe
-            src="https://www.youtube.com/embed/${STREAM_ID}?autoplay=1&mute=1&modestbranding=1&rel=0&wmode=transparent&enablejsapi=1"
-            title="YouTube Live Player"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-            allowfullscreen style="background:transparent;"></iframe>
-        </section>
-        <aside class="chat" aria-label="Live chat">
-          <div class="chat-embed">
-            <iframe
-              src="https://www.youtube.com/live_chat?v=${STREAM_ID}&embed_domain=${domain}"
-              title="YouTube Live Chat"
-              style="background:transparent;"></iframe>
-          </div>
-        </aside>`;
-    }
-
-    async function isLive(){
-      try{
-        const res = await fetch(`https://www.youtube.com/oembed?url=https://youtube.com/watch?v=${STREAM_ID}&format=json`, { cache:'no-store' });
-        return res.ok;
-      } catch { return false; }
-    }
-
-    async function updateState(){
-      if (await isLive()) renderLive();
-    }
-    updateState();
-    setInterval(updateState, 60000);
   </script>
 </body>
 </html>
+
