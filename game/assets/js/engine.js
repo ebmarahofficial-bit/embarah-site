@@ -104,7 +104,7 @@
 
   function spawnSub(){
     if(!boss) return;
-    subs.push({ x: boss.x + boss.w*0.2, y: boss.y + boss.h*0.5, w:22,h:22, vx: - (120 + Math.random()*80), vy: 0, spin: 0 });
+    subs.push({ x: boss.x + boss.w*0.2, y: boss.y + boss.h*0.5, w:22,h:22, vx: - (120 + Math.random()*80), vy: 0, spin: 0, ttl: 6.0 });
     try{ SFX.throw.currentTime = 0; SFX.throw.play(); }catch(e){}
   }
 
@@ -149,7 +149,8 @@
     if(boss){ boss.t += dt; if(boss.t >= boss.throwEvery){ boss.t = 0; spawnSub(); } }
 
     // Subs
-    for(const s of subs){
+for(const s of subs){
+      s.ttl = (s.ttl ?? 6.0) - dt;
       s.vy += (L.gravity||1600)*dt*0.55;
       s.x  += s.vx*dt;
       s.y  += s.vy*dt;
@@ -161,7 +162,7 @@
       }
       if(aabb(P,s)) damage();
     }
-    for(let i=subs.length-1;i>=0;i--){ if(subs[i].y>H+80 || subs[i].x<-80) subs.splice(i,1); }
+    for(let i=subs.length-1;i>=0;i--){ if(subs[i].y>H+80 || subs[i].x<-80 || (subs[i].ttl!==undefined && subs[i].ttl<=0)) subs.splice(i,1); }
 
     // Off-screen fall
     if(P.y > H+80) damage(true);
@@ -221,7 +222,8 @@
     }
 
     // Subs
-    for(const s of subs){
+for(const s of subs){
+      s.ttl = (s.ttl ?? 6.0) - dt;
       const cx = s.x+s.w/2, cy = s.y+s.h/2, r = s.w/2;
       ctx.save(); ctx.translate(cx,cy); ctx.rotate(s.spin);
       const grad = ctx.createRadialGradient(0,0,2,0,0,r); grad.addColorStop(0,'#222'); grad.addColorStop(1,'#444');
