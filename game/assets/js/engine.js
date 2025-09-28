@@ -1,22 +1,17 @@
 
-// game/assets/js/engine.js
-// Vanilla JS canvas engine for Dubstep Tower. Assumes DT_LEVELS is defined (see levels.js).
+// Ebmarah Dubstep Tower – Engine (TTL Fixed) v1.2
+// Features: boss fixed platform, per-level background, sub TTL + culling, mobile controls.
+// Requires window.DT_LEVELS to be defined (see game/assets/js/levels.js).
+
 (function(){
+  console.log('[DubstepTower] Engine v1.2 loaded');
+
   const W = 960, H = 540;
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d');
   canvas.width = W; canvas.height = H;
 
-  // Menu toggle
-  const burger = document.getElementById('burger');
-  const nav = document.getElementById('nav');
-  const toggle = ()=> nav && nav.classList.toggle('open');
-  if (burger) {
-    burger.addEventListener('click', toggle);
-    burger.addEventListener('keydown', e=>{ if(e.key==='Enter' || e.key===' ') toggle(); });
-  }
-
-  // Asset paths
+  // ---- Assets ----
   const ART = {
     player: 'game/assets/sprites/player.png',
     boss: 'game/assets/sprites/boss.png',
@@ -29,30 +24,33 @@
     throw:new Audio('game/assets/audio/throw.mp3'),
     win:  new Audio('game/assets/audio/win.mp3'),
   };
-  for (const k in SFX) SFX[k].volume = 0.5;
+  for(const k in SFX) SFX[k].volume = 0.5;
 
   const IM = {};
   for (const [k,src] of Object.entries(ART)) { IM[k] = new Image(); IM[k].src = src; }
 
-  // Levels
+  // ---- Level State ----
   const LEVEL_PATHS = (window.DT_LEVELS || []);
-  let currentLevelIndex = 0;
-  let L = null;
+  let currentLevelIndex = 0, L = null;
 
-  // Entities
+  // ---- Game State ----
   const P = { x:0,y:0,vx:0,vy:0,w:28,h:34,onGround:false,climbing:false,lives:3 };
   const keys = { left:false,right:false,up:false };
   let enemies = [];
   let boss = null;
-  const subs = [];
-
-  // State
+  let bossPlatform = null;
+  const subs = []; // {x,y,w,h,vx,vy,spin,ttl}
   let won=false, lost=false, elapsed=0, screenFlash=0;
+
   const livesEl = document.getElementById('lives');
   const timeEl  = document.getElementById('time');
   const levelNameEl = document.getElementById('levelName');
 
-  // Input
+  // ---- Background per level ----
+  const bgImg = new Image();
+  let hasBG = false;
+
+  // ---- Input ----
   addEventListener('keydown', e=>{
     if(e.code==='ArrowLeft') keys.left=true;
     if(e.code==='ArrowRight') keys.right=true;
@@ -65,6 +63,7 @@
     if(e.code==='ArrowRight') keys.right=false;
     if(e.code==='ArrowUp') keys.up=false;
   });
+
   const hold = (el, key)=>{
     if(!el) return;
     const on=()=>{keys[key]=true};
@@ -81,30 +80,46 @@
   function aabb(a,b){ return a.x < b.x+b.w && a.x+a.w > b.x && a.y < b.y+b.h && a.y+a.h > b.y; }
 
   async function loadLevel(i){
-    if (!LEVEL_PATHS[i]) return;
-    const res = await fetch(LEVEL_PATHS[i]);
+    if (!LEVEL_PATHS[i]) { console.warn('No level at index', i); return; }
+    const res = await fetch(LEVEL_PATHS[i] + '?v=' + Date.now());
+    if(!res.ok){ console.error('Failed loading', LEVEL_PATHS[i]); return; }
     L = await res.json();
+
+    // Book-keeping
     if(levelNameEl) levelNameEl.textContent = L.name || `Level ${i+1}`;
     P.x=L.spawn.x; P.y=L.spawn.y; P.vx=0; P.vy=0; P.onGround=false; P.climbing=false; P.lives=3;
     enemies = JSON.parse(JSON.stringify(L.enemies||[]));
     boss = L.boss ? {...L.boss, t:0} : null;
+    bossPlatform = L.bossPlatform || null;
     subs.length = 0;
     won=false; lost=false; elapsed=0; screenFlash=0;
     document.getElementById('overlayWin')?.classList.remove('show');
     document.getElementById('overlayLose')?.classList.remove('show');
+
+    // Background
+    hasBG = !!L.background;
+    if (hasBG) { bgImg.src = L.background + '?v=' + Date.now(); }
+
+    console.log('[DubstepTower] Level loaded:', LEVEL_PATHS[i], 'subTTL:', L.subTTL);
   }
 
   function restart(){ loadLevel(currentLevelIndex); }
-  function nextLevel(){
-    currentLevelIndex = (currentLevelIndex + 1) % LEVEL_PATHS.length;
-    loadLevel(currentLevelIndex);
-  }
-  window.restart = restart;
-  window.nextLevel = nextLevel;
+  function nextLevel(){ currentLevelIndex = (currentLevelIndex + 1) % LEVEL_PATHS.length; loadLevel(currentLevelIndex); }
+  window.restart = restart; window.nextLevel = nextLevel;
 
   function spawnSub(){
     if(!boss) return;
-    subs.push({ x: boss.x + boss.w*0.2, y: boss.y + boss.h*0.5, w:22,h:22, vx: - (120 + Math.random()*80), vy: 0, spin: 0, ttl: 6.0 });
+    // Ensure TTL is set at creation (fallback to level value or default 6s)
+    const ttl = (L && typeof L.subTTL === 'number') ? L.subTTL : 6.0;
+    subs.push({
+      x: boss.x + boss.w*0.2,
+      y: boss.y + boss.h*0.5,
+      w: 22, h: 22,
+      vx: - (120 + Math.random()*80),
+      vy: 0,
+      spin: 0,
+      ttl: ttl
+    });
     try{ SFX.throw.currentTime = 0; SFX.throw.play(); }catch(e){}
   }
 
@@ -117,7 +132,7 @@
     if(keys.right) P.vx += accel*dt;
 
     // Ladder check
-    P.climbing = false;
+    P.climbing=false;
     for(const LZ of (L.ladders||[])){ if(aabb(P,{x:LZ.x,y:LZ.y,w:LZ.w,h:LZ.h})){ P.climbing=true; break; } }
 
     if(P.climbing){ P.vy *= 0.6; if(keys.up){ P.vy = -220; } }
@@ -130,11 +145,20 @@
 
     // Collisions (top-only)
     P.onGround=false;
-    for(const s of (L.platforms||[])){
-      if(P.x<0) P.x=0; if(P.x+P.w>W) P.x=W-P.w;
+    const plats=(L.platforms||[]).slice();
+    if (bossPlatform) plats.push(bossPlatform);
+    for(const s of plats){
+      if(P.x < 0) P.x=0;
+      if(P.x+P.w > W) P.x=W-P.w;
       if(P.y+P.h > s.y && P.y+P.h < s.y+20 && P.x+P.w> s.x && P.x < s.x+s.w && P.vy>=0){
-        P.y = s.y - P.h; P.vy=0; P.onGround=true;
+        P.y = s.y - P.h; P.vy = 0; P.onGround = true;
       }
+    }
+
+    // Keep boss on platform if present
+    if(boss && bossPlatform){
+      boss.y = bossPlatform.y - boss.h;
+      boss.x = Math.min(Math.max(boss.x, bossPlatform.x), bossPlatform.x + bossPlatform.w - boss.w);
     }
 
     // Enemies
@@ -148,23 +172,28 @@
     // Boss
     if(boss){ boss.t += dt; if(boss.t >= boss.throwEvery){ boss.t = 0; spawnSub(); } }
 
-    // Subs
-for(const s of subs){
-      s.ttl = (s.ttl ?? 6.0) - dt;
+    // Subs (with TTL)
+    for(const s of subs){
+      if (typeof s.ttl !== 'number') s.ttl = (L && typeof L.subTTL === 'number') ? L.subTTL : 6.0; // safety for any legacy subs
+      s.ttl -= dt;
       s.vy += (L.gravity||1600)*dt*0.55;
       s.x  += s.vx*dt;
       s.y  += s.vy*dt;
       s.spin += dt*8;
-      for(const p of (L.platforms||[])){
+      for(const p of plats){
         if(s.y+s.h > p.y && s.y+s.h < p.y+18 && s.x+s.w>p.x && s.x<p.x+p.w && s.vy>=0){
           s.y = p.y - s.h; s.vy *= -0.45; s.vx *= 0.98;
         }
       }
       if(aabb(P,s)) damage();
     }
-    for(let i=subs.length-1;i>=0;i--){ if(subs[i].y>H+80 || subs[i].x<-80 || (subs[i].ttl!==undefined && subs[i].ttl<=0)) subs.splice(i,1); }
+    // Cull off-screen or expired
+    for(let i=subs.length-1;i>=0;i--){
+      const dead = (subs[i].y > H+80) || (subs[i].x < -80) || (typeof subs[i].ttl === 'number' && subs[i].ttl <= 0);
+      if(dead) subs.splice(i,1);
+    }
 
-    // Off-screen fall
+    // Fall death
     if(P.y > H+80) damage(true);
 
     // Win
@@ -185,9 +214,18 @@ for(const s of subs){
 
   function draw(){
     if(!L) return;
-    // Background grid
-    const g = ctx.createLinearGradient(0,0,W,H); g.addColorStop(0,'#00120a'); g.addColorStop(1,'#000');
-    ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
+    // Background image cover
+    if (hasBG && bgImg.complete){
+      const scale = Math.max(W/bgImg.width, H/bgImg.height);
+      const bw = bgImg.width*scale, bh = bgImg.height*scale;
+      const bx = (W-bw)/2, by = (H-bh)/2;
+      ctx.drawImage(bgImg, bx, by, bw, bh);
+    } else {
+      const g = ctx.createLinearGradient(0,0,W,H); g.addColorStop(0,'#00120a'); g.addColorStop(1,'#000');
+      ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
+    }
+
+    // Grid overlay
     ctx.globalAlpha = 0.25; ctx.strokeStyle = '#0f6';
     for(let y=0;y<H;y+=24){ ctx.beginPath(); ctx.moveTo(0,y+.5); ctx.lineTo(W,y+.5); ctx.stroke(); }
     for(let x=0;x<W;x+=24){ ctx.beginPath(); ctx.moveTo(x+.5,0); ctx.lineTo(x+.5,H); ctx.stroke(); }
@@ -196,8 +234,9 @@ for(const s of subs){
     // Goal
     const G = L.goal; ctx.shadowColor = '#0f8'; ctx.shadowBlur = 18; ctx.fillStyle = '#00ff99'; ctx.fillRect(G.x,G.y,G.w,G.h); ctx.shadowBlur = 0;
 
-    // Platforms
-    for(const s of (L.platforms||[])){
+    // Platforms (include boss platform)
+    const plats=(L.platforms||[]).slice(); if (bossPlatform) plats.push(bossPlatform);
+    for(const s of plats){
       const lg = ctx.createLinearGradient(s.x,s.y,s.x,s.y+s.h); lg.addColorStop(0,'#072'); lg.addColorStop(1,'#0a3');
       ctx.fillStyle = lg; ctx.fillRect(s.x,s.y,s.w,s.h);
       ctx.strokeStyle = '#0e6'; ctx.strokeRect(s.x+.5,s.y+.5,s.w-1,s.h-1);
@@ -222,8 +261,7 @@ for(const s of subs){
     }
 
     // Subs
-for(const s of subs){
-      s.ttl = (s.ttl ?? 6.0) - dt;
+    for(const s of subs){
       const cx = s.x+s.w/2, cy = s.y+s.h/2, r = s.w/2;
       ctx.save(); ctx.translate(cx,cy); ctx.rotate(s.spin);
       const grad = ctx.createRadialGradient(0,0,2,0,0,r); grad.addColorStop(0,'#222'); grad.addColorStop(1,'#444');
@@ -237,16 +275,13 @@ for(const s of subs){
     // Player
     if(IM.player.complete) ctx.drawImage(IM.player, P.x-6, P.y-8, P.w+12, P.h+16);
     else { ctx.fillStyle = '#061'; ctx.fillRect(P.x, P.y, P.w, P.h); ctx.strokeStyle = '#9ff'; ctx.strokeRect(P.x+.5,P.y+.5,P.w-1,P.h-1); }
-
-    // Hit flash
-    if(screenFlash>0){ ctx.fillStyle = 'rgba(255,60,60,'+screenFlash*0.35+')'; ctx.fillRect(0,0,W,H); screenFlash*=0.92; }
   }
 
-  // Loop
+  // Main loop
   let last = performance.now();
-  function loop(now){ const dt = Math.min(1/30,(now-last)/1000); last=now; step(dt); draw(); requestAnimationFrame(loop); }
+  function loop(now){ const dt = Math.min(1/30, (now-last)/1000); last = now; step(dt); draw(); requestAnimationFrame(loop); }
   requestAnimationFrame(loop);
 
   // Boot
   loadLevel(currentLevelIndex);
-})(); 
+})();
