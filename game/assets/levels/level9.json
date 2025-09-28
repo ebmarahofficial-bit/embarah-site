@@ -154,5 +154,5 @@
     "h": 16
   },
   "subTTL": 6.0,
-  "background": "game/assets/backgrounds/neon_jungle_1920x1080.png"
+  "background": "game/assets/sprites/neon_jungle_1920x1080.png"
 }
