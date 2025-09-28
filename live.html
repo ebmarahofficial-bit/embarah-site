@@ -135,18 +135,22 @@
 
         <!-- Player: always uses channel live stream -->
         <section class="player" aria-label="Live video">
-          <div class="badge">● Live</div>
+          <div class="badge" id="liveBadge">● Live</div>
           <iframe
+            id="livePlayer"
             src="https://www.youtube.com/embed/live_stream?channel=UC4TFxZzu6BKLRfAWnsZFnRA&autoplay=1&mute=1&modestbranding=1&rel=0&wmode=transparent&enablejsapi=1"
             title="YouTube Live Player"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
             allowfullscreen></iframe>
         </section>
 
-        <!-- Chat: filled dynamically from ?v=VIDEO_ID -->
+        <!-- Chat: filled dynamically by backend resolver -->
         <aside class="chat" aria-label="Live chat">
           <div class="chat-embed" id="chatEmbed">
-            <iframe id="chatFrame" title="YouTube Live Chat"></iframe>
+            <div style="display:grid;place-items:center;height:100%;text-align:center;padding:20px;">
+              <h2 style="color:var(--neon);font-size:1.2rem;margin:0 0 6px;">Standby — Chat</h2>
+              <p style="opacity:.85;margin:0;">We’ll pull the live chat automatically when you’re online.</p>
+            </div>
           </div>
         </aside>
 
@@ -173,32 +177,47 @@
     overlay.addEventListener('click', closeDrawer);
     window.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
 
-    // ===== Dynamic chat loader from ?v=VIDEO_ID =====
-    (function () {
-      const params = new URLSearchParams(location.search);
-      const videoId = (params.get('v') || '').trim();
-      const domain = location.hostname;
-      const chat = document.getElementById('chatFrame');
-      const holder = document.getElementById('chatEmbed');
+    // ===== Live Chat Auto-Detect (backend resolver) =====
+    const CHANNEL_ID = "UC4TFxZzu6BKLRfAWnsZFnRA";
+    const RESOLVER_URL = "/api/youtube-live-id?channel=" + encodeURIComponent(CHANNEL_ID);
+    const chatWrap = document.getElementById('chatEmbed');
+    const domain = location.hostname;
 
-      if (videoId) {
-        chat.src = `https://www.youtube.com/live_chat?v=${encodeURIComponent(videoId)}&embed_domain=${domain}`;
-      } else {
-        holder.innerHTML = `
-          <div style="display:grid;place-items:center;padding:16px;text-align:center;
-                      background:rgba(0,0,0,.45);border:1px solid rgba(0,255,128,.25);border-radius:12px;">
-            <p style="margin:0 0 10px;">Chat needs the live video ID.</p>
-            <a href="https://www.youtube.com/@EbmarahDubstep/live" target="_blank" rel="noopener"
-               style="display:inline-block;padding:10px 14px;border:1px solid rgba(0,255,128,.45);
-                      border-radius:10px;color:#b9ffdf;text-decoration:none;font-weight:800;">
-              Open Chat on YouTube
-            </a>
-            <p style="opacity:.8;margin:10px 0 0;font-size:.9rem">
-              Tip: open this page as <code>?v=YOUR_VIDEO_ID</code> (e.g. <code>?v=fS7mPZ5jOgc</code>)
-            </p>
-          </div>`;
-      }
-    })();
+    function setChat(videoId){
+      chatWrap.innerHTML = `
+        <iframe
+          id="chatFrame"
+          src="https://www.youtube.com/live_chat?v=${encodeURIComponent(videoId)}&embed_domain=${domain}"
+          title="YouTube Live Chat"
+          style="background:transparent;"></iframe>`;
+    }
+
+    function showFallback(){
+      chatWrap.innerHTML = `
+        <div style="display:grid;place-items:center;padding:16px;text-align:center;
+                    background:rgba(0,0,0,.45);border:1px solid rgba(0,255,128,.25);border-radius:12px;">
+          <p style="margin:0 0 10px;">Chat is unavailable right now.</p>
+          <a href="https://www.youtube.com/@Ebmarah/live" target="_blank" rel="noopener"
+             style="display:inline-block;padding:10px 14px;border:1px solid rgba(0,255,128,.45);
+                    border-radius:10px;color:#b9ffdf;text-decoration:none;font-weight:800;">
+            Open Chat on YouTube
+          </a>
+        </div>`;
+    }
+
+    async function resolveLiveId(){
+      try{
+        const res = await fetch(RESOLVER_URL, { cache: "no-store" });
+        if (!res.ok) throw 0;
+        const data = await res.json();
+        if (data && data.videoId) setChat(data.videoId);
+        else showFallback();
+      } catch { showFallback(); }
+    }
+
+    resolveLiveId();
+    // Re-check every 3 minutes so waiting visitors get chat once you go live
+    setInterval(resolveLiveId, 180000);
   </script>
 </body>
 </html>
