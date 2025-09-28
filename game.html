@@ -4,59 +4,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <!-- SEO -->
-  <meta name="description" content="Ebmarah — gorilla-themed dubstep from the Digital Jungle. Stream tracks, join the virtual rave room, and explore hidden puzzles.">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <meta property="og:type" content="website">
-  <meta property="og:title" content="Ebmarah – Digital Gorilla Forest">
-  <meta property="og:description" content="Gorilla-certified dubstep. Enter the digital jungle, catch live streams, and unlock hidden easter eggs.">
-  <meta property="og:image" content="assets/social-card.png">
-  <meta property="og:url" content="https://ebmarah.com/">
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Ebmarah – Digital Gorilla Forest">
-  <meta name="twitter:description" content="Gorilla-certified dubstep with a neon jungle vibe.">
-  <meta name="twitter:image" content="assets/social-card.png">
-  <script type="application/ld+json">
-  {
-    "@context":"https://schema.org",
-    "@type":"MusicGroup",
-    "name":"Ebmarah",
-    "url":"https://ebmarah.com/",
-    "genre":["Dubstep","Riddim"],
-    "logo":"https://ebmarah.com/assets/favicon.png",
-    "sameAs":[
-      "https://soundcloud.com/ebmarah",
-      "https://www.youtube.com/@ebmarah",
-      "https://www.instagram.com/ebmarah"
-    ]
-  }
-  </script>
-
   <title>Ebmarah – Dubstep Tower</title>
   <link rel="icon" type="image/png" href="assets/favicon.png" />
   <link rel="stylesheet" href="game/assets/css/game.css">
   <style>
-    /* === Enhancements === */
-    @media (prefers-reduced-motion: reduce) {
-      #intro video, .video-bg video { display: none !important; }
-      #intro { background: #000; }
-      .video-bg { background: #000 url('assets/bg-fallback.jpg') center/cover no-repeat; }
-    }
-    @media (max-width: 840px){
-      .menu-btn{display:inline-flex; align-items:center; gap:8px}
-      nav.menu{
-        position: fixed; inset: 64px 0 0 0; display: flex; flex-direction: column; gap: 18px;
-        background: rgba(2,13,7,.96); transform: translateY(-110%);
-        transition: transform .35s ease; padding: 24px; border-top:1px solid rgba(0,255,128,.25);
-        z-index: 999;
-      }
-      nav.menu.open{ transform: translateY(0); }
-      nav.menu a{ font-size: 18px; }
-    }
-    .skip-link{position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;}
-    .skip-link:focus{left:8px;top:8px;width:auto;height:auto;padding:8px 12px;background:#000;border:1px solid var(--neon);border-radius:8px;color:#b9ffdf;z-index:1101}
-    .ebm-audio button:focus, .menu-btn:focus, nav a:focus { outline: 2px dashed var(--neon); outline-offset: 3px; }
-
     /* ===== Styles adopted from index for consistent look ===== */
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&display=swap');
     :root { --neon:#00ff99; --bg:#020d07; --ink:#e0ffe8; --glass:rgba(2,13,7,.75) }
@@ -119,23 +70,22 @@
       border:1px solid rgba(0,255,128,.45); background:transparent;
       color:#b9ffdf; font-weight:700; padding:8px 12px; border-radius:10px; cursor:pointer;
     }
-    .ebm-audio input[type="range" aria-label="Volume"]{ width:140px; accent-color:#00ff99 }
+    .ebm-audio input[type="range"]{ width:140px; accent-color:#00ff99 }
     .ebm-audio .status{ color:#76ffb2; font-size:12px; letter-spacing:.02em; opacity:.9 }
     .ebm-audio .dot{ display:inline-block; width:6px; height:6px; border-radius:50%; background:#ff5c5c; margin-left:6px; box-shadow:0 0 8px #ff5c5c }
     .ebm-audio.playing .dot{ background:#00ffa0; box-shadow:0 0 8px #00ffa0 }
     @media (max-width: 960px){
       nav.site-nav{ display:none }
       .menu-btn{ display:inline-flex }
-      .ebm-audio input[type="range" aria-label="Volume"]{ width:110px }
+      .ebm-audio input[type="range"]{ width:110px }
     }
     @media (max-width: 520px){
       .ebm-audio{ left:12px; transform:none; right:12px; justify-content:space-between; width:auto }
-      .ebm-audio input[type="range" aria-label="Volume"]{ width:90px }
+      .ebm-audio input[type="range"]{ width:90px }
     }
   </style>
 </head>
 <body>
-  <a class=\"skip-link\" href=\"#main\">Skip to content</a>
   <!-- Background video (auto-resizes) -->
   <div class="bg" aria-hidden="true">
     <video src="video/bg2.mp4" autoplay muted loop playsinline></video>
@@ -183,7 +133,7 @@
   </aside>
 
   <!-- Game Panel -->
-  <main id="main">
+  <main>
     <section class="panel">
       <div class="glass" style="position:relative">
         <div class="hud">Level: <b id="levelName">—</b> · Lives: <b id="lives">3</b> · Time: <b id="time">0.0</b>s</div>
@@ -250,9 +200,9 @@
 
       const wrap=document.createElement('div'); wrap.className='ebm-audio';
       wrap.innerHTML = `
-        <button id="ebmPlay" aria-pressed="false" aria-label="Play or pause background music" disabled>Play</button>
-        <button id="ebmMute" aria-pressed="false" aria-label="Mute or unmute background music" disabled>Mute</button>
-        <input id="ebmVol" type="range" aria-label="Volume" min="0" max="1" step="0.01" />
+        <button id="ebmPlay" disabled>Play</button>
+        <button id="ebmMute" disabled>Mute</button>
+        <input id="ebmVol" type="range" min="0" max="1" step="0.01" />
         <span class="status" id="ebmStatus">ready<span class="dot"></span></span>`;
       document.body.appendChild(wrap);
 
