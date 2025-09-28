@@ -6,14 +6,67 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="icon" type="image/png" href="assets/favicon.png" />
   <style>
+    /* ===== Base (from game.html) ===== */
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&display=swap');
-    :root { --neon:#00ff99; --ink:#e0ffe8; --bg:#020d07; }
+    :root { --neon:#00ff99; --ink:#e0ffe8; --bg:#020d07; --glass:rgba(2,13,7,.75); }
     *{box-sizing:border-box}
-    body{margin:0;font-family:'Orbitron',sans-serif;color:var(--ink);background:var(--bg)}
-    header{position:sticky;top:0;background:rgba(0,0,0,.55);backdrop-filter:blur(10px);padding:12px 18px;border-bottom:1px solid rgba(0,255,128,.25);z-index:5}
-    nav a{color:#76ffb2;text-decoration:none;margin-right:18px}
-    h1{margin:16px 18px;text-shadow:0 0 14px var(--neon)}
+    body{margin:0;font-family:'Orbitron',sans-serif;color:var(--ink);background:var(--bg);overflow-x:hidden}
+
+    /* Fullscreen background video */
+    .bg{position:fixed; inset:0; z-index:-1; overflow:hidden}
+    .bg video{width:100%; height:100%; object-fit:cover; filter:saturate(1.05) contrast(1.05)}
+
+    /* Header + Nav (matches game.html) */
+    header{
+      position:fixed; inset:0 0 auto 0;
+      display:flex; align-items:center; justify-content:space-between;
+      padding:12px 18px; background:var(--glass);
+      border-bottom:1px solid rgba(0,255,128,.2);
+      box-shadow:0 6px 24px rgba(0,0,0,.35); z-index:1000;
+      backdrop-filter: blur(10px);
+    }
+    .brand{display:flex; align-items:center; gap:10px; font-weight:800; letter-spacing:.02em}
+    .brand img{height:40px; width:auto}
+    .brand span{font-size:clamp(16px,2.6vw,22px)}
+    nav.site-nav{display:flex; align-items:center; gap:22px}
+    nav.site-nav a{ color:#76ffb2; text-decoration:none; font-weight:700; font-size:clamp(13px,1.6vw,14px) }
+    nav.site-nav a:hover{ color:#00ffea }
+    .menu-btn{
+      display:none; background:none; border:1px solid rgba(0,255,128,.35);
+      color:#b9ffdf; font-size:16px; font-weight:700; padding:8px 12px; border-radius:10px
+    }
+    .drawer-overlay{
+      position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:999; opacity:0; pointer-events:none; transition:.25s;
+    }
+    .drawer{
+      position:fixed; top:0; right:-320px; width:min(80vw,320px); height:100%;
+      background:#03140c; border-left:1px solid rgba(0,255,128,.25);
+      box-shadow:-12px 0 40px rgba(0,0,0,.45); z-index:1000; transition: right .25s ease;
+      display:flex; flex-direction:column; padding:18px;
+    }
+    .drawer header{ all:unset; display:flex; align-items:center; justify-content:space-between; margin-bottom:8px }
+    .drawer h2{ margin:0; font-size:18px; color:#9dffd2 }
+    .drawer .close{
+      background:none; border:1px solid rgba(0,255,128,.35); color:#b9ffdf; padding:6px 10px; border-radius:10px
+    }
+    .drawer nav{ display:flex; flex-direction:column; margin-top:12px }
+    .drawer nav a{
+      padding:14px 10px; border-bottom:1px solid rgba(0,255,128,.15);
+      color:#b9ffdf; text-decoration:none; font-weight:800; letter-spacing:.02em;
+      font-size:16px;
+    }
+    .drawer nav a:last-child{ border-bottom:0 }
+    .drawer nav a:active{ background:rgba(0,255,128,.08) }
+    .drawer-open .drawer{ right:0 }
+    .drawer-open .drawer-overlay{ opacity:1; pointer-events:auto }
+    @media (max-width: 960px){ nav.site-nav{ display:none } .menu-btn{ display:inline-flex } }
+
+    /* Page content spacing */
+    .spacer{height:72px}
     .wrap{width:min(1100px,94vw);margin:0 auto 40px}
+
+    /* ===== Original page styles kept ===== */
+    h1{margin:16px 18px;text-shadow:0 0 14px var(--neon); text-align:center}
     .controls{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0;align-items:center}
     input,button,label{padding:9px;border-radius:8px;border:1px solid rgba(0,255,128,.35);background:rgba(0,0,0,.4);color:var(--ink)}
     input[type="checkbox"]{width:auto;accent-color:#00ff99}
@@ -32,14 +85,57 @@
   </style>
 </head>
 <body>
+  <!-- Background video -->
+  <div class="bg" aria-hidden="true">
+    <video src="video/bg2.mp4" autoplay muted loop playsinline></video>
+  </div>
+
+  <!-- Header / Nav (from game.html) -->
   <header>
-    <nav>
+    <div class="brand">
+      <img src="assets/favicon.png" alt="Ebmarah" />
+      <span>Ebmarah</span>
+    </div>
+
+    <!-- Desktop nav -->
+    <nav class="site-nav" aria-label="Primary">
       <a href="index.html">Home</a>
-      <a href="samples.html">Fan Vocal Booth</a>
-      <a href="samples-library.html">Library</a>
+      <a href="music.html">Music</a>
+      <a href="live.html">Live</a>
+      <a href="sample-packs.html">Sample Packs</a>
+      <a href="about.html">About</a>
+      <a href="virtual-rave-room.html">Virtual Rave Room</a>
+      <a href="game.html">Game</a>
+      <a href="drum-pad.html">BeEbmarah</a>
+      <a href="contact.html">Contact</a>
     </nav>
+
+    <!-- Mobile trigger -->
+    <button class="menu-btn" id="menuBtn" aria-haspopup="true" aria-expanded="false" aria-controls="drawer">Menu</button>
   </header>
 
+  <!-- Offcanvas drawer (mobile) -->
+  <div class="drawer-overlay" id="drawerOverlay"></div>
+  <aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-label="Site menu">
+    <header>
+      <h2>Menu</h2>
+      <button class="close" id="drawerClose" aria-label="Close menu">Close</button>
+    </header>
+    <nav aria-label="Mobile">
+      <a href="index.html">Home</a>
+      <a href="music.html">Music</a>
+      <a href="live.html">Live</a>
+      <a href="sample-packs.html">Sample Packs</a>
+      <a href="about.html">About</a>
+      <a href="game.html">Game</a>
+      <a href="drum-pad.html">BeEbmarah</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+  </aside>
+
+  <div class="spacer"></div>
+
+  <!-- ===== Page content (kept intact) ===== -->
   <h1>Fan Vocal Library</h1>
   <div class="wrap">
     <div class="controls">
@@ -69,6 +165,26 @@
     window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRjaWpjcndseGt4YWV4cW1idHh1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkwOTA0MjAsImV4cCI6MjA3NDY2NjQyMH0.UmcHKU56ezlDpDs5emLgR0UkyWaa-VzdYr01bbeQ1cc";
   </script>
 
+  <!-- Mobile drawer JS (from game.html) -->
+  <script>
+    (function(){
+      const root = document.documentElement;
+      const btn = document.getElementById('menuBtn');
+      const drawer = document.getElementById('drawer');
+      const overlay = document.getElementById('drawerOverlay');
+      const closeBtn = document.getElementById('drawerClose');
+
+      const openDrawer = () => { root.classList.add('drawer-open'); btn.setAttribute('aria-expanded','true'); drawer.querySelector('a')?.focus(); };
+      const closeDrawer = () => { root.classList.remove('drawer-open'); btn.setAttribute('aria-expanded','false'); btn.focus(); };
+
+      btn.addEventListener('click', openDrawer);
+      closeBtn.addEventListener('click', closeDrawer);
+      overlay.addEventListener('click', closeDrawer);
+      window.addEventListener('keydown', e => { if(e.key === 'Escape') closeDrawer(); });
+    })();
+  </script>
+
+  <!-- ===== Page logic (unchanged) ===== -->
   <script>
   (function(){
     const listEl = document.getElementById('list');
@@ -82,9 +198,7 @@
     const btnClear = document.getElementById('btnClear');
 
     const BUCKET='fan-vocals';
-
-    // Your files are under "public/YYYY/MM/DD/Artist/"
-    const prefixRoot='public/';
+    const prefixRoot='public/';  // Your files are under "public/YYYY/MM/DD/Artist/"
 
     let offset=0, currentPrefix=prefixRoot, lastBatchCount=0;
     const audioRe = /\.(webm|mp3|m4a|wav)$/i;
@@ -215,7 +329,7 @@
         // Artist folders at this level end with '/'
         const artistFolders = firstLevel.filter(it => it.name.endsWith('/')).map(it => it.name.replace(/\/$/, ''));
 
-        // 1) files directly in the date folder (unlikely, but support it)
+        // 1) files directly in the date folder
         const rootFiles = firstLevel.filter(it => !it.name.endsWith('/') && audioRe.test(it.name))
                                     .map(it => ({ file: it.name, full: dayPrefix + it.name }));
         if (rootFiles.length) groups.set('(root)', rootFiles);
@@ -234,7 +348,7 @@
         } else {
           const ordered = [];
           if (groups.has('(root)')) ordered.push(['(root)', groups.get('(root)')]);
-          for (const k of Array.from(groups.keys()).filter(k=>k!=='(root)').sort((a,b)=>a.localeCompare(b))){
+          for (const k of Array.from(groups.keys()).filter(k!=='(root)').sort((a,b)=>a.localeCompare(b))){
             ordered.push([k, groups.get(k)]);
           }
           for (const [gName, files] of ordered){
@@ -306,4 +420,3 @@
   </script>
 </body>
 </html>
-
