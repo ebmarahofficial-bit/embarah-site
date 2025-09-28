@@ -8,7 +8,8 @@
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&display=swap');
     :root { --neon:#00ff99; --ink:#e0ffe8; --bg:#020d07; }
-    *{box-sizing:border-box} body{margin:0;font-family:'Orbitron',sans-serif;color:var(--ink);background:var(--bg)}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:'Orbitron',sans-serif;color:var(--ink);background:var(--bg)}
     header{position:sticky;top:0;background:rgba(0,0,0,.55);backdrop-filter:blur(10px);padding:12px 18px;border-bottom:1px solid rgba(0,255,128,.25);z-index:5}
     nav a{color:#76ffb2;text-decoration:none;margin-right:18px}
     h1{margin:16px 18px;text-shadow:0 0 14px var(--neon)}
@@ -21,6 +22,7 @@
     .meta{font-size:12px;opacity:.85;margin-top:6px;word-break:break-word}
     .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
     .tiny{font-size:12px;opacity:.85}
+    .empty{padding:16px;text-align:center;opacity:.8}
   </style>
 </head>
 <body>
@@ -49,6 +51,7 @@
 
   <!-- KEYS -->
   <script>
+    // Your project values (you shared these already)
     window.SUPABASE_URL = "https://dcijcrwlxkxaexqmbtxu.supabase.co";
     window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRjaWpjcndseGt4YWV4cW1idHh1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkwOTA0MjAsImV4cCI6MjA3NDY2NjQyMH0.UmcHKU56ezlDpDs5emLgR0UkyWaa-VzdYr01bbeQ1cc";
   </script>
@@ -63,22 +66,47 @@
     const btnClear = document.getElementById('btnClear');
 
     const BUCKET='fan-vocals';
-    let offset=0, prefixBase='public/', currentPrefix='public/';
 
-    function toPublicUrl(path){ return `${window.SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${encodeURIComponent(path)}`; }
+    // If you stored files at the root, set this to ''.
+    // If you used a 'public/' folder (recommended), leave as 'public/'.
+    const prefixBase='public/';
 
-    async function list(prefix='public/', limit=24, off=0){
+    let offset=0, currentPrefix=prefixBase, lastBatchCount=0;
+
+    // Fix #1: build a correct public URL (do NOT encode slashes)
+    function toPublicUrl(path){
+      // encode each segment, preserve slashes
+      const safePath = path.split('/').map(encodeURIComponent).join('/');
+      return `${window.SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${safePath}`;
+    }
+
+    // Helper for list calls
+    async function list(prefix=prefixBase, limit=24, off=0){
       const res = await fetch(`${window.SUPABASE_URL}/storage/v1/object/list/${BUCKET}`, {
         method:'POST',
-        headers:{ 'Authorization':`Bearer ${window.SUPABASE_ANON_KEY}`,'Content-Type':'application/json' },
-        body: JSON.stringify({ prefix, limit, offset:off, sortBy:{column:'created_at', order:'desc'} })
+        headers:{
+          'Authorization': `Bearer ${window.SUPABASE_ANON_KEY}`,
+          // Fix #2: include apikey header
+          'apikey': window.SUPABASE_ANON_KEY,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          prefix,
+          limit,
+          offset: off,
+          sortBy: { column:'created_at', order:'desc' }
+        })
       });
-      if (!res.ok) throw new Error(await res.text());
+      if (!res.ok){
+        const msg = await res.text().catch(()=>res.statusText);
+        throw new Error(msg || `HTTP ${res.status}`);
+      }
       return res.json();
     }
 
     async function fetchMeta(audioPath){
-      const jsonPath = audioPath.replace(/\.webm$/i,'.json');
+      // expect a sibling JSON: same name, .json
+      const jsonPath = audioPath.replace(/\.webm$/i, '.json');
       const url = toPublicUrl(jsonPath);
       try{
         const r = await fetch(url, {cache:'no-store'});
@@ -116,15 +144,30 @@
     }
 
     async function load(reset=false){
-      if (reset){ offset=0; listEl.innerHTML=''; }
-      const dateFilter = dayEl.value ? new Date(dayEl.value+'T00:00:00Z') : null;
-      currentPrefix = 'public/';
-      if (dateFilter){
-        const y=dateFilter.getUTCFullYear(), m=String(dateFilter.getUTCMonth()+1).padStart(2,'0'), d=String(dateFilter.getUTCDate()).padStart(2,'0');
-        currentPrefix = `public/${y}/${m}/${d}/`;
+      if (reset){
+        offset=0;
+        lastBatchCount=0;
+        listEl.innerHTML='';
       }
+
+      // Date -> folder like public/YYYY/MM/DD/
+      const dateFilter = dayEl.value ? new Date(dayEl.value+'T00:00:00Z') : null;
+      currentPrefix = prefixBase;
+      if (dateFilter){
+        const y=dateFilter.getUTCFullYear();
+        const m=String(dateFilter.getUTCMonth()+1).padStart(2,'0');
+        const d=String(dateFilter.getUTCDate()).padStart(2,'0');
+        currentPrefix = `${prefixBase}${y}/${m}/${d}/`;
+      }
+
       const items = await list(currentPrefix, 24, offset);
+      lastBatchCount = items.length;
+
       const audioItems = items.filter(it => /\.webm$/i.test(it.name));
+      if (reset && audioItems.length === 0){
+        listEl.insertAdjacentHTML('beforeend', `<div class="empty card">No recordings found for this filter.</div>`);
+      }
+
       for (const it of audioItems){
         const audioPath = `${currentPrefix}${it.name}`;
         const audioUrl = toPublicUrl(audioPath);
@@ -132,13 +175,15 @@
         const namePretty = it.name.replace(/_/g,' ');
         listEl.insertAdjacentHTML('beforeend', card({audioUrl, name:namePretty, meta}));
       }
-      offset += items.length;
-      moreBtn.disabled = items.length === 0;
 
-      // wire copy buttons
+      offset += items.length;
+      moreBtn.disabled = lastBatchCount === 0;
+
+      // (re)wire copy buttons
       listEl.querySelectorAll('.copy-btn').forEach(btn=>{
         btn.onclick = async () => {
-          try { await navigator.clipboard.writeText(btn.dataset.url); btn.textContent='Copied!'; setTimeout(()=>btn.textContent='Copy URL',1200); }
+          try { await navigator.clipboard.writeText(btn.dataset.url);
+                btn.textContent='Copied!'; setTimeout(()=>btn.textContent='Copy URL',1200); }
           catch { btn.textContent='Failed'; setTimeout(()=>btn.textContent='Copy URL',1200); }
         };
       });
@@ -153,11 +198,13 @@
         card.style.display = t.includes(q) ? '' : 'none';
       });
     });
+
     btnClear.addEventListener('click', ()=>{ qEl.value=''; dayEl.value=''; load(true); });
     moreBtn.addEventListener('click', ()=>load(false));
 
+    // initial load
     load(true).catch(err=>{
-      listEl.innerHTML = `<div class="card">Error loading library: ${err.message}</div>`;
+      listEl.innerHTML = `<div class="card">Error loading library:<br><code>${esc(err.message || String(err))}</code></div>`;
     });
   })();
   </script>
