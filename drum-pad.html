@@ -1,262 +1,116 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>Ebmarah – Drum Pad</title>
+  <meta charset="UTF-8" />
+  <title>Ebmarah – Drum Pad (Press & Hold Loops)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="icon" type="image/png" href="assets/favicon.png" />
   <style>
-    /* ====== Site base (from your theme) ====== */
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&display=swap');
-    :root { --neon:#00ff99; --bg:#020d07; --ink:#e0ffe8; --glass:rgba(2,13,7,.75); }
 
-    * { box-sizing: border-box; }
-    html, body { height:100%; margin:0; }
-    body {
-      font-family:'Orbitron', sans-serif; color:var(--ink);
-      background:var(--bg); overflow-x:hidden;
+    :root{
+      --neon:#00ff99; --ink:#e0ffe8; --bg:#020d07; --card:#06140f; --line:#0d2a1f;
     }
-
-    /* Background video, like other pages */
-    .video-bg{ position:fixed; inset:0; z-index:-3; overflow:hidden }
-    .video-bg video{ width:100%; height:100%; object-fit:cover; object-position:center; }
-
-    /* Header / nav (desktop) */
+    *{ box-sizing:border-box }
+    html,body{ height:100% }
+    body{
+      margin:0; font-family:'Orbitron',sans-serif; color:var(--ink);
+      background: radial-gradient(1200px 1200px at 50% -10%, rgba(0,255,153,.07), transparent 40%) , #000;
+      min-height:100%;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .wrap{
+      max-width:1100px; margin:0 auto; padding:16px 16px 64px;
+    }
     header{
-      position:fixed; inset:0 0 auto 0;
-      display:flex; align-items:center; justify-content:space-between;
-      padding:12px 18px; background:var(--glass);
-      border-bottom:1px solid rgba(0,255,128,.2);
-      box-shadow:0 6px 24px rgba(0,0,0,.35); z-index:1000;
-      backdrop-filter: blur(10px);
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      padding:10px 0 18px; border-bottom:1px solid var(--line);
     }
-    .brand{display:flex; align-items:center; gap:10px; font-weight:800; letter-spacing:.02em}
-    .brand img{height:40px; width:auto}
-    .brand span{font-size:clamp(16px,2.6vw,22px)}
-
-    nav.site-nav{display:flex; align-items:center; gap:22px}
-    nav.site-nav a{
-      color:#76ffb2; text-decoration:none; font-weight:700; font-size:clamp(13px,1.6vw,14px)
+    .brand{
+      display:flex; align-items:center; gap:10px; font-weight:700;
+      letter-spacing:.5px; color:var(--neon);
     }
-    nav.site-nav a:hover{ color:#00ffea }
-
-    /* Mobile menu button */
-    .menu-btn{
-      display:none; background:none; border:1px solid rgba(0,255,128,.35);
-      color:#b9ffdf; font-size:16px; font-weight:700; padding:8px 12px; border-radius:10px
+    .brand .dot{ width:10px; height:10px; border-radius:50%; background:var(--neon); box-shadow:0 0 12px var(--neon) }
+    #status{ font-size:.95rem; opacity:.9 }
+    .controls{
+      display:flex; flex-wrap:wrap; gap:10px; align-items:center;
     }
-
-    /* Off-canvas drawer (mobile) */
-    .drawer-overlay{
-      position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:999; opacity:0; pointer-events:none; transition:.25s;
+    button, .slider{
+      font:inherit; color:var(--ink); background:var(--card);
+      border:1px solid var(--line); border-radius:10px; padding:10px 14px; cursor:pointer;
     }
-    .drawer{
-      position:fixed; top:0; right:-320px; width:min(80vw,320px); height:100%;
-      background:#03140c; border-left:1px solid rgba(0,255,128,.25);
-      box-shadow:-12px 0 40px rgba(0,0,0,.45); z-index:1000; transition:right .25s ease;
-      display:flex; flex-direction:column; padding:18px;
-    }
-    .drawer header{ all:unset; display:flex; align-items:center; justify-content:space-between; margin-bottom:8px }
-    .drawer h2{ margin:0; font-size:18px; color:#9dffd2 }
-    .drawer .close{
-      background:none; border:1px solid rgba(0,255,128,.35); color:#b9ffdf; padding:6px 10px; border-radius:10px
-    }
-    .drawer nav{ display:flex; flex-direction:column; margin-top:12px }
-    .drawer nav a{
-      padding:14px 10px; border-bottom:1px solid rgba(0,255,128,.15);
-      color:#b9ffdf; text-decoration:none; font-weight:800; letter-spacing:.02em; font-size:16px;
-    }
-    .drawer nav a:last-child{ border-bottom:0 }
-    .drawer nav a:active{ background:rgba(0,255,128,.08) }
-    .drawer-open .drawer{ right:0 }
-    .drawer-open .drawer-overlay{ opacity:1; pointer-events:auto }
-
-    /* Keep header off content */
-    .spacer{ height:70px }
-
-    /* ====== Drum Pad page content ====== */
-    main{
-      position:relative; z-index:1;
-      max-width:1100px; margin:0 auto; padding:22px;
-      min-height:calc(100vh - 70px);
-      display:flex; flex-direction:column; gap:16px;
-    }
-    .card{
-      background:rgba(0,0,0,0.6);
-      border:2px solid rgba(0,255,128,0.25);
-      border-radius:12px;
-      box-shadow:0 0 30px rgba(0,255,128,0.2);
-      padding: clamp(14px, 2.6vw, 22px);
-    }
-    .title-row{
-      display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
-      margin-bottom:8px;
-    }
-    h1{
-      margin:0; color:var(--neon); text-shadow:0 0 18px var(--neon);
-      font-size:clamp(22px,4.2vw,36px);
-    }
-    .status{ font-size:12px; opacity:.9 }
-
-    .ctrl-row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
-    .btn{
-      appearance:none; border:1px solid rgba(0,255,128,.45); background:transparent;
-      color:#b9ffdf; padding:10px 14px; border-radius:12px; font-weight:700; cursor:pointer;
-    }
-    .btn:hover{ color:#00ffea; border-color:#00ffea }
-    .knob{display:flex; align-items:center; gap:10px}
-    .knob input[type="range"]{width:180px; accent-color:var(--neon)}
-
+    button[disabled]{ opacity:.5; cursor:not-allowed }
+    .slider{ padding:10px }
+    .slider input{ width:160px }
     .grid{
-      display:grid; gap:12px; margin-top:8px;
-      grid-template-columns: repeat(2, 1fr);
+      display:grid; grid-template-columns:repeat(5,minmax(120px,1fr)); gap:12px; margin-top:16px;
     }
-    @media(min-width:600px){ .grid{ grid-template-columns: repeat(5, 1fr); } }
-
+    @media (max-width:820px){
+      .grid{ grid-template-columns:repeat(3,minmax(100px,1fr)) }
+    }
+    @media (max-width:520px){
+      .grid{ grid-template-columns:repeat(2,minmax(120px,1fr)) }
+    }
     .pad{
-      position:relative; isolation:isolate;
-      display:grid; place-items:center;
-      height:96px; border-radius:16px;
-      border:1px solid rgba(0,255,128,.35);
-      background:
-        radial-gradient(120% 120% at 100% 0%, rgba(0,255,128,.08), transparent),
-        linear-gradient(180deg, rgba(0,0,0,.25), rgba(0,0,0,.6)),
-        #0a1f16;
-      color:#76ffb2; font-weight:800; letter-spacing:.03em;
-      box-shadow:0 6px 18px rgba(0,0,0,.45);
-      user-select:none; -webkit-user-select:none;
-      touch-action:manipulation; cursor:pointer;
-      transition: transform .04s ease;
+      position:relative;
+      background:linear-gradient(180deg, rgba(0,255,153,.08), rgba(0,0,0,.4));
+      border:1px solid var(--line); border-radius:16px;
+      aspect-ratio:1/1; display:grid; place-items:center;
+      text-align:center; user-select:none; touch-action: none;
+      transition: transform .04s ease, box-shadow .14s ease, border-color .14s ease;
+      box-shadow: inset 0 0 0 1px rgba(0,255,153,.08);
     }
-    .pad:active{ transform: scale(.98); }
-    .pad.kb:after{
-      content: attr(data-key);
-      position:absolute; top:6px; right:8px; font-size:12px; opacity:.6;
-    }
+    .pad:active{ transform: scale(.98) }
     .pad.playing{
-      box-shadow:0 0 0 2px rgba(0,255,153,.35), 0 0 24px rgba(0,255,153,.35);
-      outline: 2px solid var(--neon);
+      border-color: var(--neon);
+      box-shadow: 0 0 20px rgba(0,255,153,.25), inset 0 0 0 1px rgba(0,255,153,.25);
     }
-    .pad .label{ font-size:14px; line-height:1.2; opacity:.95; text-align:center; }
-
-    .hint{text-align:center; font-size:12px; opacity:.8; margin:6px 0 0;}
-
-    /* Responsive nav tweaks */
-    @media (max-width: 960px){
-      nav.site-nav{ display:none }
-      .menu-btn{ display:inline-flex }
-    }
+    .label{ font-size:1.05rem; line-height:1.2 }
+    .keyhint{ position:absolute; top:8px; right:10px; font-size:.8rem; opacity:.65 }
+    footer{ margin-top:18px; font-size:.9rem; opacity:.85 }
+    .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center }
+    .pill{ border:1px solid var(--line); background:var(--card); padding:8px 12px; border-radius:999px }
+    .mb8{ margin-bottom:8px }
   </style>
 </head>
 <body>
+  <div class="wrap">
+    <header>
+      <div class="brand"><span class="dot"></span> Ebmarah Drum Pad</div>
+      <div id="status">tap “Unlock Audio” first (browser policy)</div>
+    </header>
 
-  <!-- Background video to match site -->
-  <div class="video-bg" aria-hidden="true">
-    <video autoplay loop muted playsinline preload="auto">
-      <source src="video/bg2.mp4" type="video/mp4" />
-    </video>
+    <section class="mb8">
+      <div class="controls">
+        <button id="unlock">🔓 Unlock Audio</button>
+        <span class="pill">Loop transport:</span>
+        <button id="playLoop" disabled>▶️ Play Loop</button>
+        <button id="stopLoop" disabled>⏹ Stop Loop</button>
+        <label class="slider">Loop Vol
+          <input id="loopVol" type="range" min="0" max="1" step="0.01" value="1" disabled />
+        </label>
+      </div>
+      <div style="margin-top:6px; font-size:.9rem; opacity:.8">
+        Tip: hold a pad to sustain its loop; release to stop. Keys 1-0 also trigger pads.
+      </div>
+    </section>
+
+    <section>
+      <div id="padGrid" class="grid" role="group" aria-label="Drum pads"></div>
+    </section>
+
+    <footer>
+      <div>Rules for fan samples: keep it fun (no slurs, hate, politics, or threats). Short phrases welcome like “ebmarah you a…(be creative)”—clean or bleep-able 😉</div>
+    </footer>
   </div>
 
-  <!-- Top bar -->
-  <header>
-    <div class="brand">
-      <img src="assets/favicon.png" alt="Ebmarah" />
-      <span>Ebmarah</span>
-    </div>
-    <nav class="site-nav" aria-label="Primary">
-      <a href="index.html">Home</a>
-      <a href="music.html">Music</a>
-      <a class="nav-link" href="live.html">Live</a>
-      <a href="sample-packs.html">Sample Packs</a>
-      <a href="about.html">About</a>
-      <a href="virtual-rave-room.html">Virtual Rave Room</a>
-      <a href="game.html">Game</a>
-      <a href="drum-pad.html">BeEbmarah</a>
-      <a href="contact.html">Contact</a>
-    </nav>
-    <button class="menu-btn" id="menuBtn" aria-expanded="false" aria-controls="drawer">Menu</button>
-  </header>
-
-  <!-- Offcanvas drawer -->
-  <div class="drawer-overlay" id="drawerOverlay"></div>
-  <aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-label="Site menu">
-    <header>
-      <h2>Menu</h2>
-      <button class="close" id="drawerClose">Close</button>
-    </header>
-    <nav>
-      <a href="index.html">Home</a>
-      <a href="music.html">Music</a>
-      <a class="nav-link" href="live.html">Live</a>
-      <a href="sample-packs.html">Sample Packs</a>
-      <a href="about.html">About</a>
-      <a href="game.html">Game</a>
-      <a href="drum-pad.html">BeEbmarah</a>
-      <a href="contact.html">Contact</a>
-    </nav>
-  </aside>
-
-  <div class="spacer"></div>
-
-  <main>
-    <!-- Controls card -->
-    <section class="card">
-      <div class="title-row">
-        <h1>Unleash Your Inner Ebmarah</h1>
-        <span class="status" id="status">tap “Unlock Audio” to begin</span>
-      </div>
-      <div class="ctrl-row">
-        <button id="unlock" class="btn">🔓 Unlock Audio</button>
-        <button id="playLoop" class="btn" disabled>▶️ Play Loop</button>
-        <button id="stopLoop" class="btn" disabled>⏹ Stop</button>
-        <div class="knob" aria-label="Loop volume">
-          <span>Vol</span>
-          <input id="loopVol" type="range" min="0" max="1" step="0.01" value="0.7" disabled />
-        </div>
-      </div>
-      <div class="hint">Keyboard: press <b>1–9</b> and <b>0</b>. On mobile, just tap the pads.</div>
-    </section>
-
-    <!-- Pad grid -->
-    <section class="card">
-      <div class="grid" id="padGrid" aria-label="Drum pads"></div>
-    </section>
-  </main>
-
-  <!-- Optional mascot hook (kept consistent with your site) -->
-  <script src="js/ebmarah-mascot.js"></script>
-  <script>
-    if (window.EbmarahMascot?.init) {
-      EbmarahMascot.init({
-        mode:'passive',
-        position:'bottom-right',
-        funnyLines:['beat the jungle 🥁','bass bananas only 🍌','gorilla certified 🔊']
-      });
-    }
-  </script>
-
-  <!-- Drawer logic (same pattern as other pages) -->
-  <script>
-    (function(){
-      const root=document.documentElement;
-      const btn=document.getElementById('menuBtn');
-      const drawer=document.getElementById('drawer');
-      const overlay=document.getElementById('drawerOverlay');
-      const closeBtn=document.getElementById('drawerClose');
-      const openDrawer=()=>{root.classList.add('drawer-open');btn.setAttribute('aria-expanded','true');drawer.querySelector('a')?.focus();}
-      const closeDrawer=()=>{root.classList.remove('drawer-open');btn.setAttribute('aria-expanded','false');btn.focus();}
-      btn.addEventListener('click',openDrawer);
-      closeBtn.addEventListener('click',closeDrawer);
-      overlay.addEventListener('click',closeDrawer);
-      window.addEventListener('keydown',e=>{if(e.key==='Escape')closeDrawer();});
-    })();
-  </script>
-
-  <!-- Drum pad logic -->
+  <!-- Drum pad logic (press-and-hold smooth loop) -->
   <script>
   (() => {
-    // Paths
+    // ===== Paths (adjust to your structure) =====
+    // Backing loop (100% volume by default; slider controls it)
     const DRUM_LOOP = 'assets/audio/loops/eb_loop_140.mp3';
+    // Ten pad samples (mp3). File names can be whatever; just match the ids below.
     const SAMPLES = [
       { id: 'bass1',  label: 'Bass 1',  key: '1' },
       { id: 'bass2',  label: 'Bass 2',  key: '2' },
@@ -271,7 +125,7 @@
     ];
     const SAMPLE_BASE = 'assets/audio/pads/';
 
-    // DOM
+    // ===== DOM =====
     const statusEl = document.getElementById('status');
     const unlockBtn = document.getElementById('unlock');
     const playBtn = document.getElementById('playLoop');
@@ -279,7 +133,7 @@
     const loopVol = document.getElementById('loopVol');
     const grid = document.getElementById('padGrid');
 
-    // Build pads
+    // ===== Build pads =====
     const frag = document.createDocumentFragment();
     SAMPLES.forEach(s => {
       const btn = document.createElement('button');
@@ -287,26 +141,24 @@
       btn.dataset.id = s.id;
       btn.dataset.key = s.key;
       btn.setAttribute('aria-label', s.label);
-      btn.innerHTML = `<div class="label">${s.label}</div>`;
-      btn.addEventListener('pointerdown', () => triggerPad(s.id, btn));
-      btn.addEventListener('pointerup',   () => btn.classList.remove('playing'));
-      btn.addEventListener('pointerleave',() => btn.classList.remove('playing'));
+      btn.innerHTML = `<div class="keyhint">${s.key}</div><div class="label">${s.label}</div>`;
+      // Press & hold looping
+      btn.addEventListener('pointerdown', (e) => { e.preventDefault(); startHoldLoop(s.id, btn, e); });
+      btn.addEventListener('pointerup',   () => stopHoldLoop(btn));
+      btn.addEventListener('pointercancel',() => stopHoldLoop(btn));
+      btn.addEventListener('pointerleave',() => stopHoldLoop(btn));
+      btn.addEventListener('contextmenu', e => e.preventDefault());
       frag.appendChild(btn);
     });
     grid.appendChild(frag);
 
-    // Keyboard mapping
-    window.addEventListener('keydown', (e) => {
-      if (!ctx) return;
-      let key = e.key;
-      if (key === ')') key = '0';
-      const sample = SAMPLES.find(s => s.key === key);
-      if (!sample) return;
-      const btn = [...document.querySelectorAll('.pad')].find(b => b.dataset.id === sample.id);
-      triggerPad(sample.id, btn);
-    });
+    // Map keys to buttons after nodes exist
+    const keyToBtn = new Map();
+    function mapKeys() {
+      document.querySelectorAll('.pad').forEach(b => keyToBtn.set(b.dataset.key, b));
+    }
 
-    // Web Audio
+    // ===== Web Audio =====
     let ctx = null, loopGain = null, loopSource = null, loopBuffer = null;
     const padBuffers = new Map();
 
@@ -316,16 +168,16 @@
         status('loading audio…');
 
         loopGain = ctx.createGain();
-        loopGain.gain.value = +loopVol.value;
+        loopGain.gain.value = +loopVol.value;  // backing loop volume
         loopGain.connect(ctx.destination);
 
-        // Load pads
+        // Load pad buffers
         await Promise.all(SAMPLES.map(async s => {
           const buf = await fetchDecode(SAMPLE_BASE + s.id + '.mp3');
           if (buf) padBuffers.set(s.id, buf);
         }));
 
-        // Load loop
+        // Load backing loop (optional)
         try {
           const res = await fetch(DRUM_LOOP);
           if (res.ok) {
@@ -335,10 +187,11 @@
         } catch {}
 
         setEnabled(true);
-        status('ready – tap pads or press keys');
+        mapKeys();
+        status('ready – press & hold pads or use keys 1-0');
       } catch (e) {
         console.error(e);
-        status('error unlocking audio (check console)');
+        status('error unlocking audio (see console)');
       }
     });
 
@@ -357,8 +210,8 @@
 
     function stopLoop(){
       if (loopSource) {
-        try { loopSource.stop(); } catch {}
-        loopSource.disconnect();
+        try { loopSource.stop(); } catch{}
+        try { loopSource.disconnect(); } catch{}
         loopSource = null;
         status('loop: stopped');
       }
@@ -368,7 +221,7 @@
       if (loopGain) loopGain.gain.value = +loopVol.value;
     });
 
-    // Helpers
+    // ===== Helpers =====
     function status(t){ statusEl.textContent = t; }
     function setEnabled(on){
       playBtn.disabled = !on;
@@ -381,19 +234,118 @@
         const res = await fetch(url);
         if(!res.ok) return null;
         const ab = await res.arrayBuffer();
-        return await ctx.decodeAudioData(ab);
+        return await (ctx || new (window.AudioContext||window.webkitAudioContext)()).decodeAudioData(ab);
       }catch{ return null; }
     }
 
-    function triggerPad(id, btn){
+    // ====== Press-and-hold smooth looping (crossfade retrigger) ======
+    const holds = new WeakMap(); // btn -> { stop() }
+
+    // Tunables
+    const PAD_GAIN = 0.7;         // ~70% pad level (your request)
+    const MIN_FADE = 0.02;        // 20ms fade edges
+    const MAX_OVERLAP = 0.08;     // 80ms crossfade overlap
+    const MAX_VOICES = 4;         // safety cap
+
+    function startHoldLoop(id, btn, evt){
+      if (!ctx) return;
+      if (holds.get(btn)) return;
+
       const buf = padBuffers.get(id);
-      if (!buf) { status(`missing: ${id}.wav`); flash(btn); return; }
-      const src = ctx.createBufferSource();
-      src.buffer = buf;
-      const g = ctx.createGain(); g.gain.value = 1.0;
-      src.connect(g).connect(ctx.destination);
-      src.start(0);
-      flash(btn);
+      if (!buf) { status(`missing: ${id}.mp3`); flash(btn); return; }
+
+      if (evt && btn.setPointerCapture) {
+        try { btn.setPointerCapture(evt.pointerId); } catch {}
+      }
+      btn.classList.add('playing');
+
+      // Compute timings
+      const period = Math.max(buf.duration, MIN_FADE * 3);
+      const fade = Math.min(MIN_FADE, period * 0.2);
+      const overlap = Math.min(MAX_OVERLAP, Math.max(fade * 1.5, period * 0.04));
+
+      // Output gain node for this pad instance
+      const out = ctx.createGain();
+      out.gain.value = 0;
+      out.connect(ctx.destination);
+
+      const level = PAD_GAIN;
+
+      // Voice scheduler with overlap-add crossfades
+      let alive = true;
+      let nextTime = ctx.currentTime + 0.002;
+      const voices = new Set();
+      let timer = null;
+
+      function scheduleVoice(at){
+        if (!alive) return;
+        if (voices.size > MAX_VOICES) {
+          const first = voices.values().next().value;
+          try { first.src.stop(); } catch {}
+          voices.delete(first);
+        }
+        const src = ctx.createBufferSource();
+        src.buffer = buf;
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(0, at);
+        g.gain.linearRampToValueAtTime(level, at + fade);
+
+        // fade out before overlap region
+        const outStart = at + Math.max(0, period - overlap);
+        g.gain.setValueAtTime(level, outStart);
+        g.gain.linearRampToValueAtTime(0, outStart + fade);
+
+        src.connect(g).connect(out);
+        src.start(at);
+        const stopAt = at + period + 0.25;
+        src.stop(stopAt);
+
+        const token = { src, g };
+        voices.add(token);
+        src.onended = () => voices.delete(token);
+      }
+
+      function tick(){
+        if (!alive) return;
+        const now = ctx.currentTime;
+        while (nextTime < now + 0.25) {
+          scheduleVoice(nextTime);
+          nextTime += Math.max(0.01, period - overlap);
+        }
+        timer = setTimeout(tick, 25);
+      }
+
+      // smooth fade-in for pad output
+      out.gain.cancelScheduledValues(ctx.currentTime);
+      out.gain.setValueAtTime(0, ctx.currentTime);
+      out.gain.linearRampToValueAtTime(1, ctx.currentTime + fade);
+
+      // kick it off
+      scheduleVoice(nextTime);
+      nextTime += Math.max(0.01, period - overlap);
+      tick();
+
+      const stop = () => {
+        if (!alive) return;
+        alive = false;
+        clearTimeout(timer);
+        const t = ctx.currentTime;
+        out.gain.cancelScheduledValues(t);
+        out.gain.setValueAtTime(out.gain.value, t);
+        out.gain.linearRampToValueAtTime(0, t + fade);
+        setTimeout(() => { try { out.disconnect(); } catch {} }, (fade + 0.1) * 1000);
+        voices.forEach(v => { try { v.src.stop(); } catch {} });
+        voices.clear();
+        btn.classList.remove('playing');
+        holds.delete(btn);
+      };
+
+      holds.set(btn, { stop });
+    }
+
+    function stopHoldLoop(btn){
+      const h = holds.get(btn);
+      if (h) h.stop();
     }
 
     function flash(btn){
@@ -401,6 +353,24 @@
       btn.classList.add('playing');
       setTimeout(() => btn.classList.remove('playing'), 110);
     }
+
+    // Keyboard start/stop
+    window.addEventListener('keydown', (e) => {
+      if (!ctx) return;
+      let key = e.key;
+      if (key === ')') key = '0';
+      const btn = keyToBtn.get(key);
+      if (!btn) return;
+      if (e.repeat) return; // ignore key repeat
+      startHoldLoop(btn.dataset.id, btn);
+    });
+    window.addEventListener('keyup', (e) => {
+      let key = e.key;
+      if (key === ')') key = '0';
+      const btn = keyToBtn.get(key);
+      if (!btn) return;
+      stopHoldLoop(btn);
+    });
   })();
   </script>
 </body>
