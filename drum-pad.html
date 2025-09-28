@@ -319,7 +319,7 @@
 
         // Load pads
         await Promise.all(SAMPLES.map(async s => {
-          const buf = await fetchDecode(SAMPLE_BASE + s.id + '.wav');
+          const buf = await fetchDecode(SAMPLE_BASE + s.id + '.mp3');
           if (buf) padBuffers.set(s.id, buf);
         }));
 
