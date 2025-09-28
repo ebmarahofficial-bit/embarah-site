@@ -78,7 +78,6 @@
     .spacer{ height:70px }
     .hero{
       text-align:center;
-      /* moved up (reduced top padding) */
       padding: clamp(36px, 8vw, 80px) 16px 36px;
       background:linear-gradient(180deg, rgba(0,255,128,.05), transparent);
     }
@@ -133,7 +132,7 @@
   </div>
 
   <div id="intro" aria-hidden="true">
-    <video id="introVideo" src="video/intro.mp4" autoplay playsinline preload="auto"></video>
+    <video id="introVideo" autoplay playsinline preload="auto"></video>
     <div id="tapToPlay">Tap to start intro</div>
   </div>
 
@@ -200,6 +199,14 @@
       const intro = document.getElementById('intro');
       const introVid = document.getElementById('introVideo');
       const tap = document.getElementById('tapToPlay');
+
+      // ✅ Pick intro video based on device width
+      if (window.innerWidth <= 768) {
+        introVid.src = "video/mobileintro.mp4";
+      } else {
+        introVid.src = "video/intro.mp4";
+      }
+
       function endIntro(){
         window.dispatchEvent(new Event('intro-finished'));
         intro.style.display='none';
@@ -263,4 +270,3 @@
   </script>
 </body>
 </html>
-
