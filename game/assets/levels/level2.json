@@ -1,12 +1,12 @@
 {
-  "name": "Level 2 \u2013 Smooth Ascent",
+  "name": "Level 2 \u2013 Smooth Zigzag (Remake)",
   "spawn": {
-    "x": 40,
+    "x": 60,
     "y": 500
   },
   "goal": {
     "x": 60,
-    "y": 100,
+    "y": 110,
     "w": 40,
     "h": 40
   },
@@ -100,7 +100,7 @@
       "y": 454,
       "w": 22,
       "h": 22,
-      "vx": 120,
+      "vx": 90,
       "range": [
         520,
         900
@@ -111,7 +111,7 @@
       "y": 404,
       "w": 22,
       "h": 22,
-      "vx": 110,
+      "vx": 85,
       "range": [
         80,
         420
@@ -122,18 +122,26 @@
       "y": 354,
       "w": 22,
       "h": 22,
-      "vx": -130,
+      "vx": -100,
       "range": [
         520,
         900
       ]
     }
   ],
+  "bossPlatform": {
+    "x": 380,
+    "y": 150,
+    "w": 200,
+    "h": 16
+  },
   "boss": {
-    "x": 420,
-    "y": 45,
+    "x": 425,
+    "y": 40,
     "w": 110,
     "h": 110,
-    "throwEvery": 2.8
-  }
+    "throwEvery": 3.2
+  },
+  "subTTL": 6.5,
+  "background": "game/assets/backgrounds/neon_jungle_1920x1080.png"
 }
