@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Ebmarah – Fan Vocal Booth</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" type="image/png" href="assets/favicon.png" />
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&display=swap');
+    :root { --neon:#00ff99; --ink:#e0ffe8; --bg:#020d07; --warn:#ff7676; }
+    *{box-sizing:border-box} body{margin:0;font-family:'Orbitron',sans-serif;color:var(--ink);background:var(--bg);overflow-x:hidden}
+    header{position:fixed;inset:0 0 auto 0;display:flex;align-items:center;justify-content:space-between;padding:12px 20px;background:rgba(2,13,7,.75);border-bottom:1px solid rgba(0,255,128,.2);backdrop-filter:blur(10px);z-index:10}
+    .brand{display:flex;align-items:center;gap:10px;font-weight:800}.brand img{height:40px}
+    nav{display:flex;gap:18px} nav a{color:#76ffb2;text-decoration:none;font-weight:700} nav a:hover{color:#00ffea}
+    .spacer{height:68px}
+    .wrap{width:min(1000px,94vw);margin:0 auto;padding:18px}
+    h1{font-size:clamp(26px,5vw,44px);text-align:center;text-shadow:0 0 18px var(--neon);margin:6px 0 16px}
+    .grid{display:grid;grid-template-columns:1fr;gap:16px} @media(min-width:880px){.grid{grid-template-columns:1.2fr .8fr}}
+    .card{background:rgba(0,0,0,.45);border:1px solid rgba(0,255,128,.25);border-radius:14px;padding:16px;box-shadow:0 6px 26px rgba(0,0,0,.35)}
+    .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+    .controls{display:flex;gap:10px;flex-wrap:wrap}
+    button{border:1px solid rgba(0,255,128,.45);background:transparent;color:#b9ffdf;font-weight:700;padding:9px 12px;border-radius:10px;cursor:pointer}
+    button:hover{color:#00ffea;border-color:#00ffea} button[disabled]{opacity:.5;cursor:not-allowed}
+    input,select{padding:10px;border-radius:8px;border:1px solid rgba(0,255,128,.35);background:rgba(0,0,0,.4);color:var(--ink)}
+    label{font-size:14px;opacity:.92}
+    .tiny{font-size:12px;opacity:.85}
+    .notice{background:rgba(0,255,128,.08);border:1px dashed rgba(0,255,128,.35);padding:10px;border-radius:8px}
+    audio{width:100%}
+    .meter{height:8px;background:rgba(255,255,255,.12);border-radius:999px;overflow:hidden;position:relative}
+    .bar{height:100%;width:0%;background:linear-gradient(90deg,#00ff99,#00ffea)}
+    .clip{position:absolute;inset:0;outline:2px solid var(--warn);opacity:0;transition:opacity .2s}
+    .clip.on{opacity:1}
+    .takes{display:grid;grid-template-columns:1fr;gap:8px;margin-top:10px}
+    .take{display:flex;gap:8px;align-items:center;background:rgba(255,255,255,.05);border:1px solid rgba(0,255,128,.2);border-radius:10px;padding:8px}
+    .take .meta{font-size:12px;opacity:.85}
+    .pill{font-size:11px;border:1px solid rgba(255,255,255,.3);padding:2px 6px;border-radius:999px}
+    .ok{color:#00ffa0}.bad{color:#ff6b6b}
+    .kbd{padding:2px 6px;border:1px solid rgba(255,255,255,.3);border-radius:6px;font-size:12px}
+    .counter{font-size:11px;opacity:.8;margin-left:6px}
+    .ghost{opacity:.65}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand"><img src="assets/favicon.png" alt=""><span>Ebmarah</span></div>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="music.html">Music</a>
+      <a href="sample-packs.html">Sample Packs</a>
+      <a href="samples.html">Fan Vocal Booth</a>
+      <a href="samples-library.html">Library</a>
+    </nav>
+  </header>
+  <div class="spacer"></div>
+
+  <div class="wrap">
+    <h1>Fan Vocal Booth</h1>
+
+    <!-- Hype + rules block -->
+    <div class="card" style="margin-bottom:14px">
+      <p><strong>Record a short drop vocal and get featured!</strong> Think hype shouts, ad-libs, funny tags—e.g.,
+        <em>“Ebmarah, you a b—!”</em> (keep it playful),
+        <em>“Digital jungle roll call!”</em>,
+        <em>“Gorilla stomp!”</em>. Keep it ~60s or shorter.</p>
+      <ul style="margin:.4em 0 .6em 1.2em">
+        <li><strong>Keep it respectful:</strong> no slurs or hateful content, no threats/praise of harm, nothing political.</li>
+        <li><strong>No copyrighted lyrics</strong> you don’t own.</li>
+        <li><strong>18+ only.</strong> If under 18, a parent/guardian must submit for you.</li>
+      </ul>
+      <p class="tiny">By uploading you agree to the <a href="vocal-license.html" target="_blank" rel="noopener">Fan Vocal License & Rules</a>.
+        Choose your license on upload (Creator License or CC0). Clips marked “public” appear in the <a href="samples-library.html">Library</a>.</p>
+    </div>
+
+    <div class="card grid">
+      <!-- Left: Recorder -->
+      <div>
+        <div class="notice tiny">
+          Tip: Keep it hype, clean, and under 60 seconds. You can pick a license so I can use it in songs/content.
+          Avoid copyrighted lyrics you don’t own.
+        </div>
+
+        <!-- Prompt bank & metronome -->
+        <div class="row" style="margin-top:10px">
+          <div class="controls">
+            <button id="btnPrompt">New Prompt</button>
+            <span class="tiny" id="prompt"></span>
+          </div>
+        </div>
+        <div class="row">
+          <label>BPM <input id="bpm" type="number" value="140" min="60" max="200" style="width:90px"></label>
+          <div class="controls">
+            <button class="ghost" data-bpm="128">128</button>
+            <button class="ghost" data-bpm="140">140</button>
+            <button class="ghost" data-bpm="150">150</button>
+          </div>
+          <label><input id="countIn" type="checkbox" checked> 1-bar count-in</label>
+          <label><input id="autoSilence" type="checkbox" checked> Auto-stop on silence (~2s)</label>
+        </div>
+
+        <div class="row" style="margin-top:8px">
+          <div class="controls">
+            <button id="btnInit">Enable Mic</button>
+            <button id="btnRec" disabled>Start Recording (R)</button>
+            <button id="btnStop" disabled>Stop (S)</button>
+            <button id="btnReset" disabled>Reset</button>
+          </div>
+        </div>
+
+        <div class="meter" style="margin:10px 0">
+          <div class="bar" id="level"></div>
+          <div class="clip" id="clip"></div>
+        </div>
+        <div class="tiny" id="status">Mic not ready.</div>
+
+        <audio id="player" controls style="margin-top:8px"></audio>
+
+        <!-- Title / Credit with phrase buttons + counter -->
+        <div class="row" style="margin-top:10px">
+          <div style="flex:1;min-width:240px">
+            <label>
+              Display name for this take
+              <span class="counter" id="titleCount">0/60</span>
+            </label>
+            <input id="title" type="text" placeholder="e.g., Jungle Shout 1" maxlength="60">
+            <div class="controls tiny" style="margin-top:6px">
+              <span class="ghost">Quick titles:</span>
+              <button type="button" class="ghost preset-title" data-title="Jungle Shout">Jungle Shout</button>
+              <button type="button" class="ghost preset-title" data-title="Bass Tag">Bass Tag</button>
+              <button type="button" class="ghost preset-title" data-title="Roll Call">Roll Call</button>
+              <button type="button" class="ghost preset-title" data-title="Gorilla Stomp">Gorilla Stomp</button>
+            </div>
+          </div>
+          <div style="flex:1;min-width:240px">
+            <label>Credit name (optional)</label>
+            <input id="credit" type="text" placeholder="Your name or alias" maxlength="40">
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:6px">
+          <label><input id="isPublic" type="checkbox" checked> Show in public library</label>
+          <label style="margin-left:10px">License:
+            <select id="license">
+              <option value="creator">Creator license (you grant Ebmarah a worldwide, perpetual, royalty-free license)</option>
+              <option value="cc0">CC0 (public domain dedication)</option>
+            </select>
+          </label>
+          <label style="margin-left:10px"><input id="nsfw" type="checkbox"> Contains explicit language</label>
+          <label style="margin-left:10px">Human check: <span class="kbd">EBMARAH</span></label>
+          <input id="human" type="text" placeholder="type it" style="width:110px">
+        </div>
+
+        <div class="row" style="margin-top:10px">
+          <div class="controls">
+            <button id="btnUpload" disabled>Upload (U)</button>
+            <span id="uploadMsg" class="tiny"></span>
+          </div>
+        </div>
+
+        <!-- Take tray -->
+        <div style="margin-top:12px">
+          <strong>Takes (keeps last 5)</strong>
+          <div class="takes" id="takes"></div>
+          <div class="tiny">Space = play/pause preview • R = record • S = stop • U = upload</div>
+        </div>
+      </div>
+
+      <!-- Right: Info + Recent -->
+      <div>
+        <div class="notice tiny">
+          <b>Tips:</b> Stand ~6–12 inches from phone/monitor, avoid blasts (“P”/“B”) or turn slightly. Watch the meter—if the red frame lights up, you’re clipping; step back or lower voice.
+        </div>
+
+        <div style="margin-top:12px">
+          <strong>Recent submissions</strong>
+          <ul id="feed" class="tiny" style="margin-top:8px;padding-left:18px"></ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======= SUPABASE KEYS (REQUIRED) ======= -->
+  <script>
+    // TODO: fill these in with your project values:
+    window.SUPABASE_URL = "https://YOUR-REF.supabase.co";
+    window.SUPABASE_ANON_KEY = "YOUR-ANON-PUBLIC-KEY";
+  </script>
+
+  <script>
+  (() => {
+    // ---------- Elements ----------
+    const el = id => document.getElementById(id);
+    const btnInit=el('btnInit'), btnRec=el('btnRec'), btnStop=el('btnStop'), btnReset=el('btnReset'), btnUpload=el('btnUpload');
+    const player=el('player'), statusEl=el('status'), levelBar=el('level'), clipEl=el('clip');
+    const titleEl=el('title'), titleCount=el('titleCount'), creditEl=el('credit'), licenseEl=el('license'), isPublicEl=el('isPublic'), nsfwEl=el('nsfw'), humanEl=el('human');
+    const uploadMsg=el('uploadMsg'), feedEl=el('feed'), takesEl=el('takes'), promptEl=el('prompt');
+    const bpmEl=el('bpm'), countInEl=el('countIn'), autoSilenceEl=el('autoSilence'), btnPrompt=el('btnPrompt');
+
+    // ---------- Config ----------
+    const MAX_SECONDS = 60;
+    const SILENCE_HOLD_MS = 2000;     // auto stop after this much silence
+    const SILENCE_THRESH = 10;        // 0..128 waveform deviation threshold
+    const MAX_TAKES = 5;
+
+    // ---------- State ----------
+    let stream, mediaRec, chunks=[], analyser, dataArray, raf, recording=false, activeBlob=null;
+    let audioCtx, meterSrc, silenceTimer=null, clipping=false;
+    const takes=[];   // {blob, url, created, title}
+    const promptBank = [
+      "“Welcome to the digital jungle!”",
+      "“Drop the bass, Ebmarah!”",
+      "“Gorilla stomp! Let’s go!”",
+      "“Riddim ready—140!”",
+      "“Hands up! Hands up!”",
+      "“Bass face activated.”",
+      "“Shake the ground!”",
+      "“This is Ebmarah’s house.”",
+      "“Left, right, stomp!”",
+      "“From the canopy to the crowd!”"
+    ];
+
+    // Helpers
+    const randPrompt = () => promptBank[Math.floor(Math.random()*promptBank.length)];
+    const showPrompt = () => { promptEl.textContent = randPrompt(); };
+    btnPrompt.addEventListener('click', showPrompt); showPrompt();
+
+    // BPM preset buttons
+    document.querySelectorAll('[data-bpm]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{ bpmEl.value = btn.getAttribute('data-bpm'); });
+    });
+
+    // Title counter + preset title quick buttons
+    function updateTitleCounter(){
+      const val = titleEl.value || '';
+      if (val.length > 60) titleEl.value = val.slice(0,60);
+      titleCount.textContent = `${titleEl.value.length}/60`;
+    }
+    titleEl.addEventListener('input', updateTitleCounter);
+    updateTitleCounter();
+    document.querySelectorAll('.preset-title').forEach(b=>{
+      b.addEventListener('click', ()=>{
+        titleEl.value = b.getAttribute('data-title');
+        updateTitleCounter();
+      });
+    });
+
+    function setState(s) {
+      const states = {
+        idle:   () => { btnInit.disabled=false; btnRec.disabled=true; btnStop.disabled=true; btnReset.disabled=true; btnUpload.disabled=true; },
+        ready:  () => { btnInit.disabled=true;  btnRec.disabled=false; btnStop.disabled=true; btnReset.disabled=false; btnUpload.disabled=!canUpload(); },
+        rec:    () => { btnInit.disabled=true;  btnRec.disabled=true;  btnStop.disabled=false; btnReset.disabled=true;  btnUpload.disabled=true; },
+        preview:() => { btnInit.disabled=true;  btnRec.disabled=false; btnStop.disabled=true; btnReset.disabled=false; btnUpload.disabled=!canUpload(); }
+      };
+      states[s]();
+    }
+
+    function canUpload(){
+      const humanOK = (humanEl.value || '').trim().toUpperCase() === 'EBMARAH';
+      return !!activeBlob && humanOK;
+    }
+
+    function stopMeter(){ cancelAnimationFrame(raf); raf=null; }
+    function startMeter(){
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 256;
+      meterSrc.connect(analyser);
+      dataArray = new Uint8Array(analyser.frequencyBinCount);
+      const tick = () => {
+        analyser.getByteTimeDomainData(dataArray);
+        let peak=0;
+        for (let i=0;i<dataArray.length;i++){
+          const v = Math.abs(dataArray[i]-128);
+          if (v>peak) peak=v;
+        }
+        const pct = Math.min(100, Math.max(0, (peak/128)*100));
+        levelBar.style.width = pct + '%';
+        // clipping indicator if near full scale
+        const isClip = peak > 120;
+        if (isClip !== clipping){
+          clipping = isClip;
+          clipEl.classList.toggle('on', clipping);
+        }
+
+        // auto-stop on silence while recording
+        if (recording && autoSilenceEl.checked){
+          if (peak < SILENCE_THRESH){
+            if (!silenceTimer) silenceTimer = setTimeout(() => {
+              if (mediaRec && recording){ mediaRec.stop(); recording=false; }
+            }, SILENCE_HOLD_MS);
+          } else {
+            if (silenceTimer){ clearTimeout(silenceTimer); silenceTimer=null; }
+          }
+        }
+
+        raf = requestAnimationFrame(tick);
+      };
+      tick();
+    }
+
+    async function initMic(){
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true
+          }
+        });
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        meterSrc = audioCtx.createMediaStreamSource(stream);
+        startMeter();
+        statusEl.textContent = 'Mic ready. Click Start Recording.';
+        setState('ready');
+      } catch (e) {
+        statusEl.innerHTML = 'Mic permission denied. <span class="bad">Cannot record.</span>';
+      }
+    }
+
+    function doCountIn(bpm){
+      return new Promise(resolve => {
+        const dur = 0.05; // 50ms click
+        const beatMs = 60000 / Math.max(60, Math.min(200, bpm));
+        let n=0;
+        const click = () => {
+          const t = audioCtx.currentTime + 0.01;
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type='square';
+          osc.frequency.setValueAtTime(n===3?1500:1000, t);
+          gain.gain.setValueAtTime(0.0001, t);
+          gain.gain.exponentialRampToValueAtTime(0.3, t+0.005);
+          gain.gain.exponentialRampToValueAtTime(0.0001, t+dur);
+          osc.connect(gain).connect(audioCtx.destination);
+          osc.start(t); osc.stop(t+dur);
+          n++;
+          if (n>=4){ resolve(); } else { setTimeout(click, beatMs); }
+        };
+        click();
+      });
+    }
+
+    function renderTakes(){
+      takesEl.innerHTML = '';
+      takes.forEach((t, idx) => {
+        const row = document.createElement('div');
+        row.className = 'take';
+        row.innerHTML = `
+          <span class="pill">#${idx+1}</span>
+          <audio controls src="${t.url}" style="flex:1"></audio>
+          <span class="meta">${t.title || 'untitled'} • ${new Date(t.created).toLocaleTimeString()}</span>
+          <button data-act="select" data-i="${idx}">Use</button>
+          <button data-act="del" data-i="${idx}">Delete</button>
+        `;
+        takesEl.appendChild(row);
+      });
+    }
+
+    function selectTake(i){
+      const t = takes[i]; if (!t) return;
+      activeBlob = t.blob;
+      player.src = t.url;
+      titleEl.value = t.title || titleEl.value;
+      updateTitleCounter();
+      statusEl.textContent = 'Selected take ready. You can upload.';
+      setState('preview');
+    }
+
+    takesEl.addEventListener('click', e => {
+      const act = e.target.getAttribute('data-act');
+      const i = parseInt(e.target.getAttribute('data-i'),10);
+      if (Number.isNaN(i)) return;
+      if (act === 'select') selectTake(i);
+      if (act === 'del'){
+        const t = takes[i];
+        if (t && t.url) URL.revokeObjectURL(t.url);
+        takes.splice(i,1);
+        if (i===0 && activeBlob===t?.blob){ activeBlob=null; player.removeAttribute('src'); player.load(); }
+        renderTakes(); setState(stream?'ready':'idle');
+      }
+    });
+
+    btnInit.addEventListener('click', initMic);
+
+    btnRec.addEventListener('click', async () => {
+      if (!stream) return;
+      chunks=[]; activeBlob=null;
+      if (countInEl.checked && audioCtx?.state==='suspended') await audioCtx.resume();
+      if (countInEl.checked){ statusEl.textContent = 'Count-in…'; await doCountIn(parseInt(bpmEl.value||'140',10)); }
+
+      mediaRec = new MediaRecorder(stream, { mimeType: 'audio/webm;codecs=opus' });
+      mediaRec.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+      mediaRec.onstop = () => {
+        const blob = new Blob(chunks, { type:'audio/webm' });
+        activeBlob = blob;
+        const url = URL.createObjectURL(blob);
+        player.src = url;
+
+        const take = { blob, url, created: Date.now(), title: titleEl.value?.trim() || '' };
+        takes.unshift(take); if (takes.length>MAX_TAKES){ const last = takes.pop(); if (last?.url) URL.revokeObjectURL(last.url); }
+        renderTakes();
+
+        statusEl.textContent = 'Recording complete. Preview and upload when ready.';
+        setState('preview');
+      };
+      mediaRec.start();
+      recording = true;
+      statusEl.textContent = 'Recording…';
+      setState('rec');
+
+      // Safety stop
+      setTimeout(() => { if (recording){ mediaRec.stop(); recording=false; } }, MAX_SECONDS*1000);
+    });
+
+    btnStop.addEventListener('click', () => {
+      if (mediaRec && recording){ mediaRec.stop(); recording=false; }
+    });
+
+    btnReset.addEventListener('click', () => {
+      player.removeAttribute('src'); player.load(); activeBlob=null; renderTakes();
+      statusEl.textContent = stream ? 'Mic ready. Click Start Recording.' : 'Mic not ready.';
+      setState(stream?'ready':'idle');
+    });
+
+    humanEl.addEventListener('input', () => setState(activeBlob?'preview':(stream?'ready':'idle')));
+
+    // ---------- Upload to Supabase ----------
+    async function sha256Hex(blob){
+      const buf = await blob.arrayBuffer();
+      const hash = await crypto.subtle.digest('SHA-256', buf);
+      const arr = Array.from(new Uint8Array(hash));
+      return arr.map(b=>b.toString(16).padStart(2,'0')).join('');
+    }
+    const safe = (s,max) => (s||'').replace(/[^\w\- ]+/g,'_').slice(0,max).trim().replace(/\s+/g,'_') || 'untitled';
+    const datePath = d => `${d.getUTCFullYear()}/${String(d.getUTCMonth()+1).padStart(2,'0')}/${String(d.getUTCDate()).padStart(2,'0')}`;
+
+    async function uploadToSupabase(file){
+      const SUPABASE_URL = window.SUPABASE_URL, KEY = window.SUPABASE_ANON_KEY, BUCKET='fan-vocals';
+      if (!SUPABASE_URL || !KEY) throw new Error('Supabase keys not set');
+
+      const now = new Date();
+      const nowIso = now.toISOString().replace(/[:.]/g,'-');
+      const credit = safe((creditEl.value||'anon'), 40);
+      const title  = safe((titleEl.value||'untitled'), 60);
+      const hash8  = (await sha256Hex(file)).slice(0,8);
+      const folder = `public/${datePath(now)}/${credit}`;
+      const filename = `${nowIso}__${credit}__${title}__${hash8}.webm`;
+      const path = `${folder}/${filename}`;
+
+      // Upload audio
+      let res = await fetch(`${SUPABASE_URL}/storage/v1/object/${encodeURIComponent(BUCKET)}/${encodeURIComponent(path)}`, {
+        method:'POST', headers:{ 'Authorization':`Bearer ${KEY}`, 'x-upsert':'false', 'Content-Type': file.type || 'application/octet-stream' }, body:file
+      });
+      if (!res.ok){ throw new Error('Audio upload failed: '+await res.text()); }
+
+      // Upload JSON sidecar
+      const meta = {
+        title: titleEl.value?.trim()||'untitled',
+        credit: creditEl.value?.trim()||'anon',
+        bpm: parseInt(bpmEl.value||'140',10),
+        license: licenseEl.value,
+        public: !!isPublicEl.checked,
+        nsfw: !!nsfwEl.checked,
+        createdAt: now.toISOString(),
+        hash: hash8,
+        audioPath: path
+      };
+      const jsonPath = `${folder}/${filename.replace(/\.webm$/i,'.json')}`;
+      res = await fetch(`${SUPABASE_URL}/storage/v1/object/${encodeURIComponent(BUCKET)}/${encodeURIComponent(jsonPath)}`, {
+        method:'POST', headers:{ 'Authorization':`Bearer ${KEY}`, 'x-upsert':'false', 'Content-Type': 'application/json' }, body: JSON.stringify(meta)
+      });
+      if (!res.ok){ /* Not fatal, but report */ uploadMsg.innerHTML += ' (meta save failed)'; }
+
+      const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${encodeURIComponent(path)}`;
+      return { ok:true, url:publicUrl, name:filename };
+    }
+
+    btnUpload.addEventListener('click', async () => {
+      uploadMsg.textContent=''; if (!activeBlob) return;
+      if (!canUpload()){ uploadMsg.textContent='Complete the human check and ensure a take is selected.'; return; }
+      btnUpload.disabled=true; uploadMsg.textContent='Uploading…';
+      try{
+        const result = await uploadToSupabase(activeBlob);
+        uploadMsg.innerHTML = `<span class="ok">Uploaded!</span> <a href="${result.url}" target="_blank" rel="noopener">open</a>`;
+        // refresh recent
+        loadRecent().catch(()=>{});
+      }catch(e){
+        console.error(e); uploadMsg.innerHTML = `<span class="bad">Upload error:</span> ${e.message||e}`;
+      }finally{
+        btnUpload.disabled=false;
+      }
+    });
+
+    // ---------- Recent list ----------
+    async function listSupabase(prefix='public/', limit=20, offset=0){
+      const SUPABASE_URL = window.SUPABASE_URL, KEY = window.SUPABASE_ANON_KEY, BUCKET='fan-vocals';
+      const res = await fetch(`${SUPABASE_URL}/storage/v1/object/list/${BUCKET}`, {
+        method:'POST', headers:{ 'Authorization':`Bearer ${KEY}`, 'Content-Type':'application/json' },
+        body: JSON.stringify({ prefix, limit, offset, sortBy:{column:'created_at', order:'desc'} })
+      });
+      if (!res.ok) throw new Error(await res.text());
+      return res.json();
+    }
+
+    async function loadRecent(){
+      if (!feedEl) return;
+      try{
+        const items = await listSupabase('public/', 25, 0);
+        const audioItems = items.filter(it => /\.webm$/i.test(it.name));
+        feedEl.innerHTML = audioItems.slice(0,12).map(it=>{
+          const name = it.name;
+          const url = `${window.SUPABASE_URL}/storage/v1/object/public/fan-vocals/${encodeURIComponent('public/'+name)}`;
+          const pretty = name.replace(/^\d{4}-\d{2}-\d{2}T.*?__/, '').replace(/__([0-9a-f]{8})\.webm$/i,'').replace(/_/g,' ');
+          return `<li><a href="${url}" target="_blank" rel="noopener">${pretty}</a></li>`;
+        }).join('');
+      }catch(e){
+        console.warn('Feed load error:', e);
+      }
+    }
+    loadRecent();
+
+    // ---------- Shortcuts ----------
+    window.addEventListener('keydown', e=>{
+      if (['INPUT','TEXTAREA'].includes(document.activeElement.tagName)) return;
+      if (e.key.toLowerCase()==='r' && !btnRec.disabled) btnRec.click();
+      if (e.key.toLowerCase()==='s' && !btnStop.disabled) btnStop.click();
+      if (e.key===' '){ e.preventDefault(); if (player.src){ if (player.paused) player.play(); else player.pause(); } }
+      if (e.key.toLowerCase()==='u' && !btnUpload.disabled) btnUpload.click();
+    });
+
+    // ---------- Init ----------
+    setState('idle');
+  })();
+  </script>
+</body>
+</html>
