@@ -255,16 +255,14 @@
   <!-- Drum pad logic -->
   <script>
   (() => {
-    // ===== Transport / sync (kept for compatibility, but no pad quantize/delay) =====
+    // (BPM/grid kept for compatibility; pads no longer quantize)
     const BPM = 140;
     const BEAT = 60 / BPM;
     let transportStart = 0;
-    const HOLD_THRESHOLD_MS = 170; // tap vs hold threshold
 
     // Paths
     const DRUM_LOOP = 'assets/audio/loops/eb_loop_140.mp3';
     const SAMPLES = [
-      // div values retained but unused for quantize now (kept to avoid UI/logic changes)
       { id: 'bass1',  label: '1/4th', key: '1', div: 1     },
       { id: 'bass2',  label: '1/4th', key: '2', div: 1     },
       { id: 'bass3',  label: '1/8th', key: '3', div: 0.5   },
@@ -397,18 +395,17 @@
       g.gain.setValueAtTime(1.0, ctx.currentTime);
       src.buffer = buf;
       src.connect(g).connect(ctx.destination);
-      src.start(); // immediate (no quantize) for tap behavior "like before"
+      src.start(); // immediate
     }
 
-    // ===== Hold-to-loop engine (smooth crossfade, immediate start) =====
+    // ===== Hold-to-loop engine (smooth crossfade, truly instant start) =====
     const holds = new WeakMap(); // btn -> { stop(), isLooping }
-
     const PAD_GAIN = 1.0;
     const MIN_FADE = 0.02;
     const MAX_OVERLAP = 0.08;
     const MAX_VOICES = 4;
 
-    function startHoldLoop(id, btn, startAt){
+    function startHoldLoop(id, btn){
       if (!ctx) return;
       if (holds.get(btn)?.isLooping) return;
 
@@ -428,7 +425,7 @@
       const level = PAD_GAIN;
 
       let alive = true;
-      let nextTime = startAt ?? (ctx.currentTime + 0.002); // immediate start
+      let nextTime = ctx.currentTime + 0.002; // effectively instant
       const voices = new Set();
       let timer = null;
 
@@ -469,10 +466,12 @@
         timer = setTimeout(tick, 25);
       }
 
+      // fade in pad output
       out.gain.cancelScheduledValues(ctx.currentTime);
       out.gain.setValueAtTime(0, ctx.currentTime);
       out.gain.linearRampToValueAtTime(1, ctx.currentTime + fade);
 
+      // kick immediately
       scheduleVoice(nextTime);
       nextTime += Math.max(0.01, period - overlap);
       tick();
@@ -507,37 +506,32 @@
       setTimeout(() => btn.classList.remove('playing'), 110);
     }
 
-    // ===== Pad gesture wiring (tap vs hold) =====
+    // ===== Pad gesture wiring (tap = one-shot, hold = instant loop) =====
     function setupPadGestures(btn, spec){
-      let holdTimer = null;
-      let held = false;
+      let downAt = 0;
+      let startedLoop = false;
+
+      const TAP_GRACE_MS = 120; // if released within this, treat as tap
 
       const onDown = (e) => {
         if (!ctx) return;
         e.preventDefault?.();
-        held = true;
-
-        // If still held after threshold -> start loop IMMEDIATELY (no delay/quantize)
-        holdTimer = setTimeout(() => {
-          if (!held) return;
-          startHoldLoop(spec.id, btn); // immediate
-        }, HOLD_THRESHOLD_MS);
+        downAt = performance.now();
+        startedLoop = true;
+        startHoldLoop(spec.id, btn); // start loop instantly on press
       };
 
       const onUpCancel = () => {
-        // If released before hold threshold -> treat as tap (one-shot)
-        if (holdTimer) {
-          clearTimeout(holdTimer);
-          holdTimer = null;
-          if (held && !holds.get(btn)?.isLooping) {
-            playOneShot(spec.id);
-          }
-        }
-        // If it *was* looping, stop it
-        if (holds.get(btn)?.isLooping) {
+        const dur = performance.now() - downAt;
+        // If it was a quick tap, replace the loop with a one-shot
+        if (startedLoop && dur <= TAP_GRACE_MS) {
+          stopHoldLoop(btn);
+          playOneShot(spec.id);
+        } else if (startedLoop) {
+          // Held: stop the loop when released
           stopHoldLoop(btn);
         }
-        held = false;
+        startedLoop = false;
       };
 
       // Pointer events
@@ -546,22 +540,18 @@
       btn.addEventListener('pointercancel', onUpCancel);
       btn.addEventListener('pointerleave', onUpCancel);
 
-      // Keyboard support: keydown starts gesture; keyup ends
+      // Keyboard support
       window.addEventListener('keydown', (e) => {
         if (!ctx) return;
-        let key = e.key === ')' ? '0' : e.key;
-        if (key !== spec.key) return;
-        if (e.repeat) return;
-        // mimic pointerdown
-        held = true;
-        holdTimer = setTimeout(() => {
-          if (!held) return;
-          startHoldLoop(spec.id, btn); // immediate
-        }, HOLD_THRESHOLD_MS);
+        const key = e.key === ')' ? '0' : e.key;
+        if (key !== spec.key || e.repeat) return;
+        downAt = performance.now();
+        startedLoop = true;
+        startHoldLoop(spec.id, btn); // instant on key press
       });
 
       window.addEventListener('keyup', (e) => {
-        let key = e.key === ')' ? '0' : e.key;
+        const key = e.key === ')' ? '0' : e.key;
         if (key !== spec.key) return;
         onUpCancel();
       });
@@ -570,4 +560,3 @@
   </script>
 </body>
 </html>
-
