@@ -21,6 +21,15 @@
     .video-bg{ position:fixed; inset:0; z-index:-3; overflow:hidden }
     .video-bg video{ width:100%; height:100%; object-fit:cover; object-position:center; }
 
+    /* === ADDED: image background layer behind pads (uses assets/bg.png) === */
+    .drum-bg{
+      position:fixed; inset:0;
+      background:url("assets/bg.png") center/cover no-repeat;
+      z-index:-2; /* above video, below content */
+      opacity:0.5; /* tweak if you want stronger/weaker */
+      pointer-events:none;
+    }
+
     /* Header / nav (desktop) */
     header{
       position:fixed; inset:0 0 auto 0;
@@ -118,7 +127,9 @@
       display:grid; place-items:center;
       height:96px; border-radius:16px;
       border:1px solid rgba(0,255,128,.35);
+      /* === ADDED: pad texture on top (uses assets/padbg.png) === */
       background:
+        url("assets/padbg.png") center/cover no-repeat,
         radial-gradient(120% 120% at 100% 0%, rgba(0,255,128,.08), transparent),
         linear-gradient(180deg, rgba(0,0,0,.25), rgba(0,0,0,.6)),
         #0a1f16;
@@ -156,6 +167,9 @@
       <source src="video/bg2.mp4" type="video/mp4" />
     </video>
   </div>
+
+  <!-- ADDED: static background image layer behind pads -->
+  <div class="drum-bg" aria-hidden="true"></div>
 
   <!-- Top bar -->
   <header>
@@ -409,3 +423,4 @@
   </script>
 </body>
 </html>
+
