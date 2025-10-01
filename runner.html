@@ -18,7 +18,7 @@
     width:100%; height:100%;
     object-fit:cover;
     z-index:-1;
-    background:#000; /* fallback color while loading */
+    background:#000; /* fallback while loading */
   }
 
   .wrap{ min-height:100dvh; display:flex; align-items:center; justify-content:center; padding:16px }
@@ -28,7 +28,7 @@
     position:relative;
     width:100%;
     max-width:960px;
-    aspect-ratio:16/9;   /* locks the size so overlay matches canvas */
+    aspect-ratio:16/9;   /* locks size so overlay matches canvas */
     border:1px solid var(--line);
     border-radius:16px;
     box-shadow:var(--shadow);
@@ -100,7 +100,7 @@
 <body>
 
   <!-- Site-wide animated background -->
-  <video id="bg-video" autoplay muted loop playsinline>
+  <video id="bg-video" autoplay muted loop playsinline preload="auto" poster="">
     <source src="./runner/assets/runnerbg.mp4" type="video/mp4">
   </video>
 
@@ -168,13 +168,18 @@
     const obstacleSpeedBase = 4.0;   // was 6.5
     const obstacleSpeedGain = 0.004; // was 0.007
     const spawnEveryBase = 120;      // was 90 (spawns less often)
-    theSpawnEveryMin  = 80;          // was 52
-    const spawnEveryMin  = 80;       // keep for clarity
+    const spawnEveryMin  = 80;       // was 52
     const bananaSpawnEvery = 140;    // was 110
 
     /* ---------------- DOM ---------------- */
     const canvas = document.getElementById('game');
     const ctx = canvas.getContext('2d');
+
+    // Try to start bg video if autoplay was blocked
+    const bgVid = document.getElementById('bg-video');
+    document.addEventListener('DOMContentLoaded', () => {
+      if (bgVid && bgVid.paused) { bgVid.play().catch(()=>{}); }
+    });
 
     const hud = document.getElementById('hud');
     const scoreEl = document.getElementById('score');
@@ -290,6 +295,9 @@
     /* ---------------- Helpers ---------------- */
     function collideRect(ax,ay,aw,ah, bx,by,bw,bh){ return ax < bx+bw && ax+aw > bx && ay < by+bh && ay+ah > by; }
 
+    // Debug switch
+    const DEBUG = true;
+
     // New: tighter hitboxes
     function getPlayerHitbox(){
       const px = player.x()-player.w/2;
@@ -302,7 +310,7 @@
       return {x,y,w,h};
     }
     function getObstacleHitbox(o){
-      // Matches drawObstacle pulse size more closely and shrinks a bit
+      // Match drawObstacle pulse and shrink a bit
       const baseY = groundY - 64 + 6;
       const near = Math.max(0, 1 - Math.abs(o.x - player.x())/200);
       const s = 56 + Math.floor(near*3);
@@ -312,11 +320,10 @@
       return {x,y,w,h};
     }
     function bananaHit(b){
-      // Circle-based pickup for nicer feel
+      // Circle pickup feel
       const s = 40, r = (s*0.48);
       const bx = b.x, by = b.y;
       const hb = getPlayerHitbox();
-      // closest point on player hitbox to banana center
       const cx = Math.max(hb.x, Math.min(bx, hb.x + hb.w));
       const cy = Math.max(hb.y, Math.min(by, hb.y + hb.h));
       const dx = bx - cx, dy = by - cy;
@@ -364,8 +371,7 @@
       const x=player.x()-player.w/2, y=player.y-player.h;
       if (images.player.complete) ctx.drawImage(images.player, x, y, player.w, player.h);
       else { ctx.fillStyle='#1b2a28'; ctx.fillRect(x,y,player.w,player.h); }
-      // // Debug hitbox:
-      // const hb = getPlayerHitbox(); ctx.strokeStyle='#0ff'; ctx.strokeRect(hb.x, hb.y, hb.w, hb.h);
+      if (DEBUG){ const hb = getPlayerHitbox(); ctx.strokeStyle='#00ffff'; ctx.lineWidth=2; ctx.strokeRect(hb.x, hb.y, hb.w, hb.h); }
     }
     function drawObstacle(o){
       const w=56, h=64, x=o.x-w/2, y=groundY-h+6;
@@ -374,8 +380,7 @@
         const s = 56 + Math.floor(near*3);
         ctx.drawImage(images.obstacle, o.x - s/2, y-(s-64), s, s);
       } else { ctx.fillStyle='#195'; ctx.fillRect(x,y,w,h); }
-      // // Debug:
-      // const ob = getObstacleHitbox(o); ctx.strokeStyle='#f0f'; ctx.strokeRect(ob.x, ob.y, ob.w, ob.h);
+      if (DEBUG){ const ob = getObstacleHitbox(o); ctx.strokeStyle='#ff00ff'; ctx.lineWidth=2; ctx.strokeRect(ob.x, ob.y, ob.w, ob.h); }
     }
     function drawBanana(b){
       const s=40;
@@ -383,8 +388,7 @@
         const pulse = 1 + 0.05*Math.sin(frame*0.18);
         ctx.drawImage(images.banana, b.x-(s*pulse)/2, b.y-(s*pulse)/2, s*pulse, s*pulse);
       } else { ctx.fillStyle='#fd0'; ctx.fillRect(b.x-s/2,b.y-s/2,s,s); }
-      // // Debug: pickup radius
-      // ctx.beginPath(); ctx.arc(b.x, b.y, s*0.48, 0, Math.PI*2); ctx.strokeStyle='#ff0'; ctx.stroke();
+      if (DEBUG){ ctx.beginPath(); ctx.arc(b.x, b.y, s*0.48, 0, Math.PI*2); ctx.strokeStyle='#ffff00'; ctx.lineWidth=2; ctx.stroke(); }
     }
 
     /* ---------------- Loop ---------------- */
@@ -522,3 +526,4 @@
   </script>
 </body>
 </html>
+
