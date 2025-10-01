@@ -11,10 +11,24 @@
   }
   *{ box-sizing:border-box }
   html,body{ margin:0; height:100%; background:#000; color:var(--ink); font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif }
-  .wrap{ position:relative; min-height:100dvh; display:flex; align-items:center; justify-content:center; padding:16px }
+  .wrap{ min-height:100dvh; display:flex; align-items:center; justify-content:center; padding:16px }
+
+  /* Stage wraps canvas + overlay so the cover fits exactly */
+  .stage{
+    position:relative;
+    width:100%;
+    max-width:960px;
+    aspect-ratio:16/9;   /* locks the size so overlay matches canvas */
+    border:1px solid var(--line);
+    border-radius:16px;
+    box-shadow:var(--shadow);
+    overflow:hidden;     /* prevents overlay bleed */
+    background:#04120d;
+  }
+
   canvas{
-    width:100%; max-width:960px; aspect-ratio:16/9; background:#04120d;
-    border:1px solid var(--line); border-radius:16px; box-shadow:var(--shadow);
+    position:absolute; inset:0;
+    width:100%; height:100%;
     image-rendering:crisp-edges; touch-action:none;
   }
 
@@ -28,9 +42,9 @@
   .pill{ padding:2px 10px; border-radius:999px; background:rgba(0,255,153,.12); border:1px solid rgba(0,255,153,.35) }
   .hud button{ padding:4px 10px; border-radius:10px; border:1px solid var(--line); background:#062417; color:var(--ink); cursor:pointer }
 
-  /* ---------- Start / Pause overlay ---------- */
+  /* ---------- Start / Pause overlay (now sized to stage) ---------- */
   .overlay{
-    position:absolute; inset:0; display:grid; place-items:center; border-radius:16px; overflow:hidden;
+    position:absolute; inset:0; display:grid; place-items:center;
   }
   .cover{
     position:absolute; inset:0;
@@ -39,7 +53,7 @@
   }
   .veil{ position:absolute; inset:0; background:linear-gradient(180deg, rgba(0,0,0,.45), rgba(0,0,0,.25)); }
   .panel{
-    position:relative; z-index:2; width:min(92vw, 780px);
+    position:relative; z-index:2; width:min(92%, 780px);
     padding:20px; border:1px solid var(--line); background:rgba(10,29,21,.6);
     border-radius:16px; box-shadow:var(--shadow); text-align:center; backdrop-filter: blur(6px);
   }
@@ -59,7 +73,8 @@
 
   /* ---------- Mobile controls ---------- */
   .controls{
-    position:absolute; inset:auto 0 10px 0; display:flex; justify-content:space-between; gap:10px; padding:0 8px; pointer-events:none;
+    position:absolute; left:0; right:0; bottom:10px;
+    display:flex; justify-content:space-between; gap:10px; padding:0 8px; pointer-events:none;
   }
   .controls button{
     pointer-events:auto; min-width:96px; min-height:56px; border-radius:14px;
@@ -74,68 +89,71 @@
 </head>
 <body>
   <div class="wrap">
-    <canvas id="game" width="960" height="540" aria-label="Ebmarah Runner"></canvas>
+    <div class="stage">
+      <canvas id="game" width="960" height="540" aria-label="Ebmarah Runner"></canvas>
 
-    <!-- HUD -->
-    <div class="hud" id="hud" hidden>
-      <span class="pill">Lv <strong id="level">1</strong>/10</span>
-      <span class="pill">🍌 <strong id="bananas">0</strong>/<span id="nextReq">20</span></span>
-      <span class="pill">Score <strong id="score">0</strong></span>
-      <span class="pill">Best <strong id="best">0</strong></span>
-      <span class="pill"><button id="pauseBtn">⏸ Pause</button></span>
-      <span class="pill"><button id="muteBtn">🔊</button></span>
-    </div>
+      <!-- HUD -->
+      <div class="hud" id="hud" hidden>
+        <span class="pill">Lv <strong id="level">1</strong>/10</span>
+        <span class="pill">🍌 <strong id="bananas">0</strong>/<span id="nextReq">20</span></span>
+        <span class="pill">Score <strong id="score">0</strong></span>
+        <span class="pill">Best <strong id="best">0</strong></span>
+        <span class="pill"><button id="pauseBtn">⏸ Pause</button></span>
+        <span class="pill"><button id="muteBtn">🔊</button></span>
+      </div>
 
-    <!-- Start / Pause overlay -->
-    <div class="overlay" id="overlay">
-      <div class="cover" aria-hidden="true"></div>
-      <div class="veil" aria-hidden="true"></div>
-      <div class="panel" id="panel">
-        <h1 class="title">EBMARAH RUNNER</h1>
-        <p class="tagline">Running Bass</p>
-        <p style="opacity:.9;margin:.35rem 0 1rem 0">Collect bananas to level up. Avoid hazards. Mobile: on-screen controls. Desktop: Arrow keys + Space/↑ to jump.</p>
-        <div class="btnrow">
-          <button class="btn" id="startBtn">Start</button>
-          <button class="btn" id="selectBtn">Level Select</button>
-        </div>
-        <div id="levelSelect" hidden style="margin-top:12px">
-          <p style="opacity:.9;margin:.35rem 0 .5rem 0">Choose a level (unlocks as you progress):</p>
-          <div id="grid" style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px"></div>
+      <!-- Start / Pause overlay -->
+      <div class="overlay" id="overlay">
+        <div class="cover" aria-hidden="true"></div>
+        <div class="veil" aria-hidden="true"></div>
+        <div class="panel" id="panel">
+          <h1 class="title">EBMARAH RUNNER</h1>
+          <p class="tagline">Running Bass</p>
+          <p style="opacity:.9;margin:.35rem 0 1rem 0">Collect bananas to level up. Avoid hazards. Mobile: on-screen controls. Desktop: Arrow keys + Space/↑ to jump.</p>
+          <div class="btnrow">
+            <button class="btn" id="startBtn">Start</button>
+            <button class="btn" id="selectBtn">Level Select</button>
+          </div>
+          <div id="levelSelect" hidden style="margin-top:12px">
+            <p style="opacity:.9;margin:.35rem 0 .5rem 0">Choose a level (unlocks as you progress):</p>
+            <div id="grid" style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px"></div>
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- Mobile controls -->
-    <div class="controls" id="controls" hidden>
-      <button id="leftBtn">◀</button>
-      <button id="jumpBtn" class="jump">JUMP</button>
-      <button id="rightBtn">▶</button>
-    </div>
+      <!-- Mobile controls -->
+      <div class="controls" id="controls" hidden>
+        <button id="leftBtn">◀</button>
+        <button id="jumpBtn" class="jump">JUMP</button>
+        <button id="rightBtn">▶</button>
+      </div>
 
-    <!-- SoundCloud (hidden) -->
-    <div id="sc-holder" aria-hidden="true">
-      <iframe id="sc-iframe" allow="autoplay"
-        src="https://w.soundcloud.com/player/?url=https://soundcloud.com/ebmarah/tracks&auto_play=false&visual=false&hide_related=true&show_comments=false&show_user=false&show_reposts=false&show_teaser=false"
-        width="100%" height="120" frameborder="0"></iframe>
+      <!-- SoundCloud (hidden) -->
+      <div id="sc-holder" aria-hidden="true">
+        <iframe id="sc-iframe" allow="autoplay"
+          src="https://w.soundcloud.com/player/?url=https://soundcloud.com/ebmarah/tracks&auto_play=false&visual=false&hide_related=true&show_comments=false&show_user=false&show_reposts=false&show_teaser=false"
+          width="100%" height="120" frameborder="0"></iframe>
+      </div>
     </div>
   </div>
 
   <script src="https://w.soundcloud.com/player/api.js"></script>
   <script>
   (() => {
-    /* ---------------- Config ---------------- */
+    /* ---------------- Slower Config ---------------- */
     const lanes = 3;
     const laneX = [0.22, 0.5, 0.78];
-    const groundY = 440;                 // running height baseline
+    const groundY = 440;
     const gravity = 0.9, jumpV = -16.5;
+
+    // ↓ Slowed down
     const BANANAS_PER_LEVEL = 20;
     const MAX_LEVELS = 10;
-
-    const obstacleSpeedBase = 6.5;
-    const obstacleSpeedGain = 0.007;
-    const spawnEveryBase = 90;
-    const spawnEveryMin  = 52;
-    const bananaSpawnEvery = 110;
+    const obstacleSpeedBase = 4.0;   // was 6.5
+    const obstacleSpeedGain = 0.004; // was 0.007
+    const spawnEveryBase = 120;      // was 90 (spawns less often)
+    const spawnEveryMin  = 80;       // was 52
+    const bananaSpawnEvery = 140;    // was 110
 
     /* ---------------- DOM ---------------- */
     const canvas = document.getElementById('game');
@@ -190,7 +208,7 @@
         images.bg.src = `${base}/background.png`;
         images.obstacle.src = `${base}/obstacle.png`;
         images.accent.src   = `${base}/accent.png`;
-      }).catch(()=>{}); // continue even if an image misses
+      }).catch(()=>{});
     }
 
     /* ---------------- Game State ---------------- */
@@ -199,7 +217,6 @@
     let score=0, best= +localStorage.getItem('ebmarah_runner_best') || 0;
     let bananas=0, level=1, bananasForNext=BANANAS_PER_LEVEL;
 
-    // Level unlocks for Level Select
     let unlocked = JSON.parse(localStorage.getItem('ebmarah_unlocked') || '[1]');
     const saveUnlocked = () => localStorage.setItem('ebmarah_unlocked', JSON.stringify(unlocked));
 
@@ -254,10 +271,7 @@
     });
 
     /* ---------------- Helpers ---------------- */
-    function collideRect(ax,ay,aw,ah, bx,by,bw,bh){
-      return ax < bx+bw && ax+aw > bx && ay < by+bh && ay+ah > by;
-    }
-
+    function collideRect(ax,ay,aw,ah, bx,by,bw,bh){ return ax < bx+bw && ax+aw > bx && ay < by+bh && ay+ah > by; }
     function levelUp(){
       if (!unlocked.includes(level+1) && level<MAX_LEVELS){ unlocked.push(level+1); saveUnlocked(); }
       level = Math.min(MAX_LEVELS, level+1);
@@ -272,14 +286,14 @@
       if (!images.bg.complete) { ctx.fillStyle='#05150f'; ctx.fillRect(0,0,canvas.width,canvas.height); return; }
       const iw = images.bg.naturalWidth, ih = images.bg.naturalHeight;
       const scale = canvas.height/ih, dw = iw*scale, dh = canvas.height;
-      const pxPerFrame = 1.2 + speed*0.15;
+      const pxPerFrame = 0.6 + speed*0.08;  // ↓ slower parallax scroll (was 1.2 + speed*0.15)
       bgScrollX = (bgScrollX + pxPerFrame) % dw;
       const startX = -bgScrollX;
       ctx.drawImage(images.bg, startX, 0, dw, dh);
       ctx.drawImage(images.bg, startX + dw, 0, dw, dh);
 
       // parallax accents using level's accent
-      mistPhase += 0.005;
+      mistPhase += 0.004;
       if (images.accent.complete){
         ctx.globalAlpha = 0.35 + 0.25*Math.sin(mistPhase*2);
         for (let i=0;i<3;i++){
@@ -304,14 +318,14 @@
       const w=56, h=64, x=o.x-w/2, y=groundY-h+6;
       if (images.obstacle.complete) {
         const near = Math.max(0, 1 - Math.abs(o.x - player.x())/200);
-        const s = 56 + Math.floor(near*4);
+        const s = 56 + Math.floor(near*3); // smaller pulse
         ctx.drawImage(images.obstacle, o.x - s/2, y-(s-64), s, s);
       } else { ctx.fillStyle='#195'; ctx.fillRect(x,y,w,h); }
     }
     function drawBanana(b){
       const s=40;
       if (images.banana.complete){
-        const pulse = 1 + 0.06*Math.sin(frame*0.2);
+        const pulse = 1 + 0.05*Math.sin(frame*0.18);
         ctx.drawImage(images.banana, b.x-(s*pulse)/2, b.y-(s*pulse)/2, s*pulse, s*pulse);
       } else { ctx.fillStyle='#fd0'; ctx.fillRect(b.x-s/2,b.y-s/2,s,s); }
     }
@@ -322,7 +336,7 @@
 
       frame++;
       speed += obstacleSpeedGain;
-      spawnEvery = Math.max(spawnEveryMin, spawnEveryBase - Math.floor(frame/180));
+      spawnEvery = Math.max(spawnEveryMin, spawnEveryBase - Math.floor(frame/220)); // spawns slow down less aggressively
 
       // physics
       player.vy += gravity;
@@ -338,7 +352,7 @@
         const lane = Math.floor(Math.random()*lanes);
         bananasOnField.push({ lane, x: canvas.width + 60, y: groundY - 72 });
       }
-      if (frame % 120 === 0) spawnAccent();
+      if (frame % 140 === 0) spawnAccent();
 
       // move
       for (let i=obstacles.length-1;i>=0;i--){
@@ -347,11 +361,11 @@
       }
       for (let i=bananasOnField.length-1;i>=0;i--){
         const b = bananasOnField[i];
-        b.x -= speed*0.95;
-        b.y = groundY - 80 + Math.sin((frame+i)*0.12)*12;
+        b.x -= speed*0.9;
+        b.y = groundY - 80 + Math.sin((frame+i)*0.1)*10; // slightly gentler motion
         if (b.x < -100) bananasOnField.splice(i,1);
       }
-      accents.forEach(a=>{ a.x -= 0.5; a.y += a.vy; if (a.x < -80) a.x = canvas.width+80; });
+      accents.forEach(a=>{ a.x -= 0.45; a.y += a.vy; if (a.x < -80) a.x = canvas.width+80; });
 
       // collisions
       for (const o of obstacles){
@@ -359,7 +373,7 @@
           const w=56, h=64;
           const ox=o.x-w/2, oy=groundY-h+6;
           const px=player.x()-player.w/2, py=player.y-player.h;
-          if (collideRect(px,py,player.w,player.h, ox,oy,w,h) && player.y>=groundY-40){
+          if (px < ox+w && px+player.w > ox && py < oy+h && py+player.h > oy && player.y>=groundY-40){
             return endGame();
           }
         }
@@ -369,7 +383,7 @@
         if (b.lane === player.lane){
           const s=40, bx=b.x-s/2, by=b.y-s/2;
           const px=player.x()-player.w/2, py=player.y-player.h;
-          if (collideRect(px,py,player.w,player.h, bx,by,s,s)){
+          if (px < bx+s && px+player.w > bx && py < by+s && py+player.h > by){
             bananas++; bananasEl.textContent = bananas; score += 10;
             bananasOnField.splice(i,1);
             if (bananas >= bananasForNext && level < MAX_LEVELS) levelUp();
@@ -378,7 +392,7 @@
       }
 
       // score
-      score += 0.12 + speed*0.02;
+      score += 0.09 + speed*0.015; // slower scoring pace
 
       // draw
       ctx.clearRect(0,0,canvas.width,canvas.height);
@@ -449,10 +463,8 @@
     const isTouch = matchMedia('(pointer:coarse)').matches || 'ontouchstart' in window;
     if (isTouch) controls.hidden = false;
 
-    // Initial: build Level Select
-    function init(){
-      rebuildLevelGrid();
-    }
+    // Build initial Level Select
+    function init(){ rebuildLevelGrid(); }
     init();
   })();
   </script>
