@@ -1,89 +1,118 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Choose Your Hommie</title>
-  <style>
-    html, body {
-      margin: 0;
-      height: 100%;
-      overflow: hidden;
-      background: #000;
-    }
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Choose Your Hommie</title>
+<style>
+  /* ---- Quick tuning knobs (percentages) ---- */
+  :root{
+    /* Desktop row position/height */
+    --row-top-desktop: 53%;
+    --row-height-desktop: 12%;
 
-    /* Fullscreen background videos */
-    .bg-video{
-      position: fixed;
-      inset: 0;
-      width: 100vw;
-      height: 100vh;
-      object-fit: cover;
-      object-position: center;
-      z-index: 0;            /* <-- keep AT or ABOVE 0 so it isn't behind the page */
-      display: block;
-    }
+    /* Mobile row position/height */
+    --row-top-mobile: 66%;
+    --row-height-mobile: 12%;
+  }
 
-    /* Show desktop video by default */
-    #bgDesktop { display: block; }
-    #bgMobile  { display: none; }
+  /* Base layout */
+  html, body {
+    margin: 0;
+    height: 100%;
+    overflow: hidden;
+    background: #000;
+  }
 
-    /* On phones/tablets use the mobile video */
-    @media (max-width: 768px){
-      #bgDesktop { display: none; }
-      #bgMobile  { display: block; }
-    }
+  /* Fullscreen background videos — sized for modern mobile too */
+  .bg-video{
+    position: fixed;
+    inset: 0;
+    width: 100vw;           /* desktop fallback */
+    height: 100vh;          /* desktop fallback */
+    width: 100svw;          /* modern mobile safe viewport */
+    height: 100svh;         /* modern mobile safe viewport */
+    object-fit: cover;      /* fill, crop as needed */
+    object-position: center;
+    z-index: 0;             /* visible layer, under hotspots */
+    display: block;
+    background: #000;
+  }
 
-    /* Clickable hotspots on top of the video */
-    .hotspots{
-      position: fixed;
-      inset: 0;
-      z-index: 1;            /* <-- sits ABOVE the video */
-      pointer-events: none;
-    }
-    .spot{
-      position: absolute;
-      pointer-events: auto;
-      display: block;
-      text-decoration: none;
-    }
+  /* Show desktop by default, switch to mobile under 768px */
+  #bgDesktop { display: block; }
+  #bgMobile  { display: none; }
+  @media (max-width: 768px){
+    #bgDesktop { display: none; }
+    #bgMobile  { display: block; }
+  }
 
-    /* Desktop hotspot positions */
-    @media (min-width: 769px){
-      .spot{ top: 53%; height: 12%; }
-      .spot.d00d     { left: 13%; width: 17%; }
-      .spot.hvted    { left: 33%; width: 17%; }
-      .spot.metallik { left: 53%; width: 17%; }
-      .spot.fermilat { left: 73%; width: 17%; }
-    }
+  /* Clickable hotspots overlay */
+  .hotspots{
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;   /* only children accept clicks */
+  }
+  .spot{
+    position: absolute;
+    pointer-events: auto;
+    display: block;
+    text-decoration: none;
+  }
 
-    /* Mobile hotspot positions */
-    @media (max-width: 768px){
-      .spot{ top: 66%; height: 12%; }
-      .spot.d00d     { left: 8%;  width: 22%; }
-      .spot.hvted    { left: 30%; width: 22%; }
-      .spot.metallik { left: 52%; width: 22%; }
-      .spot.fermilat { left: 74%; width: 22%; }
-    }
-  </style>
+  /* Desktop hotspot positions (tweak left/width below if needed) */
+  @media (min-width: 769px){
+    .spot{ top: var(--row-top-desktop); height: var(--row-height-desktop); }
+    .spot.d00d     { left: 13%; width: 17%; }
+    .spot.hvted    { left: 33%; width: 17%; }
+    .spot.metallik { left: 53%; width: 17%; }
+    .spot.fermilat { left: 73%; width: 17%; }
+  }
+
+  /* Mobile hotspot positions (for hommiesbgmobile.mp4 layout) */
+  @media (max-width: 768px){
+    .spot{ top: var(--row-top-mobile); height: var(--row-height-mobile); }
+    .spot.d00d     { left: 8%;  width: 22%; }
+    .spot.hvted    { left: 30%; width: 22%; }
+    .spot.metallik { left: 52%; width: 22%; }
+    .spot.fermilat { left: 74%; width: 22%; }
+  }
+
+  /* Debug view: outlines to help you position the boxes */
+  body.debug .spot{
+    outline: 2px dashed rgba(255,255,255,.75);
+    background: rgba(255,255,255,.07);
+  }
+  body.debug .bg-video{
+    outline: 2px solid rgba(0,255,255,.35);
+  }
+</style>
 </head>
 <body>
-  <!-- Desktop background -->
+  <!-- Desktop background video -->
   <video id="bgDesktop" class="bg-video" autoplay muted loop playsinline webkit-playsinline preload="auto">
     <source src="assets/hommiesbg.mp4" type="video/mp4" />
   </video>
 
-  <!-- Mobile background -->
+  <!-- Mobile background video -->
   <video id="bgMobile" class="bg-video" autoplay muted loop playsinline webkit-playsinline preload="auto">
     <source src="assets/hommiesbgmobile.mp4" type="video/mp4" />
   </video>
 
-  <!-- Clickable logo areas -->
+  <!-- Clickable logo boxes -->
   <div class="hotspots" aria-label="Choose your character">
     <a class="spot d00d"     href="d00d.html"     aria-label="D00D"></a>
     <a class="spot hvted"    href="hvted.html"    aria-label="HVTED"></a>
     <a class="spot metallik" href="metallik.html" aria-label="MetalliK"></a>
     <a class="spot fermilat" href="fermilat.html" aria-label="Fermilat"></a>
   </div>
+
+  <!-- Optional: tiny helper to toggle debug with ?debug=1 -->
+  <script>
+    if (new URLSearchParams(location.search).get('debug') === '1') {
+      document.body.classList.add('debug');
+    }
+  </script>
 </body>
 </html>
