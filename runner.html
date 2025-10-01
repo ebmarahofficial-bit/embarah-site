@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Ebmarah Runner</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<style>
+  :root{
+    --neon:#00ff99; --ink:#eaffef; --bg:#04120d; --panel:#0a1d15; --line:#0b3;
+    --shadow:0 0 18px rgba(0,255,153,.35);
+  }
+  *{ box-sizing:border-box }
+  html,body{ margin:0; height:100%; background:#000; color:var(--ink); font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif }
+  .wrap{ position:relative; min-height:100dvh; display:flex; align-items:center; justify-content:center; padding:16px }
+  canvas{
+    width:100%; max-width:960px; aspect-ratio:16/9; background:#04120d;
+    border:1px solid var(--line); border-radius:16px; box-shadow:var(--shadow);
+    image-rendering:crisp-edges; touch-action:none;
+  }
+
+  /* ---------- HUD (in-game UI) ---------- */
+  .hud{
+    position:absolute; top:10px; left:50%; transform:translateX(-50%);
+    display:flex; gap:10px; align-items:center; font-weight:700; font-size:14px;
+    background:rgba(0,0,0,.30); padding:6px 10px; border-radius:999px; border:1px solid rgba(0,255,153,.45);
+    backdrop-filter: blur(4px);
+  }
+  .pill{ padding:2px 10px; border-radius:999px; background:rgba(0,255,153,.12); border:1px solid rgba(0,255,153,.35) }
+  .hud button{ padding:4px 10px; border-radius:10px; border:1px solid var(--line); background:#062417; color:var(--ink); cursor:pointer }
+
+  /* ---------- Start / Pause overlay ---------- */
+  .overlay{
+    position:absolute; inset:0; display:grid; place-items:center; border-radius:16px; overflow:hidden;
+  }
+  .cover{
+    position:absolute; inset:0;
+    background:url("./runner/assets/ui/start_cover.png") center/cover no-repeat;
+    filter: saturate(1.08) contrast(1.05);
+  }
+  .veil{ position:absolute; inset:0; background:linear-gradient(180deg, rgba(0,0,0,.45), rgba(0,0,0,.25)); }
+  .panel{
+    position:relative; z-index:2; width:min(92vw, 780px);
+    padding:20px; border:1px solid var(--line); background:rgba(10,29,21,.6);
+    border-radius:16px; box-shadow:var(--shadow); text-align:center; backdrop-filter: blur(6px);
+  }
+  .title{
+    margin:0 0 6px; font-weight:900; letter-spacing:.06em;
+    font-size: clamp(28px, 5.5vw, 56px); color:var(--neon);
+    text-shadow: 0 0 24px rgba(0,255,153,.45);
+  }
+  .tagline{
+    margin:0 0 14px; font-weight:800; letter-spacing:.04em; opacity:.95;
+  }
+  .btnrow{ display:flex; gap:10px; justify-content:center; flex-wrap:wrap }
+  .btn{
+    padding:12px 16px; border:1px solid var(--line); background:#062417; color:var(--ink);
+    border-radius:12px; cursor:pointer; font-weight:800; letter-spacing:.03em; box-shadow:var(--shadow)
+  }
+
+  /* ---------- Mobile controls ---------- */
+  .controls{
+    position:absolute; inset:auto 0 10px 0; display:flex; justify-content:space-between; gap:10px; padding:0 8px; pointer-events:none;
+  }
+  .controls button{
+    pointer-events:auto; min-width:96px; min-height:56px; border-radius:14px;
+    background:rgba(0,0,0,.35); border:1px solid rgba(0,255,153,.5); color:var(--ink); font-weight:800;
+  }
+  .controls .jump{ flex:1; min-width:120px }
+  @media (max-width:520px){ .controls button{ min-width:78px; min-height:52px } }
+
+  /* Hidden SoundCloud iframe */
+  #sc-holder{ position:absolute; width:0; height:0; overflow:hidden }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <canvas id="game" width="960" height="540" aria-label="Ebmarah Runner"></canvas>
+
+    <!-- HUD -->
+    <div class="hud" id="hud" hidden>
+      <span class="pill">Lv <strong id="level">1</strong>/10</span>
+      <span class="pill">🍌 <strong id="bananas">0</strong>/<span id="nextReq">20</span></span>
+      <span class="pill">Score <strong id="score">0</strong></span>
+      <span class="pill">Best <strong id="best">0</strong></span>
+      <span class="pill"><button id="pauseBtn">⏸ Pause</button></span>
+      <span class="pill"><button id="muteBtn">🔊</button></span>
+    </div>
+
+    <!-- Start / Pause overlay -->
+    <div class="overlay" id="overlay">
+      <div class="cover" aria-hidden="true"></div>
+      <div class="veil" aria-hidden="true"></div>
+      <div class="panel" id="panel">
+        <h1 class="title">EBMARAH RUNNER</h1>
+        <p class="tagline">Running Bass</p>
+        <p style="opacity:.9;margin:.35rem 0 1rem 0">Collect bananas to level up. Avoid hazards. Mobile: on-screen controls. Desktop: Arrow keys + Space/↑ to jump.</p>
+        <div class="btnrow">
+          <button class="btn" id="startBtn">Start</button>
+          <button class="btn" id="selectBtn">Level Select</button>
+        </div>
+        <div id="levelSelect" hidden style="margin-top:12px">
+          <p style="opacity:.9;margin:.35rem 0 .5rem 0">Choose a level (unlocks as you progress):</p>
+          <div id="grid" style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mobile controls -->
+    <div class="controls" id="controls" hidden>
+      <button id="leftBtn">◀</button>
+      <button id="jumpBtn" class="jump">JUMP</button>
+      <button id="rightBtn">▶</button>
+    </div>
+
+    <!-- SoundCloud (hidden) -->
+    <div id="sc-holder" aria-hidden="true">
+      <iframe id="sc-iframe" allow="autoplay"
+        src="https://w.soundcloud.com/player/?url=SOUND_CLOUD_TRACK_URL_HERE&auto_play=false&visual=false&hide_related=true&show_comments=false&show_user=false&show_reposts=false&show_teaser=false"
+        width="100%" height="120" frameborder="0"></iframe>
+    </div>
+  </div>
+
+  <script src="https://w.soundcloud.com/player/api.js"></script>
+  <script>
+  (() => {
+    /* ---------------- Config ---------------- */
+    const lanes = 3;
+    const laneX = [0.22, 0.5, 0.78];
+    const groundY = 440;                 // running height baseline
+    const gravity = 0.9, jumpV = -16.5;
+    const BANANAS_PER_LEVEL = 20;
+    const MAX_LEVELS = 10;
+
+    const obstacleSpeedBase = 6.5;
+    const obstacleSpeedGain = 0.007;
+    const spawnEveryBase = 90;
+    const spawnEveryMin  = 52;
+    const bananaSpawnEvery = 110;
+
+    /* ---------------- DOM ---------------- */
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+
+    const hud = document.getElementById('hud');
+    const scoreEl = document.getElementById('score');
+    const bestEl = document.getElementById('best');
+    const bananasEl = document.getElementById('bananas');
+    const nextReqEl = document.getElementById('nextReq');
+    const levelEl = document.getElementById('level');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const muteBtn  = document.getElementById('muteBtn');
+
+    const overlay   = document.getElementById('overlay');
+    const panel     = document.getElementById('panel');
+    const startBtn  = document.getElementById('startBtn');
+    const selectBtn = document.getElementById('selectBtn');
+    const levelSelect = document.getElementById('levelSelect');
+    const grid = document.getElementById('grid');
+
+    const controls = document.getElementById('controls');
+    const leftBtn  = document.getElementById('leftBtn');
+    const rightBtn = document.getElementById('rightBtn');
+    const jumpBtn  = document.getElementById('jumpBtn');
+
+    /* ---------------- SoundCloud ---------------- */
+    const widget = window.SC.Widget(document.getElementById('sc-iframe'));
+    let musicEnabled = true, widgetReady = false;
+    widget.bind(window.SC.Widget.Events.READY, () => { widgetReady = true; widget.setVolume(70); });
+    const playMusic = () => { if (musicEnabled && widgetReady) widget.play(); };
+    const pauseMusic = () => { if (widgetReady) widget.pause(); };
+    muteBtn.addEventListener('click', () => {
+      musicEnabled = !musicEnabled;
+      muteBtn.textContent = musicEnabled ? '🔊' : '🔇';
+      if (!musicEnabled) pauseMusic(); else playMusic();
+    });
+
+    /* ---------------- Assets ---------------- */
+    function levelPath(i){ return `./runner/assets/levels/level${i}`; }
+    const images = { player:new Image(), banana:new Image(), bg:new Image(), obstacle:new Image(), accent:new Image() };
+    images.player.src = "./runner/assets/runner/gorilla.png";
+    images.banana.src = "./runner/assets/runner/banana.png";
+
+    function loadLevelAssets(i){
+      return new Promise((res,rej)=>{
+        let left = 3;
+        const done = ()=>{ if(--left===0) res(); };
+        images.bg.onload = done; images.obstacle.onload = done; images.accent.onload = done;
+        images.bg.onerror = images.obstacle.onerror = images.accent.onerror = rej;
+        const base = levelPath(i);
+        images.bg.src = `${base}/background.png`;
+        images.obstacle.src = `${base}/obstacle.png`;
+        images.accent.src   = `${base}/accent.png`;
+      }).catch(()=>{}); // continue even if an image misses
+    }
+
+    /* ---------------- Game State ---------------- */
+    let playing=false, paused=false, frame=0;
+    let speed=obstacleSpeedBase, spawnEvery=spawnEveryBase;
+    let score=0, best= +localStorage.getItem('ebmarah_runner_best') || 0;
+    let bananas=0, level=1, bananasForNext=BANANAS_PER_LEVEL;
+
+    // Level unlocks for Level Select
+    let unlocked = JSON.parse(localStorage.getItem('ebmarah_unlocked') || '[1]');
+    const saveUnlocked = () => localStorage.setItem('ebmarah_unlocked', JSON.stringify(unlocked));
+
+    bestEl.textContent = best; nextReqEl.textContent = bananasForNext; levelEl.textContent = level;
+
+    const player = { lane:1, x(){ return laneX[this.lane]*canvas.width }, y:groundY, vy:0, w:64, h:64, jumping:false };
+    const obstacles=[], bananasOnField=[], accents=[];
+    let bgScrollX = 0, mistPhase = 0;
+
+    function spawnAccent(){
+      accents.push({ x:Math.random()*canvas.width, y:120+Math.random()*220, vy:(Math.random()*0.6)-0.3, vx:(Math.random()*0.2)+0.2 });
+      if (accents.length>10) accents.shift();
+    }
+
+    function resetRun(startLevel=1){
+      playing=true; paused=false; frame=0;
+      speed = obstacleSpeedBase; spawnEvery = spawnEveryBase;
+      score=0; bananas=0; bananasForNext=BANANAS_PER_LEVEL;
+      level=startLevel; levelEl.textContent = level;
+      bestEl.textContent = best; bananasEl.textContent = bananas; nextReqEl.textContent = bananasForNext;
+      obstacles.length=0; bananasOnField.length=0; accents.length=0;
+      player.lane=1; player.y=groundY; player.vy=0; player.jumping=false;
+      bgScrollX=0; mistPhase=0;
+      hud.hidden=false; controls.hidden = isTouch ? false : true; overlay.style.display='none';
+      Promise.resolve(loadLevelAssets(level)).then(()=>{ playMusic(); requestAnimationFrame(loop); }).catch(()=>{ requestAnimationFrame(loop); });
+    }
+
+    /* ---------------- Level Select ---------------- */
+    function rebuildLevelGrid(){
+      grid.innerHTML = '';
+      for(let i=1;i<=MAX_LEVELS;i++){
+        const b = document.createElement('button');
+        b.className = 'btn'; b.textContent = `Level ${i}`;
+        const open = unlocked.includes(i);
+        if (!open) b.disabled = true;
+        b.addEventListener('click', ()=> resetRun(i));
+        grid.appendChild(b);
+      }
+    }
+    selectBtn.addEventListener('click', ()=>{
+      levelSelect.hidden = !levelSelect.hidden;
+      rebuildLevelGrid();
+    });
+    startBtn.addEventListener('click', ()=> resetRun(1));
+
+    /* ---------------- Pause ---------------- */
+    pauseBtn.addEventListener('click', ()=>{
+      if (!playing) return;
+      paused = !paused;
+      pauseBtn.textContent = paused ? '▶ Resume' : '⏸ Pause';
+      if (!paused) requestAnimationFrame(loop);
+    });
+
+    /* ---------------- Helpers ---------------- */
+    function collideRect(ax,ay,aw,ah, bx,by,bw,bh){
+      return ax < bx+bw && ax+aw > bx && ay < by+bh && ay+ah > by;
+    }
+
+    function levelUp(){
+      if (!unlocked.includes(level+1) && level<MAX_LEVELS){ unlocked.push(level+1); saveUnlocked(); }
+      level = Math.min(MAX_LEVELS, level+1);
+      levelEl.textContent = level;
+      bananasForNext += BANANAS_PER_LEVEL; nextReqEl.textContent = bananasForNext;
+      loadLevelAssets(level);
+      for(let i=0;i<6;i++) spawnAccent();
+    }
+
+    /* ---------------- Drawing ---------------- */
+    function drawScrollingBG(){
+      if (!images.bg.complete) { ctx.fillStyle='#05150f'; ctx.fillRect(0,0,canvas.width,canvas.height); return; }
+      const iw = images.bg.naturalWidth, ih = images.bg.naturalHeight;
+      const scale = canvas.height/ih, dw = iw*scale, dh = canvas.height;
+      const pxPerFrame = 1.2 + speed*0.15;
+      bgScrollX = (bgScrollX + pxPerFrame) % dw;
+      const startX = -bgScrollX;
+      ctx.drawImage(images.bg, startX, 0, dw, dh);
+      ctx.drawImage(images.bg, startX + dw, 0, dw, dh);
+
+      // parallax accents using level's accent
+      mistPhase += 0.005;
+      if (images.accent.complete){
+        ctx.globalAlpha = 0.35 + 0.25*Math.sin(mistPhase*2);
+        for (let i=0;i<3;i++){
+          const x = (i*320 - (bgScrollX*0.5)%320);
+          const y = 80 + 60*Math.sin(mistPhase*3 + i);
+          ctx.drawImage(images.accent, x, y, 96, 96);
+        }
+        ctx.globalAlpha = 1;
+      }
+
+      // ground highlight line
+      ctx.fillStyle = '#0a3'; ctx.fillRect(0, groundY+32, canvas.width, 6);
+      ctx.fillStyle = '#0c5'; ctx.fillRect(0, groundY+38, canvas.width, 2);
+    }
+
+    function drawPlayer(){
+      const x=player.x()-player.w/2, y=player.y-player.h;
+      if (images.player.complete) ctx.drawImage(images.player, x, y, player.w, player.h);
+      else { ctx.fillStyle='#1b2a28'; ctx.fillRect(x,y,player.w,player.h); }
+    }
+    function drawObstacle(o){
+      const w=56, h=64, x=o.x-w/2, y=groundY-h+6;
+      if (images.obstacle.complete) {
+        const near = Math.max(0, 1 - Math.abs(o.x - player.x())/200);
+        const s = 56 + Math.floor(near*4);
+        ctx.drawImage(images.obstacle, o.x - s/2, y-(s-64), s, s);
+      } else { ctx.fillStyle='#195'; ctx.fillRect(x,y,w,h); }
+    }
+    function drawBanana(b){
+      const s=40;
+      if (images.banana.complete){
+        const pulse = 1 + 0.06*Math.sin(frame*0.2);
+        ctx.drawImage(images.banana, b.x-(s*pulse)/2, b.y-(s*pulse)/2, s*pulse, s*pulse);
+      } else { ctx.fillStyle='#fd0'; ctx.fillRect(b.x-s/2,b.y-s/2,s,s); }
+    }
+
+    /* ---------------- Loop ---------------- */
+    function loop(){
+      if (!playing || paused) return;
+
+      frame++;
+      speed += obstacleSpeedGain;
+      spawnEvery = Math.max(spawnEveryMin, spawnEveryBase - Math.floor(frame/180));
+
+      // physics
+      player.vy += gravity;
+      player.y += player.vy;
+      if (player.y > groundY){ player.y=groundY; player.vy=0; player.jumping=false; }
+
+      // spawns
+      if (frame % spawnEvery === 0){
+        const lane = Math.floor(Math.random()*lanes);
+        obstacles.push({ lane, x: canvas.width + 60 });
+      }
+      if (frame % bananaSpawnEvery === 0){
+        const lane = Math.floor(Math.random()*lanes);
+        bananasOnField.push({ lane, x: canvas.width + 60, y: groundY - 72 });
+      }
+      if (frame % 120 === 0) spawnAccent();
+
+      // move
+      for (let i=obstacles.length-1;i>=0;i--){
+        obstacles[i].x -= speed;
+        if (obstacles[i].x < -100) obstacles.splice(i,1);
+      }
+      for (let i=bananasOnField.length-1;i>=0;i--){
+        const b = bananasOnField[i];
+        b.x -= speed*0.95;
+        b.y = groundY - 80 + Math.sin((frame+i)*0.12)*12;
+        if (b.x < -100) bananasOnField.splice(i,1);
+      }
+      accents.forEach(a=>{ a.x -= 0.5; a.y += a.vy; if (a.x < -80) a.x = canvas.width+80; });
+
+      // collisions
+      for (const o of obstacles){
+        if (o.lane === player.lane){
+          const w=56, h=64;
+          const ox=o.x-w/2, oy=groundY-h+6;
+          const px=player.x()-player.w/2, py=player.y-player.h;
+          if (collideRect(px,py,player.w,player.h, ox,oy,w,h) && player.y>=groundY-40){
+            return endGame();
+          }
+        }
+      }
+      for (let i=bananasOnField.length-1;i>=0;i--){
+        const b = bananasOnField[i];
+        if (b.lane === player.lane){
+          const s=40, bx=b.x-s/2, by=b.y-s/2;
+          const px=player.x()-player.w/2, py=player.y-player.h;
+          if (collideRect(px,py,player.w,player.h, bx,by,s,s)){
+            bananas++; bananasEl.textContent = bananas; score += 10;
+            bananasOnField.splice(i,1);
+            if (bananas >= bananasForNext && level < MAX_LEVELS) levelUp();
+          }
+        }
+      }
+
+      // score
+      score += 0.12 + speed*0.02;
+
+      // draw
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      drawScrollingBG();
+      // lane guides
+      ctx.save(); ctx.globalAlpha=.18; ctx.setLineDash([10,14]); ctx.lineWidth=2; ctx.strokeStyle='#0f7';
+      for(let i=0;i<lanes;i++){ const x=laneX[i]*canvas.width; ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,canvas.height); ctx.stroke(); }
+      ctx.restore();
+      obstacles.forEach(drawObstacle);
+      bananasOnField.forEach(drawBanana);
+      drawPlayer();
+
+      scoreEl.textContent = Math.floor(score);
+      bestEl.textContent  = best;
+
+      requestAnimationFrame(loop);
+    }
+
+    function endGame(){
+      playing=false; pauseMusic();
+      if (Math.floor(score) > best){ best = Math.floor(score); localStorage.setItem('ebmarah_runner_best', best); }
+      hud.hidden=true; controls.hidden=true;
+
+      overlay.style.display='grid';
+      panel.innerHTML = `
+        <h1 class="title">GAME OVER</h1>
+        <p>Level <b>${level}</b> • Bananas <b>${bananas}</b> • Score <b>${Math.floor(score)}</b> • Best <b>${best}</b></p>
+        <div class="btnrow">
+          <button class="btn" id="restartBtn">Play Again</button>
+          <button class="btn" id="selectBtn2">Level Select</button>
+          <button class="btn" id="musicToggle">${musicEnabled ? '🔊 Music' : '🔇 Music'}</button>
+        </div>
+      `;
+      document.getElementById('restartBtn').addEventListener('click', ()=> resetRun(level));
+      document.getElementById('selectBtn2').addEventListener('click', ()=>{
+        panel.innerHTML = '';
+        panel.appendChild(levelSelect);
+        levelSelect.hidden=false;
+        rebuildLevelGrid();
+      });
+      document.getElementById('musicToggle').addEventListener('click', ()=>{
+        musicEnabled = !musicEnabled; if (!musicEnabled) pauseMusic(); else playMusic();
+        document.getElementById('musicToggle').textContent = musicEnabled ? '🔊 Music' : '🔇 Music';
+      });
+    }
+
+    /* ---------------- Controls ---------------- */
+    function moveLeft(){ if (player.lane>0) player.lane--; }
+    function moveRight(){ if (player.lane<lanes-1) player.lane++; }
+    function jump(){ if (!player.jumping){ player.vy = jumpV; player.jumping = true; } }
+
+    window.addEventListener('keydown', e=>{
+      if (e.key==='ArrowLeft'){ e.preventDefault(); moveLeft(); }
+      if (e.key==='ArrowRight'){ e.preventDefault(); moveRight(); }
+      if (e.key===' ' || e.key==='ArrowUp'){ e.preventDefault(); jump(); }
+      if (e.key==='Escape'){ 
+        if (!playing) return;
+        paused = !paused; 
+        pauseBtn.textContent = paused ? '▶ Resume' : '⏸ Pause'; 
+        if (!paused) requestAnimationFrame(loop); 
+      }
+    }, {passive:false});
+
+    leftBtn.addEventListener('click', moveLeft);
+    rightBtn.addEventListener('click', moveRight);
+    jumpBtn.addEventListener('click',  jump);
+
+    const isTouch = matchMedia('(pointer:coarse)').matches || 'ontouchstart' in window;
+    if (isTouch) controls.hidden = false;
+
+    // Initial: build Level Select
+    function init(){
+      rebuildLevelGrid();
+    }
+    init();
+  })();
+  </script>
+</body>
+</html>
