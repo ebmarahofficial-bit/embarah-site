@@ -5,41 +5,35 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Choose An Artist</title>
 <style>
-  /* ---- Quick tuning knobs (percentages) ---- */
   :root{
-    /* Desktop row position/height */
     --row-top-desktop: 44%;
     --row-height-desktop: 12%;
-
-    /* Mobile row position/height */
     --row-top-mobile: 66%;
     --row-height-mobile: 12%;
+
+    --neon:#00ff99; --bg:#020d07; --ink:#e0ffe8; --glass:rgba(2,13,7,.75);
   }
 
-  /* Base layout */
   html, body {
     margin: 0;
     height: 100%;
     overflow: hidden;
     background: #000;
+    font-family:'Orbitron',sans-serif; color:var(--ink);
   }
 
-  /* Fullscreen background videos — sized for modern mobile too */
+  /* BG videos */
   .bg-video{
     position: fixed;
     inset: 0;
-    width: 100vw;           /* desktop fallback */
-    height: 100vh;          /* desktop fallback */
-    width: 100svw;          /* modern mobile safe viewport */
-    height: 100svh;         /* modern mobile safe viewport */
-    object-fit: cover;      /* fill, crop as needed */
+    width: 100svw;
+    height: 100svh;
+    object-fit: contain; /* ✅ no cropping */
     object-position: center;
-    z-index: 0;             /* visible layer, under hotspots */
-    display: block;
+    z-index: 0;
     background: #000;
   }
 
-  /* Show desktop by default, switch to mobile under 768px */
   #bgDesktop { display: block; }
   #bgMobile  { display: none; }
   @media (max-width: 768px){
@@ -47,12 +41,11 @@
     #bgMobile  { display: block; }
   }
 
-  /* Clickable hotspots overlay */
   .hotspots{
     position: fixed;
     inset: 0;
     z-index: 1;
-    pointer-events: none;   /* only children accept clicks */
+    pointer-events: none;
   }
   .spot{
     position: absolute;
@@ -60,8 +53,6 @@
     display: block;
     text-decoration: none;
   }
-
-  /* Desktop hotspot positions (tweak left/width below if needed) */
   @media (min-width: 769px){
     .spot{ top: var(--row-top-desktop); height: var(--row-height-desktop); }
     .spot.d00d     { left: 13%; width: 17%; }
@@ -69,8 +60,6 @@
     .spot.metallik { left: 59%; width: 17%; }
     .spot.fermilat { left: 69%; width: 17%; }
   }
-
-  /* Mobile hotspot positions (for hommiesbgmobile.mp4 layout) */
   @media (max-width: 768px){
     .spot{ top: var(--row-top-mobile); height: var(--row-height-mobile); }
     .spot.d00d     { left: 2%;  width: 22%; }
@@ -78,29 +67,133 @@
     .spot.metallik { left: 55%; width: 22%; }
     .spot.fermilat { left: 83%; width: 22%; }
   }
+  body.debug .spot{ outline: 2px dashed rgba(255,255,255,.75); background: rgba(255,255,255,.07); }
+  body.debug .bg-video{ outline: 2px solid rgba(0,255,255,.35); }
 
-  /* Debug view: outlines to help you position the boxes */
-  body.debug .spot{
-    outline: 2px dashed rgba(255,255,255,.75);
-    background: rgba(255,255,255,.07);
+  /* ===== Header/Nav ===== */
+  header{
+    position:fixed; inset:0 0 auto 0;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:12px 18px; background:var(--glass);
+    border-bottom:1px solid rgba(0,255,128,.2);
+    box-shadow:0 6px 24px rgba(0,0,0,.35); z-index:1000;
+    backdrop-filter: blur(10px);
   }
-  body.debug .bg-video{
-    outline: 2px solid rgba(0,255,255,.35);
+  .brand{display:flex; align-items:center; gap:10px; font-weight:800; letter-spacing:.02em}
+  .brand img{height:40px; width:auto}
+  .brand span{font-size:clamp(16px,2.6vw,22px)}
+
+  nav.site-nav{display:flex; align-items:center; gap:22px}
+  nav.site-nav a{
+    color:#76ffb2; text-decoration:none; font-weight:700; font-size:clamp(13px,1.6vw,14px)
+  }
+  nav.site-nav a:hover{ color:#00ffea }
+  .menu-btn{
+    display:none; background:none; border:1px solid rgba(0,255,128,.35);
+    color:#b9ffdf; font-size:16px; font-weight:700; padding:8px 12px; border-radius:10px
+  }
+
+  .drawer-overlay{
+    position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:999; opacity:0; pointer-events:none; transition:.25s;
+  }
+  .drawer{
+    position:fixed; top:0; right:-320px; width:min(80vw,320px); height:100%;
+    background:#03140c; border-left:1px solid rgba(0,255,128,.25);
+    box-shadow:-12px 0 40px rgba(0,0,0,.45); z-index:1000; transition: right .25s ease;
+    display:flex; flex-direction:column; padding:18px;
+  }
+  .drawer header{ all:unset; display:flex; align-items:center; justify-content:space-between; margin-bottom:8px }
+  .drawer h2{ margin:0; font-size:18px; color:#9dffd2 }
+  .drawer .close{
+    background:none; border:1px solid rgba(0,255,128,.35); color:#b9ffdf; padding:6px 10px; border-radius:10px
+  }
+  .drawer nav{ display:flex; flex-direction:column; margin-top:12px }
+  .drawer nav a{
+    padding:14px 10px; border-bottom:1px solid rgba(0,255,128,.15);
+    color:#b9ffdf; text-decoration:none; font-weight:800; letter-spacing:.02em;
+    font-size:16px;
+  }
+  .drawer nav a:last-child{ border-bottom:0 }
+  .drawer nav a:active{ background:rgba(0,255,128,.08) }
+  .drawer-open .drawer{ right:0 }
+  .drawer-open .drawer-overlay{ opacity:1; pointer-events:auto }
+
+  @media (max-width: 960px){
+    nav.site-nav{ display:none }
+    .menu-btn{ display:inline-flex }
+  }
+
+  /* ===== Audio widget ===== */
+  .ebm-audio{
+    position:fixed; left:50%; bottom:16px; transform:translateX(-50%);
+    z-index:1100; display:flex; align-items:center; gap:10px;
+    background:rgba(0,0,0,.55); border:1px solid rgba(0,255,128,.35);
+    border-radius:12px; padding:8px 12px; font-family:'Orbitron',sans-serif;
+    box-shadow:0 8px 24px rgba(0,0,0,.35);
+  }
+  .ebm-audio button{
+    border:1px solid rgba(0,255,128,.45); background:transparent;
+    color:#b9ffdf; font-weight:700; padding:8px 12px; border-radius:10px; cursor:pointer;
+  }
+  .ebm-audio input[type="range"]{ width:140px; accent-color:#00ff99 }
+  .ebm-audio .status{ color:#76ffb2; font-size:12px; letter-spacing:.02em; opacity:.9 }
+  .ebm-audio .dot{ display:inline-block; width:6px; height:6px; border-radius:50%; background:#ff5c5c; margin-left:6px; box-shadow:0 0 8px #ff5c5c }
+  .ebm-audio.playing .dot{ background:#00ffa0; box-shadow:0 0 8px #00ffa0 }
+  @media (max-width: 520px){
+    .ebm-audio{ left:12px; transform:none; right:12px; justify-content:space-between; width:auto }
+    .ebm-audio input[type="range"]{ width:90px }
   }
 </style>
 </head>
 <body>
-  <!-- Desktop background video -->
-  <video id="bgDesktop" class="bg-video" autoplay muted loop playsinline webkit-playsinline preload="auto">
+  <!-- BG videos -->
+  <video id="bgDesktop" class="bg-video" autoplay muted loop playsinline preload="auto">
     <source src="assets/hommiesbg.mp4" type="video/mp4" />
   </video>
-
-  <!-- Mobile background video -->
-  <video id="bgMobile" class="bg-video" autoplay muted loop playsinline webkit-playsinline preload="auto">
+  <video id="bgMobile" class="bg-video" autoplay muted loop playsinline preload="auto">
     <source src="assets/hommiesbgmobile.mp4" type="video/mp4" />
   </video>
 
-  <!-- Clickable logo boxes -->
+  <!-- ✅ Header/Nav -->
+  <header>
+    <div class="brand">
+      <img src="assets/favicon.png" alt="Ebmarah" />
+      <span>Ebmarah</span>
+    </div>
+    <nav class="site-nav" aria-label="Primary">
+      <a href="index.html">Home</a>
+      <a href="live.html">Live</a>
+      <a href="sample-packs.html">Sample Packs</a>
+      <a href="about.html">About</a>
+      <a href="virtual-rave-room.html">Virtual Rave Room</a>
+      <a href="drum-pad.html">BeEbmarah</a>
+      <a href="hommies.html">Hommies</a>
+      <a href="samples.html">Fan Vocal Booth</a>
+      <a href="samples-library.html">Vocal Library</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+    <button class="menu-btn" id="menuBtn">Menu</button>
+  </header>
+  <div class="drawer-overlay" id="drawerOverlay"></div>
+  <aside class="drawer" id="drawer">
+    <header>
+      <h2>Menu</h2>
+      <button class="close" id="drawerClose">Close</button>
+    </header>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="live.html">Live</a>
+      <a href="sample-packs.html">Sample Packs</a>
+      <a href="about.html">About</a>
+      <a href="drum-pad.html">BeEbmarah</a>
+      <a href="hommies.html">Hommies</a>
+      <a href="samples.html">Fan Vocal Booth</a>
+      <a href="samples-library.html">Vocal Library</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+  </aside>
+
+  <!-- Clickable hotspots -->
   <div class="hotspots" aria-label="Choose your character">
     <a class="spot d00d"     href="d00d.html"     aria-label="D00D"></a>
     <a class="spot hvted"    href="hvted.html"    aria-label="HVTED"></a>
@@ -108,11 +201,62 @@
     <a class="spot fermilat" href="fermilat.html" aria-label="Fermilat"></a>
   </div>
 
-  <!-- Optional: tiny helper to toggle debug with ?debug=1 -->
+  <!-- Background music -->
+  <audio id="bgm" src="assets/hommies.mp3" preload="auto" loop playsinline></audio>
+
   <script>
-    if (new URLSearchParams(location.search).get('debug') === '1') {
-      document.body.classList.add('debug');
-    }
+    // mobile nav drawer
+    const root=document.documentElement;
+    const btn=document.getElementById('menuBtn');
+    const drawer=document.getElementById('drawer');
+    const overlay=document.getElementById('drawerOverlay');
+    const closeBtn=document.getElementById('drawerClose');
+    const openDrawer=()=>{ root.classList.add('drawer-open'); btn.setAttribute('aria-expanded','true'); };
+    const closeDrawer=()=>{ root.classList.remove('drawer-open'); btn.setAttribute('aria-expanded','false'); };
+    btn.addEventListener('click',openDrawer);
+    closeBtn.addEventListener('click',closeDrawer);
+    overlay.addEventListener('click',closeDrawer);
+    window.addEventListener('keydown',e=>{ if(e.key==='Escape') closeDrawer(); });
+
+    // audio widget setup
+    (function(){
+      const audio=document.getElementById('bgm');
+      const keyVol='hommies_vol', keyMute='hommies_mute';
+      const savedVol=parseFloat(localStorage.getItem(keyVol));
+      const savedMute=localStorage.getItem(keyMute)==='true';
+      audio.volume=Number.isFinite(savedVol)? savedVol:0.5;
+      audio.muted=!!savedMute;
+      const wrap=document.createElement('div'); wrap.className='ebm-audio';
+      wrap.innerHTML=`
+        <button id="ebmPlay">Play</button>
+        <button id="ebmMute">Mute</button>
+        <input id="ebmVol" type="range" min="0" max="1" step="0.01" />
+        <span class="status" id="ebmStatus">paused<span class="dot"></span></span>`;
+      document.body.appendChild(wrap);
+      const playBtn=wrap.querySelector('#ebmPlay');
+      const muteBtn=wrap.querySelector('#ebmMute');
+      const vol=wrap.querySelector('#ebmVol');
+      const status=wrap.querySelector('#ebmStatus');
+      const updateUI=()=>{ 
+        playBtn.textContent=audio.paused?'Play':'Pause';
+        muteBtn.textContent=audio.muted?'Unmute':'Mute';
+        status.textContent=audio.paused?'paused':'playing';
+        wrap.classList.toggle('playing',!audio.paused);
+        status.insertAdjacentHTML('beforeend','<span class="dot"></span>');
+      };
+      async function start(){ try{ await audio.play(); }catch{} updateUI(); }
+      start();
+      playBtn.addEventListener('click',async()=>{ if(audio.paused){ await audio.play().catch(()=>{});} else{ audio.pause(); } updateUI(); });
+      muteBtn.addEventListener('click',()=>{ audio.muted=!audio.muted; localStorage.setItem(keyMute,String(audio.muted)); updateUI(); });
+      vol.value=audio.volume;
+      vol.addEventListener('input',()=>{ audio.volume=Number(vol.value); localStorage.setItem(keyVol,String(audio.volume)); if(audio.volume>0&&audio.muted){ audio.muted=false; localStorage.setItem(keyMute,'false'); } updateUI(); });
+      audio.addEventListener('play',updateUI);
+      audio.addEventListener('pause',updateUI);
+      audio.addEventListener('volumechange',updateUI);
+    })();
+
+    // debug toggle
+    if(new URLSearchParams(location.search).get('debug')==='1'){ document.body.classList.add('debug'); }
   </script>
 </body>
 </html>
