@@ -11,6 +11,16 @@
   }
   *{ box-sizing:border-box }
   html,body{ margin:0; height:100%; background:#000; color:var(--ink); font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif }
+
+  /* Fullscreen video background */
+  #bg-video{
+    position:fixed; inset:0;
+    width:100%; height:100%;
+    object-fit:cover;
+    z-index:-1;
+    background:#000; /* fallback color while loading */
+  }
+
   .wrap{ min-height:100dvh; display:flex; align-items:center; justify-content:center; padding:16px }
 
   /* Stage wraps canvas + overlay so the cover fits exactly */
@@ -88,6 +98,12 @@
 </style>
 </head>
 <body>
+
+  <!-- Site-wide animated background -->
+  <video id="bg-video" autoplay muted loop playsinline>
+    <source src="./runner/assets/runnerbg.mp4" type="video/mp4">
+  </video>
+
   <div class="wrap">
     <div class="stage">
       <canvas id="game" width="960" height="540" aria-label="Ebmarah Runner"></canvas>
@@ -152,7 +168,8 @@
     const obstacleSpeedBase = 4.0;   // was 6.5
     const obstacleSpeedGain = 0.004; // was 0.007
     const spawnEveryBase = 120;      // was 90 (spawns less often)
-    const spawnEveryMin  = 80;       // was 52
+    theSpawnEveryMin  = 80;          // was 52
+    const spawnEveryMin  = 80;       // keep for clarity
     const bananaSpawnEvery = 140;    // was 110
 
     /* ---------------- DOM ---------------- */
@@ -272,6 +289,40 @@
 
     /* ---------------- Helpers ---------------- */
     function collideRect(ax,ay,aw,ah, bx,by,bw,bh){ return ax < bx+bw && ax+aw > bx && ay < by+bh && ay+ah > by; }
+
+    // New: tighter hitboxes
+    function getPlayerHitbox(){
+      const px = player.x()-player.w/2;
+      const py = player.y - player.h;
+      // Slightly inset for more natural feel
+      const w = player.w * 0.75;
+      const h = player.h * 0.85;
+      const x = px + (player.w - w)/2;
+      const y = py + (player.h - h)/2;
+      return {x,y,w,h};
+    }
+    function getObstacleHitbox(o){
+      // Matches drawObstacle pulse size more closely and shrinks a bit
+      const baseY = groundY - 64 + 6;
+      const near = Math.max(0, 1 - Math.abs(o.x - player.x())/200);
+      const s = 56 + Math.floor(near*3);
+      const w = s*0.85, h = s*0.85;
+      const x = o.x - w/2;
+      const y = baseY - (s-64) + (s-h); // align to drawn bottom
+      return {x,y,w,h};
+    }
+    function bananaHit(b){
+      // Circle-based pickup for nicer feel
+      const s = 40, r = (s*0.48);
+      const bx = b.x, by = b.y;
+      const hb = getPlayerHitbox();
+      // closest point on player hitbox to banana center
+      const cx = Math.max(hb.x, Math.min(bx, hb.x + hb.w));
+      const cy = Math.max(hb.y, Math.min(by, hb.y + hb.h));
+      const dx = bx - cx, dy = by - cy;
+      return (dx*dx + dy*dy) <= (r*r);
+    }
+
     function levelUp(){
       if (!unlocked.includes(level+1) && level<MAX_LEVELS){ unlocked.push(level+1); saveUnlocked(); }
       level = Math.min(MAX_LEVELS, level+1);
@@ -286,7 +337,7 @@
       if (!images.bg.complete) { ctx.fillStyle='#05150f'; ctx.fillRect(0,0,canvas.width,canvas.height); return; }
       const iw = images.bg.naturalWidth, ih = images.bg.naturalHeight;
       const scale = canvas.height/ih, dw = iw*scale, dh = canvas.height;
-      const pxPerFrame = 1.2 + speed*0.15;  // ↓ slower parallax scroll (was 1.2 + speed*0.15)
+      const pxPerFrame = 1.2 + speed*0.15;
       bgScrollX = (bgScrollX + pxPerFrame) % dw;
       const startX = -bgScrollX;
       ctx.drawImage(images.bg, startX, 0, dw, dh);
@@ -313,14 +364,18 @@
       const x=player.x()-player.w/2, y=player.y-player.h;
       if (images.player.complete) ctx.drawImage(images.player, x, y, player.w, player.h);
       else { ctx.fillStyle='#1b2a28'; ctx.fillRect(x,y,player.w,player.h); }
+      // // Debug hitbox:
+      // const hb = getPlayerHitbox(); ctx.strokeStyle='#0ff'; ctx.strokeRect(hb.x, hb.y, hb.w, hb.h);
     }
     function drawObstacle(o){
       const w=56, h=64, x=o.x-w/2, y=groundY-h+6;
       if (images.obstacle.complete) {
         const near = Math.max(0, 1 - Math.abs(o.x - player.x())/200);
-        const s = 56 + Math.floor(near*3); // smaller pulse
+        const s = 56 + Math.floor(near*3);
         ctx.drawImage(images.obstacle, o.x - s/2, y-(s-64), s, s);
       } else { ctx.fillStyle='#195'; ctx.fillRect(x,y,w,h); }
+      // // Debug:
+      // const ob = getObstacleHitbox(o); ctx.strokeStyle='#f0f'; ctx.strokeRect(ob.x, ob.y, ob.w, ob.h);
     }
     function drawBanana(b){
       const s=40;
@@ -328,6 +383,8 @@
         const pulse = 1 + 0.05*Math.sin(frame*0.18);
         ctx.drawImage(images.banana, b.x-(s*pulse)/2, b.y-(s*pulse)/2, s*pulse, s*pulse);
       } else { ctx.fillStyle='#fd0'; ctx.fillRect(b.x-s/2,b.y-s/2,s,s); }
+      // // Debug: pickup radius
+      // ctx.beginPath(); ctx.arc(b.x, b.y, s*0.48, 0, Math.PI*2); ctx.strokeStyle='#ff0'; ctx.stroke();
     }
 
     /* ---------------- Loop ---------------- */
@@ -336,7 +393,7 @@
 
       frame++;
       speed += obstacleSpeedGain;
-      spawnEvery = Math.max(spawnEveryMin, spawnEveryBase - Math.floor(frame/220)); // spawns slow down less aggressively
+      spawnEvery = Math.max(spawnEveryMin, spawnEveryBase - Math.floor(frame/220));
 
       // physics
       player.vy += gravity;
@@ -362,37 +419,32 @@
       for (let i=bananasOnField.length-1;i>=0;i--){
         const b = bananasOnField[i];
         b.x -= speed*0.9;
-        b.y = groundY - 80 + Math.sin((frame+i)*0.1)*10; // slightly gentler motion
+        b.y = groundY - 80 + Math.sin((frame+i)*0.1)*10;
         if (b.x < -100) bananasOnField.splice(i,1);
       }
       accents.forEach(a=>{ a.x -= 0.45; a.y += a.vy; if (a.x < -80) a.x = canvas.width+80; });
 
-      // collisions
+      // collisions (more accurate)
+      const hb = getPlayerHitbox();
       for (const o of obstacles){
         if (o.lane === player.lane){
-          const w=56, h=64;
-          const ox=o.x-w/2, oy=groundY-h+6;
-          const px=player.x()-player.w/2, py=player.y-player.h;
-          if (px < ox+w && px+player.w > ox && py < oy+h && py+player.h > oy && player.y>=groundY-40){
+          const ob = getObstacleHitbox(o);
+          if (collideRect(hb.x,hb.y,hb.w,hb.h, ob.x,ob.y,ob.w,ob.h) && player.y>=groundY-40){
             return endGame();
           }
         }
       }
       for (let i=bananasOnField.length-1;i>=0;i--){
         const b = bananasOnField[i];
-        if (b.lane === player.lane){
-          const s=40, bx=b.x-s/2, by=b.y-s/2;
-          const px=player.x()-player.w/2, py=player.y-player.h;
-          if (px < bx+s && px+player.w > bx && py < by+s && py+player.h > by){
-            bananas++; bananasEl.textContent = bananas; score += 10;
-            bananasOnField.splice(i,1);
-            if (bananas >= bananasForNext && level < MAX_LEVELS) levelUp();
-          }
+        if (b.lane === player.lane && bananaHit(b)){
+          bananas++; bananasEl.textContent = bananas; score += 10;
+          bananasOnField.splice(i,1);
+          if (bananas >= bananasForNext && level < MAX_LEVELS) levelUp();
         }
       }
 
       // score
-      score += 0.09 + speed*0.015; // slower scoring pace
+      score += 0.09 + speed*0.015;
 
       // draw
       ctx.clearRect(0,0,canvas.width,canvas.height);
