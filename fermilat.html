@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Fermilat — Artist Showcase</title>
+<style>
+  html, body { margin:0; height:100%; overflow:hidden; background:#000; font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; }
+  .bg-video{ position:fixed; inset:0; width:100vw; height:100vh; width:100svw; height:100svh; object-fit:cover; object-position:center; z-index:0; display:block; background:#000; }
+  #bgDesktop{ display:block; } #bgMobile{ display:none; }
+  @media (max-width:768px){ #bgDesktop{ display:none; } #bgMobile{ display:block; } }
+
+  .topbar{ position:fixed; left:18px; top:18px; z-index:3; pointer-events:auto; display:flex; gap:10px; align-items:center; background:rgba(0,0,0,.55); border:1px solid rgba(0,255,200,.25); backdrop-filter:blur(4px); border-radius:12px; padding:8px 10px; }
+  .btn{ appearance:none; border:1px solid rgba(0,255,255,.35); background:rgba(0,0,0,.6); color:#eaffff; padding:8px 12px; border-radius:10px; text-decoration:none; font-size:14px; }
+
+  .overlay{ position:fixed; inset:0; z-index:2; pointer-events:none; display:grid; align-items:end; padding:18px; }
+  .playerBar{ pointer-events:auto; width:min(100%,680px); margin:0 auto; padding:10px 12px; background:rgba(0,0,0,.58); border:1px solid rgba(0,255,200,.25); border-radius:12px; backdrop-filter:blur(4px); display:grid; grid-template-columns:auto 1fr auto; gap:10px; align-items:center; color:#eaffff; }
+  .controls{ display:flex; gap:8px; align-items:center; }
+  .iconBtn{ width:36px; height:36px; border-radius:9px; border:1px solid rgba(0,255,255,.35); background:rgba(0,0,0,.55); color:#eaffff; cursor:pointer; display:grid; place-items:center; font-weight:700; font-size:14px; }
+  .trackTitle{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; opacity:.95; }
+  .volWrap{ display:flex; gap:8px; align-items:center; }
+  input[type="range"]{ width:140px; }
+
+  #scFrame{ position:fixed; width:1px; height:1px; opacity:0; pointer-events:none; left:-9999px; top:-9999px; border:0; }
+</style>
+</head>
+<body>
+
+  <!-- Desktop background -->
+  <video id="bgDesktop" class="bg-video" autoplay muted loop playsinline webkit-playsinline preload="auto">
+    <source src="assets/fermilatbg.mp4" type="video/mp4" />
+  </video>
+  <!-- Mobile background -->
+  <video id="bgMobile" class="bg-video" autoplay muted loop playsinline webkit-playsinline preload="auto">
+    <source src="assets/fermilatbgmobile.mp4" type="video/mp4" />
+  </video>
+
+  <div class="topbar">
+    <a class="btn" href="hommies.html">← Back</a>
+    <strong>Fermilat</strong>
+  </div>
+
+  <div class="overlay">
+    <div class="playerBar" role="region" aria-label="Fermilat player">
+      <div class="controls">
+        <button class="iconBtn" id="prevBtn">⏮</button>
+        <button class="iconBtn" id="playBtn">▶</button>
+        <button class="iconBtn" id="nextBtn">⏭</button>
+      </div>
+      <div class="trackTitle" id="trackTitle">Loading Fermilat tracks…</div>
+      <div class="volWrap">
+        <span style="opacity:.8">VOL</span>
+        <input id="vol" type="range" min="0" max="100" value="80" />
+      </div>
+    </div>
+  </div>
+
+  <iframe
+    id="scFrame"
+    allow="autoplay"
+    src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/fermilat/tracks&auto_play=false&visual=false&show_teaser=false&show_comments=false&show_user=false&sharing=false&hide_related=true">
+  </iframe>
+
+  <script src="https://w.soundcloud.com/player/api.js"></script>
+  <script>
+    (function(){
+      const w = SC.Widget(document.getElementById('scFrame'));
+      const playBtn = document.getElementById('playBtn');
+      const prevBtn = document.getElementById('prevBtn');
+      const nextBtn = document.getElementById('nextBtn');
+      const titleEl = document.getElementById('trackTitle');
+      const vol = document.getElementById('vol');
+      let isPlaying = false;
+
+      function updateTitle(){ w.getCurrentSound(s => { titleEl.textContent = s && s.title ? s.title : 'Fermilat — Tracks'; }); }
+      w.bind(SC.Widget.Events.READY, () => {
+        w.setVolume(vol.value);
+        updateTitle();
+        w.bind(SC.Widget.Events.PLAY,  () => { isPlaying = true;  playBtn.textContent = '⏸'; updateTitle(); });
+        w.bind(SC.Widget.Events.PAUSE, () => { isPlaying = false; playBtn.textContent = '▶'; });
+      });
+
+      playBtn.onclick = () => isPlaying ? w.pause() : w.play();
+      prevBtn.onclick = () => w.prev();
+      nextBtn.onclick = () => w.next();
+      vol.oninput = e => w.setVolume(e.target.value);
+    })();
+  </script>
+</body>
+</html>
