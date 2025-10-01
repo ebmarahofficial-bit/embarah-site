@@ -28,7 +28,7 @@
     inset: 0;
     width: 100svw;
     height: 100svh;
-    object-fit: contain; /* ✅ no cropping */
+    object-fit: contain; /* no cropping */
     object-position: center;
     z-index: 0;
     background: #000;
@@ -67,8 +67,6 @@
     .spot.metallik { left: 55%; width: 22%; }
     .spot.fermilat { left: 83%; width: 22%; }
   }
-  body.debug .spot{ outline: 2px dashed rgba(255,255,255,.75); background: rgba(255,255,255,.07); }
-  body.debug .bg-video{ outline: 2px solid rgba(0,255,255,.35); }
 
   /* ===== Header/Nav ===== */
   header{
@@ -96,12 +94,17 @@
   .drawer-overlay{
     position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:999; opacity:0; pointer-events:none; transition:.25s;
   }
+
+  /* FIXED: use transform instead of right:-320px to avoid peeking */
   .drawer{
-    position:fixed; top:0; right:-320px; width:min(80vw,320px); height:100%;
+    position:fixed; top:0; right:0; width:min(80vw,320px); height:100%;
     background:#03140c; border-left:1px solid rgba(0,255,128,.25);
-    box-shadow:-12px 0 40px rgba(0,0,0,.45); z-index:1000; transition: right .25s ease;
+    box-shadow:-12px 0 40px rgba(0,0,0,.45); z-index:1000;
     display:flex; flex-direction:column; padding:18px;
+    transform: translateX(100%);           /* hidden by default */
+    transition: transform .25s ease;
   }
+  .drawer-open .drawer{ transform: translateX(0) }
   .drawer header{ all:unset; display:flex; align-items:center; justify-content:space-between; margin-bottom:8px }
   .drawer h2{ margin:0; font-size:18px; color:#9dffd2 }
   .drawer .close{
@@ -115,7 +118,6 @@
   }
   .drawer nav a:last-child{ border-bottom:0 }
   .drawer nav a:active{ background:rgba(0,255,128,.08) }
-  .drawer-open .drawer{ right:0 }
   .drawer-open .drawer-overlay{ opacity:1; pointer-events:auto }
 
   @media (max-width: 960px){
@@ -154,7 +156,7 @@
     <source src="assets/hommiesbgmobile.mp4" type="video/mp4" />
   </video>
 
-  <!-- ✅ Header/Nav -->
+  <!-- Header/Nav -->
   <header>
     <div class="brand">
       <img src="assets/favicon.png" alt="Ebmarah" />
@@ -172,13 +174,13 @@
       <a href="samples-library.html">Vocal Library</a>
       <a href="contact.html">Contact</a>
     </nav>
-    <button class="menu-btn" id="menuBtn">Menu</button>
+    <button class="menu-btn" id="menuBtn" aria-haspopup="true" aria-expanded="false" aria-controls="drawer">Menu</button>
   </header>
   <div class="drawer-overlay" id="drawerOverlay"></div>
-  <aside class="drawer" id="drawer">
+  <aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-label="Site menu">
     <header>
       <h2>Menu</h2>
-      <button class="close" id="drawerClose">Close</button>
+      <button class="close" id="drawerClose" aria-label="Close menu">Close</button>
     </header>
     <nav>
       <a href="index.html">Home</a>
@@ -205,14 +207,17 @@
   <audio id="bgm" src="assets/hommies.mp3" preload="auto" loop playsinline></audio>
 
   <script>
+    // Ensure drawer starts closed (prevents "peeking" after hot reloads)
+    document.documentElement.classList.remove('drawer-open');
+
     // mobile nav drawer
     const root=document.documentElement;
     const btn=document.getElementById('menuBtn');
     const drawer=document.getElementById('drawer');
     const overlay=document.getElementById('drawerOverlay');
     const closeBtn=document.getElementById('drawerClose');
-    const openDrawer=()=>{ root.classList.add('drawer-open'); btn.setAttribute('aria-expanded','true'); };
-    const closeDrawer=()=>{ root.classList.remove('drawer-open'); btn.setAttribute('aria-expanded','false'); };
+    const openDrawer=()=>{ root.classList.add('drawer-open'); btn.setAttribute('aria-expanded','true'); drawer.querySelector('a')?.focus(); };
+    const closeDrawer=()=>{ root.classList.remove('drawer-open'); btn.setAttribute('aria-expanded','false'); btn.focus(); };
     btn.addEventListener('click',openDrawer);
     closeBtn.addEventListener('click',closeDrawer);
     overlay.addEventListener('click',closeDrawer);
@@ -226,6 +231,7 @@
       const savedMute=localStorage.getItem(keyMute)==='true';
       audio.volume=Number.isFinite(savedVol)? savedVol:0.5;
       audio.muted=!!savedMute;
+
       const wrap=document.createElement('div'); wrap.className='ebm-audio';
       wrap.innerHTML=`
         <button id="ebmPlay">Play</button>
@@ -233,6 +239,7 @@
         <input id="ebmVol" type="range" min="0" max="1" step="0.01" />
         <span class="status" id="ebmStatus">paused<span class="dot"></span></span>`;
       document.body.appendChild(wrap);
+
       const playBtn=wrap.querySelector('#ebmPlay');
       const muteBtn=wrap.querySelector('#ebmMute');
       const vol=wrap.querySelector('#ebmVol');
