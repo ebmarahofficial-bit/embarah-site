@@ -10,7 +10,7 @@
     --shadow:0 0 18px rgba(0,255,153,.35);
   }
   *{ box-sizing:border-box }
-  html,body{ margin:0; height:100%; background:#000; color:var(--ink); font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif }
+  html,body{ margin:0; height:100%; background:#000; color:var(--ink); font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif; overflow:hidden; }
 
   /* Fullscreen video background */
   #bg-video{
@@ -21,18 +21,17 @@
     background:#000; /* fallback while loading */
   }
 
-  .wrap{ min-height:100dvh; display:flex; align-items:center; justify-content:center; padding:16px }
+  .wrap{ height:100%; width:100%; display:flex; align-items:center; justify-content:center; }
 
-  /* Stage wraps canvas + overlay so the cover fits exactly */
+  /* Stage fullscreen */
   .stage{
     position:relative;
-    width:100%;
-    max-width:960px;
-    aspect-ratio:16/9;   /* locks size so overlay matches canvas */
+    width:100vw;
+    height:100vh;
     border:1px solid var(--line);
-    border-radius:16px;
+    border-radius:0;
     box-shadow:var(--shadow);
-    overflow:hidden;     /* prevents overlay bleed */
+    overflow:hidden;
     background:#04120d;
   }
 
@@ -48,43 +47,41 @@
     display:flex; gap:10px; align-items:center; font-weight:700; font-size:14px;
     background:rgba(0,0,0,.30); padding:6px 10px; border-radius:999px; border:1px solid rgba(0,255,153,.45);
     backdrop-filter: blur(4px);
+    z-index:5;
   }
   .pill{ padding:2px 10px; border-radius:999px; background:rgba(0,255,153,.12); border:1px solid rgba(0,255,153,.35) }
   .hud button{ padding:4px 10px; border-radius:10px; border:1px solid var(--line); background:#062417; color:var(--ink); cursor:pointer }
 
-  /* ---------- Start / Pause overlay (now sized to stage) ---------- */
+  /* Exit button */
+  #exitBtn{
+    position:absolute; top:10px; right:10px;
+    padding:8px 12px; border-radius:8px;
+    border:1px solid var(--line); background:#062417; color:var(--ink);
+    font-weight:700; cursor:pointer; z-index:10;
+  }
+
+  /* ---------- Overlay ---------- */
   .overlay{
-    position:absolute; inset:0; display:grid; place-items:center;
+    position:absolute; inset:0; display:grid; place-items:center; background:rgba(0,0,0,0.6); z-index:20;
   }
-  .cover{
-    position:absolute; inset:0;
-    background:url("./runner/assets/ui/start_cover.png") center/cover no-repeat;
-    filter: saturate(1.08) contrast(1.05);
-  }
-  .veil{ position:absolute; inset:0; background:linear-gradient(180deg, rgba(0,0,0,.45), rgba(0,0,0,.25)); }
+  .cover{ display:none; } /* keep DOM, hide image cover since we’re fullscreen */
+  .veil{ display:none; }
   .panel{
     position:relative; z-index:2; width:min(92%, 780px);
-    padding:20px; border:1px solid var(--line); background:rgba(10,29,21,.6);
+    padding:20px; border:1px solid var(--line); background:rgba(10,29,21,.85);
     border-radius:16px; box-shadow:var(--shadow); text-align:center; backdrop-filter: blur(6px);
   }
-  .title{
-    margin:0 0 6px; font-weight:900; letter-spacing:.06em;
-    font-size: clamp(28px, 5.5vw, 56px); color:var(--neon);
-    text-shadow: 0 0 24px rgba(0,255,153,.45);
-  }
-  .tagline{
-    margin:0 0 14px; font-weight:800; letter-spacing:.04em; opacity:.95;
-  }
+  .title{ margin:0 0 6px; font-weight:900; letter-spacing:.06em; font-size: clamp(28px, 5.5vw, 56px); color:var(--neon); text-shadow: 0 0 24px rgba(0,255,153,.45); }
+  .tagline{ margin:0 0 14px; font-weight:800; letter-spacing:.04em; opacity:.95; }
   .btnrow{ display:flex; gap:10px; justify-content:center; flex-wrap:wrap }
-  .btn{
-    padding:12px 16px; border:1px solid var(--line); background:#062417; color:var(--ink);
-    border-radius:12px; cursor:pointer; font-weight:800; letter-spacing:.03em; box-shadow:var(--shadow)
-  }
+  .btn{ padding:12px 16px; border:1px solid var(--line); background:#062417; color:var(--ink);
+    border-radius:12px; cursor:pointer; font-weight:800; letter-spacing:.03em; box-shadow:var(--shadow) }
 
   /* ---------- Mobile controls ---------- */
   .controls{
     position:absolute; left:0; right:0; bottom:10px;
     display:flex; justify-content:space-between; gap:10px; padding:0 8px; pointer-events:none;
+    z-index:5;
   }
   .controls button{
     pointer-events:auto; min-width:96px; min-height:56px; border-radius:14px;
@@ -100,12 +97,13 @@
 <body>
 
   <!-- Site-wide animated background -->
-  <video id="bg-video" autoplay muted loop playsinline preload="auto" poster="">
+  <video id="bg-video" autoplay muted loop playsinline preload="auto">
     <source src="./runner/assets/runnerbg.mp4" type="video/mp4">
   </video>
 
   <div class="wrap">
     <div class="stage">
+      <button id="exitBtn" hidden>Exit</button>
       <canvas id="game" width="960" height="540" aria-label="Ebmarah Runner"></canvas>
 
       <!-- HUD -->
@@ -118,14 +116,13 @@
         <span class="pill"><button id="muteBtn">🔊</button></span>
       </div>
 
-      <!-- Start / Pause overlay -->
+      <!-- Overlay -->
       <div class="overlay" id="overlay">
-        <div class="cover" aria-hidden="true"></div>
-        <div class="veil" aria-hidden="true"></div>
         <div class="panel" id="panel">
           <h1 class="title">EBMARAH RUNNER</h1>
           <p class="tagline">Running Bass</p>
-          <p style="opacity:.9;margin:.35rem 0 1rem 0">Collect bananas to level up. Avoid hazards. Mobile: on-screen controls. Desktop: Arrow keys + Space/↑ to jump.</p>
+          <p style="opacity:.9;margin:.35rem 0 1rem 0">Collect bananas to level up. Avoid hazards.<br>
+          Mobile: on-screen controls. Desktop: Arrow keys + Space/↑ to jump.</p>
           <div class="btnrow">
             <button class="btn" id="startBtn">Start</button>
             <button class="btn" id="selectBtn">Level Select</button>
@@ -175,11 +172,13 @@
     const canvas = document.getElementById('game');
     const ctx = canvas.getContext('2d');
 
-    // Try to start bg video if autoplay was blocked
+    // Background video autoplay fallback(s)
     const bgVid = document.getElementById('bg-video');
-    document.addEventListener('DOMContentLoaded', () => {
-      if (bgVid && bgVid.paused) { bgVid.play().catch(()=>{}); }
-    });
+    function tryPlayBG(){ if (bgVid && bgVid.paused) { bgVid.play().catch(()=>{}); } }
+    window.addEventListener('load', tryPlayBG);
+    document.addEventListener('visibilitychange', tryPlayBG);
+    document.addEventListener('click', tryPlayBG);
+    document.addEventListener('touchstart', tryPlayBG, {passive:true});
 
     const hud = document.getElementById('hud');
     const scoreEl = document.getElementById('score');
@@ -201,6 +200,8 @@
     const leftBtn  = document.getElementById('leftBtn');
     const rightBtn = document.getElementById('rightBtn');
     const jumpBtn  = document.getElementById('jumpBtn');
+
+    const exitBtn = document.getElementById('exitBtn');
 
     /* ---------------- SoundCloud ---------------- */
     const widget = window.SC.Widget(document.getElementById('sc-iframe'));
@@ -263,6 +264,7 @@
       player.lane=1; player.y=groundY; player.vy=0; player.jumping=false;
       bgScrollX=0; mistPhase=0;
       hud.hidden=false; controls.hidden = isTouch ? false : true; overlay.style.display='none';
+      exitBtn.hidden = false;
       Promise.resolve(loadLevelAssets(level)).then(()=>{ playMusic(); requestAnimationFrame(loop); }).catch(()=>{ requestAnimationFrame(loop); });
     }
 
@@ -284,12 +286,19 @@
     });
     startBtn.addEventListener('click', ()=> resetRun(1));
 
-    /* ---------------- Pause ---------------- */
+    /* ---------------- Pause / Exit ---------------- */
     pauseBtn.addEventListener('click', ()=>{
       if (!playing) return;
       paused = !paused;
       pauseBtn.textContent = paused ? '▶ Resume' : '⏸ Pause';
       if (!paused) requestAnimationFrame(loop);
+    });
+    exitBtn.addEventListener('click', ()=>{
+      // return to overlay
+      playing=false; paused=false;
+      pauseMusic();
+      hud.hidden=true; controls.hidden=true; exitBtn.hidden=true;
+      overlay.style.display='grid';
     });
 
     /* ---------------- Helpers ---------------- */
@@ -298,11 +307,10 @@
     // Debug switch
     const DEBUG = true;
 
-    // New: tighter hitboxes
+    // Tighter hitboxes
     function getPlayerHitbox(){
       const px = player.x()-player.w/2;
       const py = player.y - player.h;
-      // Slightly inset for more natural feel
       const w = player.w * 0.75;
       const h = player.h * 0.85;
       const x = px + (player.w - w)/2;
@@ -310,17 +318,15 @@
       return {x,y,w,h};
     }
     function getObstacleHitbox(o){
-      // Match drawObstacle pulse and shrink a bit
       const baseY = groundY - 64 + 6;
       const near = Math.max(0, 1 - Math.abs(o.x - player.x())/200);
       const s = 56 + Math.floor(near*3);
       const w = s*0.85, h = s*0.85;
       const x = o.x - w/2;
-      const y = baseY - (s-64) + (s-h); // align to drawn bottom
+      const y = baseY - (s-64) + (s-h);
       return {x,y,w,h};
     }
     function bananaHit(b){
-      // Circle pickup feel
       const s = 40, r = (s*0.48);
       const bx = b.x, by = b.y;
       const hb = getPlayerHitbox();
@@ -470,7 +476,7 @@
     function endGame(){
       playing=false; pauseMusic();
       if (Math.floor(score) > best){ best = Math.floor(score); localStorage.setItem('ebmarah_runner_best', best); }
-      hud.hidden=true; controls.hidden=true;
+      hud.hidden=true; controls.hidden=true; exitBtn.hidden=true;
 
       overlay.style.display='grid';
       panel.innerHTML = `
@@ -504,11 +510,11 @@
       if (e.key==='ArrowLeft'){ e.preventDefault(); moveLeft(); }
       if (e.key==='ArrowRight'){ e.preventDefault(); moveRight(); }
       if (e.key===' ' || e.key==='ArrowUp'){ e.preventDefault(); jump(); }
-      if (e.key==='Escape'){ 
+      if (e.key==='Escape'){
         if (!playing) return;
-        paused = !paused; 
-        pauseBtn.textContent = paused ? '▶ Resume' : '⏸ Pause'; 
-        if (!paused) requestAnimationFrame(loop); 
+        paused = !paused;
+        pauseBtn.textContent = paused ? '▶ Resume' : '⏸ Pause';
+        if (!paused) requestAnimationFrame(loop);
       }
     }, {passive:false});
 
@@ -519,6 +525,9 @@
     const isTouch = matchMedia('(pointer:coarse)').matches || 'ontouchstart' in window;
     if (isTouch) controls.hidden = false;
 
+    // Exit back to menu (button already wired above)
+    exitBtn.addEventListener('click', ()=>{}); // no-op; handled earlier
+
     // Build initial Level Select
     function init(){ rebuildLevelGrid(); }
     init();
@@ -526,4 +535,3 @@
   </script>
 </body>
 </html>
-
