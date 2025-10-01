@@ -1,95 +1,89 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Choose Your Hommie</title>
   <style>
     html, body {
       margin: 0;
-      padding: 0;
       height: 100%;
       overflow: hidden;
       background: #000;
     }
 
-    /* Fullscreen videos */
-    video {
+    /* Fullscreen background videos */
+    .bg-video{
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
       object-fit: cover;
-      z-index: -1;
-    }
-
-    /* Desktop shown by default */
-    #bgDesktop { display: block; }
-    #bgMobile { display: none; }
-
-    /* Mobile overrides */
-    @media (max-width: 768px) {
-      #bgDesktop { display: none; }
-      #bgMobile { display: block; }
-    }
-
-    /* Clickable hotspots */
-    .hotspots {
-      position: absolute;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      pointer-events: none;
-    }
-    .spot {
-      position: absolute;
-      pointer-events: auto;
+      object-position: center;
+      z-index: 0;            /* <-- keep AT or ABOVE 0 so it isn't behind the page */
       display: block;
     }
 
-    /* Example positions – adjust these % until they cover your logos */
-    @media (min-width: 769px) {
-      .spot { top: 55%; height: 12%; }
-      .d00d     { left: 13%; width: 17%; }
-      .hvted    { left: 33%; width: 17%; }
-      .metallik { left: 53%; width: 17%; }
-      .fermilat { left: 73%; width: 17%; }
+    /* Show desktop video by default */
+    #bgDesktop { display: block; }
+    #bgMobile  { display: none; }
+
+    /* On phones/tablets use the mobile video */
+    @media (max-width: 768px){
+      #bgDesktop { display: none; }
+      #bgMobile  { display: block; }
     }
 
-    @media (max-width: 768px) {
-      .spot { top: 66%; height: 12%; }
-      .d00d     { left: 8%;  width: 22%; }
-      .hvted    { left: 30%; width: 22%; }
-      .metallik { left: 52%; width: 22%; }
-      .fermilat { left: 74%; width: 22%; }
+    /* Clickable hotspots on top of the video */
+    .hotspots{
+      position: fixed;
+      inset: 0;
+      z-index: 1;            /* <-- sits ABOVE the video */
+      pointer-events: none;
+    }
+    .spot{
+      position: absolute;
+      pointer-events: auto;
+      display: block;
+      text-decoration: none;
     }
 
-    /* Debug helper – add "debug" class to <body> to see clickable areas */
-    body.debug .spot {
-      outline: 2px solid red;
-      background: rgba(255,0,0,0.2);
+    /* Desktop hotspot positions */
+    @media (min-width: 769px){
+      .spot{ top: 53%; height: 12%; }
+      .spot.d00d     { left: 13%; width: 17%; }
+      .spot.hvted    { left: 33%; width: 17%; }
+      .spot.metallik { left: 53%; width: 17%; }
+      .spot.fermilat { left: 73%; width: 17%; }
+    }
+
+    /* Mobile hotspot positions */
+    @media (max-width: 768px){
+      .spot{ top: 66%; height: 12%; }
+      .spot.d00d     { left: 8%;  width: 22%; }
+      .spot.hvted    { left: 30%; width: 22%; }
+      .spot.metallik { left: 52%; width: 22%; }
+      .spot.fermilat { left: 74%; width: 22%; }
     }
   </style>
 </head>
 <body>
-
   <!-- Desktop background -->
-  <video id="bgDesktop" autoplay muted loop playsinline>
-    <source src="assets/hommiesbg.mp4" type="video/mp4">
+  <video id="bgDesktop" class="bg-video" autoplay muted loop playsinline webkit-playsinline preload="auto">
+    <source src="assets/hommiesbg.mp4" type="video/mp4" />
   </video>
 
   <!-- Mobile background -->
-  <video id="bgMobile" autoplay muted loop playsinline>
-    <source src="assets/hommiesbgmobile.mp4" type="video/mp4">
+  <video id="bgMobile" class="bg-video" autoplay muted loop playsinline webkit-playsinline preload="auto">
+    <source src="assets/hommiesbgmobile.mp4" type="video/mp4" />
   </video>
 
-  <!-- Clickable hotspots -->
-  <div class="hotspots">
-    <a class="spot d00d" href="d00d.html"></a>
-    <a class="spot hvted" href="hvted.html"></a>
-    <a class="spot metallik" href="metallik.html"></a>
-    <a class="spot fermilat" href="fermilat.html"></a>
+  <!-- Clickable logo areas -->
+  <div class="hotspots" aria-label="Choose your character">
+    <a class="spot d00d"     href="d00d.html"     aria-label="D00D"></a>
+    <a class="spot hvted"    href="hvted.html"    aria-label="HVTED"></a>
+    <a class="spot metallik" href="metallik.html" aria-label="MetalliK"></a>
+    <a class="spot fermilat" href="fermilat.html" aria-label="Fermilat"></a>
   </div>
-
 </body>
 </html>
