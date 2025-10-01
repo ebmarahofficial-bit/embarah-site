@@ -286,7 +286,7 @@
       if (!images.bg.complete) { ctx.fillStyle='#05150f'; ctx.fillRect(0,0,canvas.width,canvas.height); return; }
       const iw = images.bg.naturalWidth, ih = images.bg.naturalHeight;
       const scale = canvas.height/ih, dw = iw*scale, dh = canvas.height;
-      const pxPerFrame = 0.6 + speed*0.08;  // ↓ slower parallax scroll (was 1.2 + speed*0.15)
+      const pxPerFrame = 1.2 + speed*0.15;  // ↓ slower parallax scroll (was 1.2 + speed*0.15)
       bgScrollX = (bgScrollX + pxPerFrame) % dw;
       const startX = -bgScrollX;
       ctx.drawImage(images.bg, startX, 0, dw, dh);
