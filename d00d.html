@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>D00D — Artist Showcase</title>
+<style>
+  /* Base */
+  html, body {
+    margin: 0;
+    height: 100%;
+    overflow: hidden;
+    background: #000;
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  }
+
+  /* Fullscreen background videos (desktop + mobile swap) */
+  .bg-video{
+    position: fixed;
+    inset: 0;
+    width: 100vw; height: 100vh;     /* fallback */
+    width: 100svw; height: 100svh;   /* modern mobile safe viewport */
+    object-fit: cover;
+    object-position: center;
+    z-index: 0;
+    display: block;
+    background: #000;
+  }
+  #bgDesktop{ display:block; }
+  #bgMobile{ display:none; }
+
+  @media (max-width: 768px){
+    #bgDesktop{ display:none; }
+    #bgMobile{ display:block; }
+  }
+
+  /* Content overlay panel */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    padding: 20px;
+  }
+
+  .panel {
+    width: min(100%, 1000px);
+    background: rgba(0,0,0,.55);
+    border: 1px solid rgba(0,255,200,.25);
+    backdrop-filter: blur(4px);
+    border-radius: 14px;
+    padding: 18px;
+    box-shadow: 0 10px 40px rgba(0,0,0,.45);
+  }
+
+  .topbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .title {
+    margin: 0;
+    font-size: clamp(20px, 2.6vw, 28px);
+    letter-spacing: .5px;
+    color: #eaffff;
+    text-shadow: 0 0 10px rgba(0,255,255,.25);
+  }
+
+  .btn {
+    appearance: none;
+    border: 1px solid rgba(0,255,255,.35);
+    background: rgba(0,0,0,.55);
+    color: #eaffff;
+    padding: 8px 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 14px;
+    text-decoration: none;
+    transition: transform .08s ease, filter .12s ease, background .12s ease;
+  }
+  .btn:hover { filter: brightness(1.08); }
+  .btn:active { transform: translateY(1px); }
+
+  /* SoundCloud embed wrapper (responsive height on mobile) */
+  .player {
+    width: 100%;
+    height: 520px;
+    border: none;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #000;
+  }
+  @media (max-width: 768px){
+    .player { height: 420px; }
+  }
+
+  .fineprint {
+    margin-top: 10px;
+    color: #c7ffff;
+    opacity: .7;
+    font-size: 12px;
+  }
+</style>
+</head>
+<body>
+
+  <!-- Desktop background -->
+  <video id="bgDesktop" class="bg-video" autoplay muted loop playsinline webkit-playsinline preload="auto">
+    <source src="assets/d00dbg.mp4" type="video/mp4" />
+  </video>
+  <!-- Mobile background -->
+  <video id="bgMobile" class="bg-video" autoplay muted loop playsinline webkit-playsinline preload="auto">
+    <source src="assets/d00dbgmobile.mp4" type="video/mp4" />
+  </video>
+
+  <!-- Content overlay -->
+  <div class="overlay">
+    <div class="panel">
+      <div class="topbar">
+        <a class="btn" href="hommies.html">← Back</a>
+        <h1 class="title">D00D — Latest Tracks</h1>
+      </div>
+
+      <!-- SoundCloud profile embed -->
+      <iframe
+        class="player"
+        allow="autoplay"
+        src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/d00ddubz/tracks&color=%2300ffff&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true&visual=true">
+      </iframe>
+
+      <div class="fineprint">
+        Tip: if audio doesn’t start on mobile, tap the player once (browser autoplay rules).
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
