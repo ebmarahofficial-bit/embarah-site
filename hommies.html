@@ -6,95 +6,98 @@
 <title>Choose Your Hommie</title>
 <style>
   :root{
-    /* Tweak these if you want to move the whole row up/down */
-    --row-top-desktop: 53%; /* y-position of logo row on desktop */
+    --row-top-desktop: 53%;
     --row-height-desktop: 12%;
-    --row-top-mobile: 66%;  /* y-position of logo row on mobile */
+    --row-top-mobile: 66%;
     --row-height-mobile: 12%;
   }
+  html, body { margin:0; height:100%; background:#000; overflow:hidden; }
 
-  html, body {
-    margin: 0;
-    height: 100%;
-    background:#000;
-    overflow: hidden;
+  /* Fullscreen background video */
+  #bgVideo{
+    position:fixed; inset:0;
+    width:100vw; height:100vh;
+    object-fit:cover; object-position:center;
+    z-index:-1; background:#000;
   }
 
-  /* Fullscreen video that truly covers on mobile + desktop */
-  .bg-video {
-    position: fixed;
-    inset: 0;
-    width: 100vw;
-    height: 100vh;
-    object-fit: cover;
-    object-position: center;
-    z-index: -1;
+  /* Clickable hotspots */
+  .hotspots{ position:fixed; inset:0; pointer-events:none; }
+  .spot{ position:absolute; display:block; pointer-events:auto; text-decoration:none; }
+
+  /* Desktop layout */
+  @media (min-width:769px){
+    .spot{ top:var(--row-top-desktop); height:var(--row-height-desktop); }
+    .spot.d00d     { left:13%; width:17%; }
+    .spot.hvted    { left:33%; width:17%; }
+    .spot.metallik { left:53%; width:17%; }
+    .spot.fermilat { left:73%; width:17%; }
+  }
+  /* Mobile layout */
+  @media (max-width:768px){
+    .spot{ top:var(--row-top-mobile); height:var(--row-height-mobile); }
+    .spot.d00d     { left:8%;  width:22%; }
+    .spot.hvted    { left:30%; width:22%; }
+    .spot.metallik { left:52%; width:22%; }
+    .spot.fermilat { left:74%; width:22%; }
   }
 
-  /* Clickable hotspot layer */
-  .hotspots {
-    position: fixed;
-    inset: 0;
-    pointer-events: none; /* only the children capture clicks */
-  }
+  /* Debug outlines: open with ?debug=1 */
+  body.debug .spot{ outline:2px dashed rgba(255,255,255,.6); background:rgba(255,255,255,.06); }
+  body.debug #bgVideo{ outline:2px solid rgba(0,255,255,.4); }
 
-  .spot {
-    position: absolute;
-    pointer-events: auto;
-    display: block;
-    text-decoration: none;
+  /* Error banner if the video source fails */
+  #err{
+    position:fixed; left:50%; top:12px; transform:translateX(-50%);
+    background:#111; color:#fff; font:14px/1.3 system-ui, sans-serif;
+    padding:10px 12px; border:1px solid #f33; border-radius:8px; display:none; z-index:10;
   }
-
-  /* Desktop positions (>= 769px) */
-  @media (min-width: 769px) {
-    /* four boxes across, centered, roughly around the logo plates in your desktop video */
-    .spot { top: var(--row-top-desktop); height: var(--row-height-desktop); }
-    .spot.d00d     { left: 13%; width: 17%; }
-    .spot.hvted    { left: 33%; width: 17%; }
-    .spot.metallik { left: 53%; width: 17%; }
-    .spot.fermilat { left: 73%; width: 17%; }
-  }
-
-  /* Mobile positions (<= 768px) – layout shifts lower and tighter */
-  @media (max-width: 768px) {
-    .spot { top: var(--row-top-mobile); height: var(--row-height-mobile); }
-    .spot.d00d     { left: 8%;  width: 22%; }
-    .spot.hvted    { left: 30%; width: 22%; }
-    .spot.metallik { left: 52%; width: 22%; }
-    .spot.fermilat { left: 74%; width: 22%; }
-  }
-
-  /* Debug view: add ?debug=1 to URL to see the boxes */
-  body.debug .spot { outline: 2px dashed rgba(255,255,255,.6); background: rgba(255,255,255,.06); }
 </style>
 </head>
 <body>
-  <!-- Background video (source swapped by JS) -->
-  <video id="bgVideo" class="bg-video" autoplay muted loop playsinline preload="auto">
-    <source src="assets/hommiesbg.mp4" type="video/mp4" />
-  </video>
+<div id="err"></div>
 
-  <!-- Clickable hotspots -->
-  <div class="hotspots" aria-label="Choose your character">
-    <a class="spot d00d"     href="d00d.html"     aria-label="D00D"></a>
-    <a class="spot hvted"    href="hvted.html"    aria-label="HVTED"></a>
-    <a class="spot metallik" href="metallik.html" aria-label="MetalliK"></a>
-    <a class="spot fermilat" href="fermilat.html" aria-label="Fermilat"></a>
-  </div>
+<!-- Single video element; we swap .src in JS -->
+<video id="bgVideo" autoplay muted loop playsinline preload="auto" poster="assets/hommiesbg_poster.jpg"></video>
+
+<div class="hotspots" aria-label="Choose your character">
+  <a class="spot d00d"     href="d00d.html"     aria-label="D00D"></a>
+  <a class="spot hvted"    href="hvted.html"    aria-label="HVTED"></a>
+  <a class="spot metallik" href="metallik.html" aria-label="MetalliK"></a>
+  <a class="spot fermilat" href="fermilat.html" aria-label="Fermilat"></a>
+</div>
 
 <script>
-  // Debug toggle (?debug=1 shows boxes)
-  if (new URLSearchParams(location.search).get('debug') === '1') {
-    document.body.classList.add('debug');
-  }
+  const qs = new URLSearchParams(location.search);
+  if (qs.get('debug') === '1') document.body.classList.add('debug');
 
-  // Choose the correct background
+  const v = document.getElementById('bgVideo');
+  const err = document.getElementById('err');
+
+  // Pick source (make sure these two files exist)
   const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-  const video = document.getElementById('bgVideo');
-  video.src = isMobile ? 'assets/hommiesbgmobile.mp4' : 'assets/hommiesbg.mp4';
-  // iOS sometimes needs an explicit load/play after src swap
-  video.load();
-  video.play().catch(()=>{ /* ignore if autoplay blocked; page still works */ });
+  const src = isMobile ? 'assets/hommiesbgmobile.mp4' : 'assets/hommiesbg.mp4';
+
+  // Important for mobile autoplay: set muted BEFORE setting src
+  v.muted = true;
+  v.setAttribute('playsinline', '');
+  v.src = src;
+
+  // Try to load + play
+  const tryPlay = () => v.play().catch(() => {/* autoplay might be blocked; it's fine as bg */});
+  v.addEventListener('loadeddata', tryPlay, { once:true });
+  v.addEventListener('canplay', tryPlay, { once:true });
+
+  // Error diagnostics if the file/path/codec is wrong
+  v.addEventListener('error', () => {
+    const code = v.error && v.error.code;
+    err.style.display = 'block';
+    err.textContent = `Background video failed to load: ${src} (error code ${code || 'unknown'}). 
+Check path, filename, and MP4 (H.264 + AAC) codec.`;
+  });
+
+  // Optional: show controls in debug for quick sanity checks
+  if (document.body.classList.contains('debug')) v.setAttribute('controls', 'controls');
 </script>
 </body>
 </html>
