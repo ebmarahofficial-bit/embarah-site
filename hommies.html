@@ -1,75 +1,70 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Choose Your Hommie</title>
-<style>
-  :root{
-    /* Adjust these if the row is a little high/low */
-    --row-top-desktop: 53%;
-    --row-height-desktop: 12%;
-    --row-top-mobile: 66%;
-    --row-height-mobile: 12%;
-  }
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Choose Your Hommie</title>
+  <style>
+    :root{
+      --row-top-desktop: 53%;
+      --row-height-desktop: 12%;
+      --row-top-mobile: 66%;
+      --row-height-mobile: 12%;
+    }
+    html, body { margin:0; height:100%; background:#000; overflow:hidden; }
 
-  html, body { margin:0; height:100%; background:#000; overflow:hidden; }
+    /* Fallback background (poster image) set by JS */
+    body { background: #000 center / cover no-repeat fixed; }
 
-  /* Fullscreen videos */
-  .bg-video{
-    position:fixed; inset:0;
-    width:100vw; height:100vh;
-    object-fit:cover; object-position:center;
-    z-index:-1; background:#000;
-  }
+    /* Single fullscreen video; JS sets .src */
+    #bgVideo{
+      position:fixed; inset:0;
+      width:100vw; height:100vh;
+      object-fit:cover; object-position:center;
+      z-index:-1; background:#000;
+      display:block;
+    }
 
-  /* Show desktop video by default, hide mobile one */
-  #bgDesktop { display:block; }
-  #bgMobile  { display:none; }
+    /* Clickable hotspots */
+    .hotspots{ position:fixed; inset:0; pointer-events:none; }
+    .spot{ position:absolute; display:block; pointer-events:auto; text-decoration:none; }
 
-  /* On phones/tablets, use the mobile video */
-  @media (max-width: 768px){
-    #bgDesktop { display:none; }
-    #bgMobile  { display:block; }
-  }
+    /* Desktop hotspot positions */
+    @media (min-width:769px){
+      .spot{ top:var(--row-top-desktop); height:var(--row-height-desktop); }
+      .spot.d00d     { left:13%; width:17%; }
+      .spot.hvted    { left:33%; width:17%; }
+      .spot.metallik { left:53%; width:17%; }
+      .spot.fermilat { left:73%; width:17%; }
+    }
+    /* Mobile hotspot positions */
+    @media (max-width:768px){
+      .spot{ top:var(--row-top-mobile); height:var(--row-height-mobile); }
+      .spot.d00d     { left:8%;  width:22%; }
+      .spot.hvted    { left:30%; width:22%; }
+      .spot.metallik { left:52%; width:22%; }
+      .spot.fermilat { left:74%; width:22%; }
+    }
 
-  /* Clickable hotspots layer */
-  .hotspots{ position:fixed; inset:0; pointer-events:none; }
-  .spot{ position:absolute; display:block; pointer-events:auto; text-decoration:none; }
+    /* Debug outlines (add ?debug=1) */
+    body.debug .spot{ outline:2px dashed rgba(255,255,255,.6); background:rgba(255,255,255,.06); }
+    body.debug #bgVideo{ outline:2px solid rgba(0,255,255,.35); }
 
-  /* Desktop hotspot positions */
-  @media (min-width: 769px){
-    .spot{ top:var(--row-top-desktop); height:var(--row-height-desktop); }
-    .spot.d00d     { left:13%; width:17%; }
-    .spot.hvted    { left:33%; width:17%; }
-    .spot.metallik { left:53%; width:17%; }
-    .spot.fermilat { left:73%; width:17%; }
-  }
-
-  /* Mobile hotspot positions */
-  @media (max-width: 768px){
-    .spot{ top:var(--row-top-mobile); height:var(--row-height-mobile); }
-    .spot.d00d     { left:8%;  width:22%; }
-    .spot.hvted    { left:30%; width:22%; }
-    .spot.metallik { left:52%; width:22%; }
-    .spot.fermilat { left:74%; width:22%; }
-  }
-
-  /* Debug outlines (add ?debug=1) */
-  body.debug .spot{ outline:2px dashed rgba(255,255,255,.6); background:rgba(255,255,255,.06); }
-  body.debug .bg-video{ outline:2px solid rgba(0,255,255,.35); }
-</style>
+    /* Error banner */
+    #err{
+      position:fixed; left:50%; top:12px; transform:translateX(-50%);
+      background:#111; color:#fff; font:14px/1.3 system-ui, sans-serif;
+      padding:10px 12px; border:1px solid #f33; border-radius:8px; display:none; z-index:10;
+    }
+  </style>
 </head>
 <body>
-  <!-- Desktop background -->
-  <video id="bgDesktop" class="bg-video" autoplay muted loop playsinline webkit-playsinline preload="auto" poster="assets/hommiesbg_poster.jpg">
-    <source src="assets/hommiesbg.mp4" type="video/mp4" />
-  </video>
+  <div id="err"></div>
 
-  <!-- Mobile background -->
-  <video id="bgMobile" class="bg-video" autoplay muted loop playsinline webkit-playsinline preload="auto" poster="assets/hommiesbg_poster.jpg">
-    <source src="assets/hommiesbgmobile.mp4" type="video/mp4" />
-  </video>
+  <!-- One video; JS picks the right source -->
+  <video id="bgVideo"
+         autoplay muted loop playsinline webkit-playsinline
+         preload="auto"></video>
 
   <!-- Clickable hotspots -->
   <div class="hotspots" aria-label="Choose your character">
@@ -79,13 +74,14 @@
     <a class="spot fermilat" href="fermilat.html" aria-label="Fermilat"></a>
   </div>
 
-  <!-- Tiny script only for debug toggle -->
-  <script>
-    if (new URLSearchParams(location.search).get('debug') === '1') {
-      document.body.classList.add('debug');
-      // Optional: show controls for quick checks
-      document.querySelectorAll('video').forEach(v => v.setAttribute('controls','controls'));
-    }
-  </script>
+  <noscript>
+    <style>#bgVideo{display:none}</style>
+    <img src="assets/hommiesbg_poster.jpg" alt="Choose your character"
+         style="position:fixed;inset:0;width:100vw;height:100vh;object-fit:cover;">
+  </noscript>
+
+  <!-- IMPORTANT: load the JS with defer so it runs after the DOM exists -->
+  <script src="assets/hommies.js" defer></script>
 </body>
 </html>
+
