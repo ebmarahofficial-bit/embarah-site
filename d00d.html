@@ -5,103 +5,69 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>D00D — Artist Showcase</title>
 <style>
-  /* Base */
   html, body {
-    margin: 0;
-    height: 100%;
-    overflow: hidden;
-    background: #000;
+    margin: 0; height: 100%; overflow: hidden; background: #000;
     font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
   }
 
-  /* Fullscreen background videos (desktop + mobile swap) */
+  /* Fullscreen background videos (desktop/mobile swap) */
   .bg-video{
-    position: fixed;
-    inset: 0;
-    width: 100vw; height: 100vh;     /* fallback */
-    width: 100svw; height: 100svh;   /* modern mobile safe viewport */
-    object-fit: cover;
-    object-position: center;
-    z-index: 0;
-    display: block;
-    background: #000;
+    position: fixed; inset: 0;
+    width: 100vw; height: 100vh;      /* fallback */
+    width: 100svw; height: 100svh;    /* mobile-safe viewport */
+    object-fit: cover; object-position: center;
+    z-index: 0; background: #000; display: block;
   }
   #bgDesktop{ display:block; }
   #bgMobile{ display:none; }
-
   @media (max-width: 768px){
     #bgDesktop{ display:none; }
     #bgMobile{ display:block; }
   }
 
-  /* Content overlay panel */
-  .overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 1;
-    display: grid;
-    place-items: center;
-    padding: 20px;
-  }
-
-  .panel {
-    width: min(100%, 1000px);
-    background: rgba(0,0,0,.55);
-    border: 1px solid rgba(0,255,200,.25);
-    backdrop-filter: blur(4px);
-    border-radius: 14px;
+  /* Overlay with tiny player */
+  .overlay{
+    position: fixed; inset: 0; z-index: 2; pointer-events: none;
+    display: grid; align-items: end;
     padding: 18px;
-    box-shadow: 0 10px 40px rgba(0,0,0,.45);
+  }
+  .topbar{
+    position: fixed; left: 18px; top: 18px; z-index: 3; pointer-events: auto;
+    display: flex; gap: 10px; align-items: center;
+    background: rgba(0,0,0,.55); border: 1px solid rgba(0,255,200,.25);
+    backdrop-filter: blur(4px); border-radius: 12px; padding: 8px 10px;
+  }
+  .btn{
+    appearance: none; border: 1px solid rgba(0,255,255,.35);
+    background: rgba(0,0,0,.6); color: #eaffff; padding: 8px 12px;
+    border-radius: 10px; text-decoration: none; font-size: 14px;
   }
 
-  .topbar {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 12px;
-  }
-
-  .title {
-    margin: 0;
-    font-size: clamp(20px, 2.6vw, 28px);
-    letter-spacing: .5px;
+  /* Tiny player bar */
+  .playerBar{
+    pointer-events: auto;
+    width: min(100%, 680px);
+    margin: 0 auto; padding: 10px 12px;
+    background: rgba(0,0,0,.58);
+    border: 1px solid rgba(0,255,200,.25);
+    border-radius: 12px; backdrop-filter: blur(4px);
+    display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center;
     color: #eaffff;
-    text-shadow: 0 0 10px rgba(0,255,255,.25);
   }
+  .controls{ display: flex; gap: 8px; align-items: center; }
+  .iconBtn{
+    width: 36px; height: 36px; border-radius: 9px; border: 1px solid rgba(0,255,255,.35);
+    background: rgba(0,0,0,.55); color: #eaffff; cursor: pointer;
+    display: grid; place-items: center; font-weight: 700; font-size: 14px;
+  }
+  .trackTitle{ white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: .95; }
+  .volWrap{ display: flex; gap: 8px; align-items: center; }
+  input[type="range"]{ width: 140px; }
 
-  .btn {
-    appearance: none;
-    border: 1px solid rgba(0,255,255,.35);
-    background: rgba(0,0,0,.55);
-    color: #eaffff;
-    padding: 8px 12px;
-    border-radius: 10px;
-    cursor: pointer;
-    font-size: 14px;
-    text-decoration: none;
-    transition: transform .08s ease, filter .12s ease, background .12s ease;
-  }
-  .btn:hover { filter: brightness(1.08); }
-  .btn:active { transform: translateY(1px); }
-
-  /* SoundCloud embed wrapper (responsive height on mobile) */
-  .player {
-    width: 100%;
-    height: 520px;
-    border: none;
-    border-radius: 10px;
-    overflow: hidden;
-    background: #000;
-  }
-  @media (max-width: 768px){
-    .player { height: 420px; }
-  }
-
-  .fineprint {
-    margin-top: 10px;
-    color: #c7ffff;
-    opacity: .7;
-    font-size: 12px;
+  /* Invisible SoundCloud iframe (kept accessible for API control) */
+  #scFrame{
+    position: fixed; width: 1px; height: 1px; opacity: 0; pointer-events: none;
+    left: -9999px; top: -9999px; border: 0;
   }
 </style>
 </head>
@@ -116,26 +82,90 @@
     <source src="assets/d00dbgmobile.mp4" type="video/mp4" />
   </video>
 
-  <!-- Content overlay -->
+  <!-- Back button -->
+  <div class="topbar">
+    <a class="btn" href="hommies.html">← Back</a>
+    <strong>D00D</strong>
+  </div>
+
+  <!-- Mini player overlay -->
   <div class="overlay">
-    <div class="panel">
-      <div class="topbar">
-        <a class="btn" href="hommies.html">← Back</a>
-        <h1 class="title">D00D — Latest Tracks</h1>
+    <div class="playerBar" role="region" aria-label="D00D player">
+      <div class="controls">
+        <button class="iconBtn" id="prevBtn" title="Previous">⏮</button>
+        <button class="iconBtn" id="playBtn" title="Play/Pause">▶</button>
+        <button class="iconBtn" id="nextBtn" title="Next">⏭</button>
       </div>
-
-      <!-- SoundCloud profile embed -->
-      <iframe
-        class="player"
-        allow="autoplay"
-        src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/d00ddubz/tracks&color=%2300ffff&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true&visual=true">
-      </iframe>
-
-      <div class="fineprint">
-        Tip: if audio doesn’t start on mobile, tap the player once (browser autoplay rules).
+      <div class="trackTitle" id="trackTitle">Loading D00D tracks…</div>
+      <div class="volWrap">
+        <span style="opacity:.8">VOL</span>
+        <input id="vol" type="range" min="0" max="100" value="80" />
       </div>
     </div>
   </div>
 
+  <!-- Hidden SoundCloud widget (loads the artist's /tracks feed) -->
+  <iframe
+    id="scFrame"
+    allow="autoplay"
+    src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/d00ddubz/tracks&auto_play=false&visual=false&show_teaser=false&show_comments=false&show_user=false&sharing=false&hide_related=true">
+  </iframe>
+
+  <!-- SoundCloud Widget API -->
+  <script src="https://w.soundcloud.com/player/api.js"></script>
+  <script>
+    (function(){
+      const iframe = document.getElementById('scFrame');
+      const widget = SC.Widget(iframe);
+
+      const playBtn = document.getElementById('playBtn');
+      const prevBtn = document.getElementById('prevBtn');
+      const nextBtn = document.getElementById('nextBtn');
+      const titleEl = document.getElementById('trackTitle');
+      const vol = document.getElementById('vol');
+
+      let isPlaying = false;
+
+      function updateTitle() {
+        widget.getCurrentSound(function(sound){
+          titleEl.textContent = sound && sound.title ? sound.title : 'D00D — Tracks';
+        });
+      }
+
+      widget.bind(SC.Widget.Events.READY, function(){
+        // set initial volume
+        widget.setVolume(vol.value);
+        updateTitle();
+
+        // When a new track starts, update title and ensure button shows pause icon
+        widget.bind(SC.Widget.Events.PLAY, function(){
+          isPlaying = true;
+          playBtn.textContent = '⏸';
+          updateTitle();
+        });
+        widget.bind(SC.Widget.Events.PAUSE, function(){
+          isPlaying = false;
+          playBtn.textContent = '▶';
+        });
+        widget.bind(SC.Widget.Events.FINISH, function(){
+          // auto advances; title updates on next PLAY event
+        });
+      });
+
+      playBtn.addEventListener('click', function(){
+        if (isPlaying) {
+          widget.pause();
+        } else {
+          widget.play();
+        }
+      });
+      prevBtn.addEventListener('click', function(){ widget.prev(); });
+      nextBtn.addEventListener('click', function(){ widget.next(); });
+
+      vol.addEventListener('input', function(){
+        widget.setVolume(this.value);
+      });
+    })();
+  </script>
 </body>
 </html>
