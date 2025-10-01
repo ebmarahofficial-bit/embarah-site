@@ -12,13 +12,18 @@
   *{ box-sizing:border-box }
   html,body{ margin:0; height:100%; background:#000; color:var(--ink); font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif; overflow:hidden; }
 
-  /* Fullscreen video background */
-  #bg-video{
-    position:fixed; inset:0;
-    width:100%; height:100%;
-    object-fit:cover;
-    z-index:-1;
-    background:#000; /* fallback while loading */
+  /* Lightweight animated backdrop (not a video) */
+  body::before{
+    content:""; position:fixed; inset:0; z-index:-1;
+    background:
+      radial-gradient(60% 80% at 30% 20%, rgba(0,255,153,.12), transparent 60%),
+      radial-gradient(70% 70% at 80% 70%, rgba(0,180,120,.10), transparent 60%),
+      linear-gradient(180deg, #030a07 0%, #061f16 100%);
+    animation: glow 10s linear infinite alternate;
+  }
+  @keyframes glow{
+    0%{ filter:hue-rotate(0deg) brightness(1); }
+    100%{ filter:hue-rotate(10deg) brightness(1.05); }
   }
 
   .wrap{ height:100%; width:100%; display:flex; align-items:center; justify-content:center; }
@@ -27,7 +32,7 @@
   .stage{
     position:relative;
     width:100vw;
-    height:100vh;
+    height:100vh;          /* true fullscreen on phone */
     border:1px solid var(--line);
     border-radius:0;
     box-shadow:var(--shadow);
@@ -37,8 +42,9 @@
 
   canvas{
     position:absolute; inset:0;
-    width:100%; height:100%;
-    image-rendering:crisp-edges; touch-action:none;
+    width:100%; height:100%; /* CSS size follows stage */
+    image-rendering:crisp-edges; image-rendering:pixelated; /* helps low-res art pop */
+    touch-action:none;
   }
 
   /* ---------- HUD (in-game UI) ---------- */
@@ -60,12 +66,10 @@
     font-weight:700; cursor:pointer; z-index:10;
   }
 
-  /* ---------- Overlay ---------- */
+  /* ---------- Overlay (menu) ---------- */
   .overlay{
     position:absolute; inset:0; display:grid; place-items:center; background:rgba(0,0,0,0.6); z-index:20;
   }
-  .cover{ display:none; } /* keep DOM, hide image cover since we’re fullscreen */
-  .veil{ display:none; }
   .panel{
     position:relative; z-index:2; width:min(92%, 780px);
     padding:20px; border:1px solid var(--line); background:rgba(10,29,21,.85);
@@ -95,12 +99,6 @@
 </style>
 </head>
 <body>
-
-  <!-- Site-wide animated background -->
-  <video id="bg-video" autoplay muted loop playsinline preload="auto">
-    <source src="./runner/assets/runnerbg.mp4" type="video/mp4">
-  </video>
-
   <div class="wrap">
     <div class="stage">
       <button id="exitBtn" hidden>Exit</button>
@@ -116,7 +114,7 @@
         <span class="pill"><button id="muteBtn">🔊</button></span>
       </div>
 
-      <!-- Overlay -->
+      <!-- Overlay (menu) -->
       <div class="overlay" id="overlay">
         <div class="panel" id="panel">
           <h1 class="title">EBMARAH RUNNER</h1>
@@ -153,32 +151,40 @@
   <script src="https://w.soundcloud.com/player/api.js"></script>
   <script>
   (() => {
-    /* ---------------- Slower Config ---------------- */
+    /* ---------------- Config ---------------- */
     const lanes = 3;
-    const laneX = [0.22, 0.5, 0.78];
-    const groundY = 440;
+    const laneX = [0.22, 0.5, 0.78];  // lane center ratios
     const gravity = 0.9, jumpV = -16.5;
 
-    // ↓ Slowed down
+    // pacing (a bit slower)
     const BANANAS_PER_LEVEL = 10;
     const MAX_LEVELS = 10;
-    const obstacleSpeedBase = 4.0;   // was 6.5
-    const obstacleSpeedGain = 0.004; // was 0.007
-    const spawnEveryBase = 120;      // was 90 (spawns less often)
-    const spawnEveryMin  = 80;       // was 52
-    const bananaSpawnEvery = 140;    // was 110
+    const obstacleSpeedBase = 4.0;
+    const obstacleSpeedGain = 0.004;
+    const spawnEveryBase = 120;
+    const spawnEveryMin  = 80;
+    const bananaSpawnEvery = 140;
+
+    // Debug switch
+    const DEBUG = true;
 
     /* ---------------- DOM ---------------- */
     const canvas = document.getElementById('game');
     const ctx = canvas.getContext('2d');
 
-    // Background video autoplay fallback(s)
-    const bgVid = document.getElementById('bg-video');
-    function tryPlayBG(){ if (bgVid && bgVid.paused) { bgVid.play().catch(()=>{}); } }
-    window.addEventListener('load', tryPlayBG);
-    document.addEventListener('visibilitychange', tryPlayBG);
-    document.addEventListener('click', tryPlayBG);
-    document.addEventListener('touchstart', tryPlayBG, {passive:true});
+    // DPR scaling for crisp & smooth rendering on phones
+    function resizeCanvas(){
+      const ratio = Math.max(1, Math.min(3, Math.floor(window.devicePixelRatio || 1)));
+      const cssW = canvas.clientWidth;
+      const cssH = canvas.clientHeight;
+      canvas.width  = Math.round(cssW * ratio);
+      canvas.height = Math.round(cssH * ratio);
+      ctx.setTransform(ratio,0,0,ratio,0,0);
+    }
+    window.addEventListener('resize', resizeCanvas);
+    window.addEventListener('orientationchange', resizeCanvas);
+    // iOS 15+ address bar hide/show: redraw safe
+    document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) resizeCanvas(); });
 
     const hud = document.getElementById('hud');
     const scoreEl = document.getElementById('score');
@@ -228,7 +234,7 @@
         images.bg.onload = done; images.obstacle.onload = done; images.accent.onload = done;
         images.bg.onerror = images.obstacle.onerror = images.accent.onerror = rej;
         const base = levelPath(i);
-        images.bg.src = `${base}/background.png`;
+        images.bg.src = `${base}/background.png`;   // make these tileable left-right for perfect endless
         images.obstacle.src = `${base}/obstacle.png`;
         images.accent.src   = `${base}/accent.png`;
       }).catch(()=>{});
@@ -245,23 +251,27 @@
 
     bestEl.textContent = best; nextReqEl.textContent = bananasForNext; levelEl.textContent = level;
 
-    const player = { lane:1, x(){ return laneX[this.lane]*canvas.width }, y:groundY, vy:0, w:64, h:64, jumping:false };
+    // Ground depends on canvas size, so compute each frame
+    const player = { lane:1, x(){ return laneX[this.lane]*canvas.clientWidth }, y:0, vy:0, w:64, h:64, jumping:false };
     const obstacles=[], bananasOnField=[], accents=[];
     let bgScrollX = 0, mistPhase = 0;
 
+    function groundY(){ return Math.round(canvas.clientHeight*0.81); } // based on viewport height
+
     function spawnAccent(){
-      accents.push({ x:Math.random()*canvas.width, y:120+Math.random()*220, vy:(Math.random()*0.6)-0.3, vx:(Math.random()*0.2)+0.2 });
+      accents.push({ x:Math.random()*canvas.clientWidth, y:120+Math.random()*220, vy:(Math.random()*0.6)-0.3, vx:(Math.random()*0.2)+0.2 });
       if (accents.length>10) accents.shift();
     }
 
     function resetRun(startLevel=1){
+      resizeCanvas();                  // ensure fresh DPR size
       playing=true; paused=false; frame=0;
       speed = obstacleSpeedBase; spawnEvery = spawnEveryBase;
       score=0; bananas=0; bananasForNext=BANANAS_PER_LEVEL;
       level=startLevel; levelEl.textContent = level;
       bestEl.textContent = best; bananasEl.textContent = bananas; nextReqEl.textContent = bananasForNext;
       obstacles.length=0; bananasOnField.length=0; accents.length=0;
-      player.lane=1; player.y=groundY; player.vy=0; player.jumping=false;
+      player.lane=1; player.y=groundY(); player.vy=0; player.jumping=false;
       bgScrollX=0; mistPhase=0;
       hud.hidden=false; controls.hidden = isTouch ? false : true; overlay.style.display='none';
       exitBtn.hidden = false;
@@ -304,10 +314,7 @@
     /* ---------------- Helpers ---------------- */
     function collideRect(ax,ay,aw,ah, bx,by,bw,bh){ return ax < bx+bw && ax+aw > bx && ay < by+bh && ay+ah > by; }
 
-    // Debug switch
-    const DEBUG = true;
-
-    // Tighter hitboxes
+    // Tighter hitboxes (debug-draw below)
     function getPlayerHitbox(){
       const px = player.x()-player.w/2;
       const py = player.y - player.h;
@@ -318,7 +325,7 @@
       return {x,y,w,h};
     }
     function getObstacleHitbox(o){
-      const baseY = groundY - 64 + 6;
+      const baseY = groundY() - 64 + 6;
       const near = Math.max(0, 1 - Math.abs(o.x - player.x())/200);
       const s = 56 + Math.floor(near*3);
       const w = s*0.85, h = s*0.85;
@@ -345,18 +352,28 @@
       for(let i=0;i<6;i++) spawnAccent();
     }
 
-    /* ---------------- Drawing ---------------- */
+    /* ---------------- Drawing (endless) ---------------- */
     function drawScrollingBG(){
-      if (!images.bg.complete) { ctx.fillStyle='#05150f'; ctx.fillRect(0,0,canvas.width,canvas.height); return; }
+      // endless tile: requires background.png to be seamless left-right
+      if (!images.bg.complete) { 
+        ctx.fillStyle='#05150f'; 
+        ctx.fillRect(0,0,canvas.clientWidth,canvas.clientHeight); 
+        return; 
+      }
       const iw = images.bg.naturalWidth, ih = images.bg.naturalHeight;
-      const scale = canvas.height/ih, dw = iw*scale, dh = canvas.height;
+      const scale = canvas.clientHeight/ih;
+      const dw = iw*scale, dh = canvas.clientHeight;
+
       const pxPerFrame = 1.2 + speed*0.15;
       bgScrollX = (bgScrollX + pxPerFrame) % dw;
-      const startX = -bgScrollX;
-      ctx.drawImage(images.bg, startX, 0, dw, dh);
-      ctx.drawImage(images.bg, startX + dw, 0, dw, dh);
+      let startX = -bgScrollX;
 
-      // parallax accents using level's accent
+      // draw enough tiles to cover full width
+      for(let x = startX; x < canvas.clientWidth; x += dw){
+        ctx.drawImage(images.bg, Math.round(x), 0, Math.round(dw), Math.round(dh));
+      }
+
+      // parallax accents
       mistPhase += 0.004;
       if (images.accent.complete){
         ctx.globalAlpha = 0.35 + 0.25*Math.sin(mistPhase*2);
@@ -369,8 +386,8 @@
       }
 
       // ground highlight line
-      ctx.fillStyle = '#0a3'; ctx.fillRect(0, groundY+32, canvas.width, 6);
-      ctx.fillStyle = '#0c5'; ctx.fillRect(0, groundY+38, canvas.width, 2);
+      ctx.fillStyle = '#0a3'; ctx.fillRect(0, groundY()+32, canvas.clientWidth, 6);
+      ctx.fillStyle = '#0c5'; ctx.fillRect(0, groundY()+38, canvas.clientWidth, 2);
     }
 
     function drawPlayer(){
@@ -380,12 +397,12 @@
       if (DEBUG){ const hb = getPlayerHitbox(); ctx.strokeStyle='#00ffff'; ctx.lineWidth=2; ctx.strokeRect(hb.x, hb.y, hb.w, hb.h); }
     }
     function drawObstacle(o){
-      const w=56, h=64, x=o.x-w/2, y=groundY-h+6;
+      const baseY = groundY() - 64 + 6;
       if (images.obstacle.complete) {
         const near = Math.max(0, 1 - Math.abs(o.x - player.x())/200);
         const s = 56 + Math.floor(near*3);
-        ctx.drawImage(images.obstacle, o.x - s/2, y-(s-64), s, s);
-      } else { ctx.fillStyle='#195'; ctx.fillRect(x,y,w,h); }
+        ctx.drawImage(images.obstacle, o.x - s/2, baseY-(s-64), s, s);
+      } else { ctx.fillStyle='#195'; ctx.fillRect(o.x-28, baseY-64, 56, 64); }
       if (DEBUG){ const ob = getObstacleHitbox(o); ctx.strokeStyle='#ff00ff'; ctx.lineWidth=2; ctx.strokeRect(ob.x, ob.y, ob.w, ob.h); }
     }
     function drawBanana(b){
@@ -408,16 +425,16 @@
       // physics
       player.vy += gravity;
       player.y += player.vy;
-      if (player.y > groundY){ player.y=groundY; player.vy=0; player.jumping=false; }
+      if (player.y > groundY()){ player.y=groundY(); player.vy=0; player.jumping=false; }
 
       // spawns
       if (frame % spawnEvery === 0){
         const lane = Math.floor(Math.random()*lanes);
-        obstacles.push({ lane, x: canvas.width + 60 });
+        obstacles.push({ lane, x: canvas.clientWidth + 60 });
       }
       if (frame % bananaSpawnEvery === 0){
         const lane = Math.floor(Math.random()*lanes);
-        bananasOnField.push({ lane, x: canvas.width + 60, y: groundY - 72 });
+        bananasOnField.push({ lane, x: canvas.clientWidth + 60, y: groundY() - 72 });
       }
       if (frame % 140 === 0) spawnAccent();
 
@@ -429,17 +446,17 @@
       for (let i=bananasOnField.length-1;i>=0;i--){
         const b = bananasOnField[i];
         b.x -= speed*0.9;
-        b.y = groundY - 80 + Math.sin((frame+i)*0.1)*10;
+        b.y = groundY() - 80 + Math.sin((frame+i)*0.1)*10;
         if (b.x < -100) bananasOnField.splice(i,1);
       }
-      accents.forEach(a=>{ a.x -= 0.45; a.y += a.vy; if (a.x < -80) a.x = canvas.width+80; });
+      accents.forEach(a=>{ a.x -= 0.45; a.y += a.vy; if (a.x < -80) a.x = canvas.clientWidth+80; });
 
-      // collisions (more accurate)
+      // collisions
       const hb = getPlayerHitbox();
       for (const o of obstacles){
         if (o.lane === player.lane){
           const ob = getObstacleHitbox(o);
-          if (collideRect(hb.x,hb.y,hb.w,hb.h, ob.x,ob.y,ob.w,ob.h) && player.y>=groundY-40){
+          if (collideRect(hb.x,hb.y,hb.w,hb.h, ob.x,ob.y,ob.w,ob.h) && player.y>=groundY()-40){
             return endGame();
           }
         }
@@ -457,11 +474,11 @@
       score += 0.09 + speed*0.015;
 
       // draw
-      ctx.clearRect(0,0,canvas.width,canvas.height);
+      ctx.clearRect(0,0,canvas.clientWidth,canvas.clientHeight);
       drawScrollingBG();
-      // lane guides
-      ctx.save(); ctx.globalAlpha=.18; ctx.setLineDash([10,14]); ctx.lineWidth=2; ctx.strokeStyle='#0f7';
-      for(let i=0;i<lanes;i++){ const x=laneX[i]*canvas.width; ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,canvas.height); ctx.stroke(); }
+      // lane guides (subtle)
+      ctx.save(); ctx.globalAlpha=.14; ctx.setLineDash([10,14]); ctx.lineWidth=2; ctx.strokeStyle='#0f7';
+      for(let i=0;i<lanes;i++){ const x=laneX[i]*canvas.clientWidth; ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,canvas.clientHeight); ctx.stroke(); }
       ctx.restore();
       obstacles.forEach(drawObstacle);
       bananasOnField.forEach(drawBanana);
@@ -525,11 +542,8 @@
     const isTouch = matchMedia('(pointer:coarse)').matches || 'ontouchstart' in window;
     if (isTouch) controls.hidden = false;
 
-    // Exit back to menu (button already wired above)
-    exitBtn.addEventListener('click', ()=>{}); // no-op; handled earlier
-
     // Build initial Level Select
-    function init(){ rebuildLevelGrid(); }
+    function init(){ resizeCanvas(); rebuildLevelGrid(); }
     init();
   })();
   </script>
