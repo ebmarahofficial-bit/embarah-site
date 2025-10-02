@@ -7,23 +7,18 @@
   --text: #e9ffee;
   --desktop-offset: 19.6vh; /* desktop vertical position */
 
-  /* Mobile height variable (CSS-only): prefer svh/dvh; fallback is 100vh */
+  /* Mobile height (pure CSS; modern units with fallbacks) */
   --app-h: 100vh;
 
-  /* NEW: right-side gutter for mobile (pulls game in from right) */
-  --mobile-right-gutter: 8px; /* adjust 8–20px to taste */
+  /* Right-side gutter knob for phones (if you want a tiny inset) */
+  --mobile-right-gutter: 10px; /* tweak 0–16px if needed */
 }
-@supports (height: 100svh){
-  :root{ --app-h: 100svh; }
-}
-@supports (height: 100dvh){
-  :root{ --app-h: 100dvh; }
-}
+@supports (height: 100svh){ :root{ --app-h: 100svh; } }
+@supports (height: 100dvh){ :root{ --app-h: 100dvh; } }
 
 * { box-sizing: border-box; }
 html, body { height: 100%; }
 html, body { overscroll-behavior-y: none; touch-action: manipulation; }
-/* Prevent font “autosize” that can cause layout zooming on some mobile browsers */
 html { -webkit-text-size-adjust: 100%; }
 
 body {
@@ -50,12 +45,12 @@ body {
   z-index: -1;
 }
 
-/* Hide background video & overlay on phones only */
+/* Hide video bg on phones only (per your request) */
 @media (max-width: 900px){
   .bg-video, .bg-overlay { display: none !important; }
 }
 
-/* Center wrapper */
+/* Page wrapper */
 .page-offset{
   min-height: 100vh;
   display: grid;
@@ -65,7 +60,6 @@ body {
 @media (min-width: 901px){
   .page-offset{ align-content: start; padding-top: var(--desktop-offset); }
 }
-/* Mobile: use true device viewport height from --app-h */
 @media (max-width: 900px){
   .page-offset{
     min-height: 0;
@@ -74,7 +68,7 @@ body {
   }
 }
 
-/* Main shell */
+/* Game shell */
 .game-shell{
   width: min(100vw, var(--frame-w));
   height: min(100vh, var(--frame-h));
@@ -89,23 +83,24 @@ body {
   border-radius: 16px;
   box-shadow: 0 10px 40px rgba(0,0,0,0.45), inset 0 0 80px rgba(53,255,160,0.10);
 }
-/* Desktop: width/height transforms (as you tuned earlier) */
 @media (min-width: 901px){
   .game-shell{
     transform: scale(.9) scaleY(.94) scaleX(1.140);
     transform-origin: top center;
   }
 }
-
-/* Phones: full device height (fits 360–412w Android, 375–390w iPhone) */
-@media (max-width: 900px) {
+@media (max-width: 900px){
   .game-shell{
     width: 100vw;
-    height: var(--app-h); /* robust vs. browser UI bars */
+    height: var(--app-h);
     border-radius: 0;
     border: none;
     background: var(--panel-strong);
-    padding: calc(env(safe-area-inset-top) + 6px) 8px calc(env(safe-area-inset-bottom) + 6px);
+    /* include safe-area LEFT/RIGHT so nothing gets clipped on notches/dynamic island */
+    padding: calc(env(safe-area-inset-top,0px) + 6px)
+             calc(env(safe-area-inset-right,0px) + 8px)
+             calc(env(safe-area-inset-bottom,0px) + 6px)
+             calc(env(safe-area-inset-left,0px) + 8px);
     gap: 6px;
   }
 }
@@ -148,12 +143,14 @@ body {
     linear-gradient(180deg, rgba(0,0,0,0.35), rgba(0,0,0,0.65));
   border: 1px solid rgba(53,255,160,0.2);
 }
-/* Mobile: keep centered so canvas can preserve aspect ratio (no stretch),
-   BUT anchor content to the left and leave a fixed gutter on the right. */
+/* Mobile: zero-stretch + safe right inset so nothing is cropped */
 @media (max-width: 900px){
   .game-stage{
     padding: 0;
-    justify-items: start;   /* left-align the canvas */
+    /* push content in from the right by gutter + safe area */
+    padding-inline-end: calc(var(--mobile-right-gutter) + env(safe-area-inset-right, 0px));
+    padding-inline-start: calc(env(safe-area-inset-left, 0px));
+    justify-items: stretch;  /* allow canvas to be full width of this padded box */
     align-items: center;
     min-height: 0;
   }
@@ -161,27 +158,25 @@ body {
 
 #game{
   width: 100%;
-  height: auto;               /* default keeps intrinsic 3:2 aspect */
+  height: auto;               /* preserve intrinsic 900x600 ratio */
   max-height: 100%;
   image-rendering: pixelated;
   border-radius: 10px;
   box-shadow: 0 10px 40px rgba(0,0,0,0.45), inset 0 0 40px rgba(53,255,160,0.08);
   background: transparent;
-  touch-action: none; /* allows smooth drag without scrolling */
+  touch-action: none;
 }
-/* Mobile: keep aspect; pull in from the RIGHT only */
 @media (max-width: 900px){
   #game{
-    width: calc(100% - var(--mobile-right-gutter)); /* add right gutter */
-    height: auto;        /* no stretch */
-    max-height: 100%;    /* never exceed available height */
-    aspect-ratio: 3 / 2; /* reinforce intrinsic ratio */
-    margin-left: 0;
-    margin-right: var(--mobile-right-gutter);
+    width: 100%;          /* let the stage padding handle the right inset */
+    height: auto;         /* never stretch */
+    max-height: 100%;
+    aspect-ratio: 3 / 2;  /* reinforce aspect, avoid zoom/crop */
+    margin: 0;            /* no extra margins that could push out of view */
   }
 }
 
-/* Touch controls (fallback only; hidden if drag-mode enabled) */
+/* Touch controls (fallback only) */
 .touch-controls{
   position: absolute; inset-inline: 0; bottom: 8px;
   display: none; gap: 10px; justify-content: center;
@@ -225,8 +220,4 @@ body {
 .gameover-overlay .btn:hover{ filter: brightness(1.1); }
 
 /* Footer */
-.help{
-  text-align: center;
-  font-size: 14px;
-  opacity: 0.8;
-}
+.help{ text-align: center; font-size: 14px; opacity: 0.8; }
