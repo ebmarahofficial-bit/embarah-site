@@ -1,7 +1,16 @@
-/* Ebmarah Galaxian — bosses every 10 waves starting at 10
-   - Adds Start Menu with ship naming + start background (assets/ebmarahgamestart.png)
-   - Ship name renders under the ship during gameplay
-   - Keeps all prior features (power-ups, pause, high scores, SC music, etc.)
+/* Ebmarah Galaxian — bosses tankier, 7 new power-ups, truly random swoopers
+   - Boss HP increased + explicit maxHp bar
+   - 7 NEW power-ups:
+     • Shield x2 (two-hit shield)
+     • Drone (auto ally fires at targets)
+     • Freeze (slow enemies & enemy bullets)
+     • Magnet (pulls drops toward you)
+     • Double Score (2x points)
+     • Pierce (regular bullets pierce 1 target)
+     • Super Speed (move faster)
+   - Swoopers now pick a RANDOM logo (not tied to next stage)
+   - Desktop pause with P (and Esc) remains
+   - Beam stays the MOST rare drop
 */
 (() => {
   // ---- Mobile height helper ----
@@ -55,57 +64,24 @@
   const $hsList = document.getElementById('hsList');
   const $hsClose = document.getElementById('hsClose');
 
-  // ====== START MENU OVERLAY ======
-  // (self-contained styles so no CSS file changes needed)
-  const startOverlay = document.createElement('div');
-  startOverlay.id = 'startOverlay';
-  startOverlay.setAttribute('style', `
-    position:fixed; inset:0; z-index:9999; display:flex; align-items:center; justify-content:center;
-    background:#000; font-family: Orbitron, system-ui, sans-serif;
-  `);
-  startOverlay.innerHTML = `
-    <div style="position:relative; width:min(100%, 1000px);">
-      <img src="assets/ebmarahgamestart.png" alt="Start" style="width:100%; height:auto; display:block; filter:contrast(1.05) saturate(1.1);" />
-      <div style="
-        position:absolute; inset:auto 50% 10% 50%; transform:translate(-50%,0);
-        background:rgba(0,0,0,.65); border:1px solid rgba(0,255,200,.35); padding:16px 18px; border-radius:10px;
-        display:flex; flex-direction:column; gap:10px; align-items:center; min-width:min(86%, 520px);
-        box-shadow:0 0 24px rgba(0,255,180,.25);
-      ">
-        <h1 style="margin:4px 0 2px; color:#e9fef8; letter-spacing:.06em;">SPACEMARAH</h1>
-        <label for="shipNameInput" style="color:#b9fff0; font-size:14px;">Name your ship</label>
-        <input id="shipNameInput" type="text" maxlength="20" placeholder="My Ship"
-          style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid #39fbd1; background:#061a17; color:#eafffb; outline:none;"/>
-        <button id="startBtn" style="
-          padding:10px 16px; border-radius:10px; border:1px solid #39fbd1; background:#0b2e28; color:#cafff4;
-          cursor:pointer; font-weight:700; letter-spacing:.04em;
-        ">Start Game</button>
-      </div>
-    </div>
-  `;
-  document.body.appendChild(startOverlay);
-  const $shipInput = startOverlay.querySelector('#shipNameInput');
-  const $startBtn  = startOverlay.querySelector('#startBtn');
-
   // ====== GAME STATE ======
   const state = {
     score: 0,
     lives: 3,
     wave: 1,
-    playing: false,          // start paused until Start menu submits
+    playing: true,
     paused: false,
-    shipName: "",
-    playerSpeed: 320,        // base px/sec (Super Speed scales this)
-    bulletSpeed: 700,        // px/sec
+    playerSpeed: 320,       // base px/sec (Super Speed scales this)
+    bulletSpeed: 700,       // px/sec
     enemyH: 48,
     enemyW: 64,
     enemyGapX: 18,
     enemyGapY: 20,
     enemyRowsBase: 3,
     enemyCols: 7,
-    enemyBaseSpeed: 80,      // px/sec
-    enemyDrop: 18,           // px when bouncing
-    enemyShotRate: 0.045,    // per enemy per sec
+    enemyBaseSpeed: 80,     // px/sec
+    enemyDrop: 18,          // px when bouncing
+    enemyShotRate: 0.045,   // per enemy per sec
     playerCooldownMs: 220,
   };
 
@@ -126,9 +102,9 @@
   let enemySpeed = state.enemyBaseSpeed;
   let enemyImages = [];
 
-  // Boss (every 10th wave starting at 10) — more health + maxHp
+  // Boss (every 20th wave) — more health + maxHp
   let boss = null; // {x,y,w,h,imgIdx,hp,maxHp,baseX,amp,freq,t,vy,alive}
-  const BOSS_HP_BASE = 42;     // beefier base
+  const BOSS_HP_BASE = 42;     // ↑ more tanky base
   const BOSS_HP_STEP = 8;      // extra every few waves
 
   // Swoopers (side attackers)
@@ -136,7 +112,7 @@
   let swooperCooldown = 3.5;
 
   // ====== POWER-UPS ======
-  // Existing + new types
+  // Existing types
   const POWER_TYPES = {
     RAPID:  { key:'RAPID',  label:'R',  color:'#7fffd4', dur: 10, effect:'faster_fire'   },
     MULTI:  { key:'MULTI',  label:'M',  color:'#ffd27f', dur: 12, effect:'multishot2'    },
@@ -154,7 +130,7 @@
     SUPER:  { key:'SUPER',  label:'Sp', color:'#a2ffcf', dur: 10, effect:'superspeed'    }, // faster move
   };
 
-  // Weighted rarity (Beam is most rare)
+  // Weighted rarity (higher weight = more common). Beam is MOST rare.
   const POWER_WEIGHTS = [
     [POWER_TYPES.RAPID,   5.0],
     [POWER_TYPES.MULTI,   3.5],
@@ -168,7 +144,7 @@
     [POWER_TYPES.SHIELD,  0.7],
     [POWER_TYPES.SHIELD2, 0.6],
     [POWER_TYPES.LIFE,    0.35],
-    [POWER_TYPES.BEAM,    0.10],
+    [POWER_TYPES.BEAM,    0.10], // MOST rare
   ];
   function weightedChoice(weighted) {
     const total = weighted.reduce((s,[,w])=>s+w,0);
@@ -185,7 +161,7 @@
     beamUntil: 0,
     shieldHits: 0,
 
-    shield2Hits: 0,
+    shield2Hits: 0,        // stacks with shieldHits
     droneUntil: 0, droneAccum: 0,
     freezeUntil: 0,
     magnetUntil: 0,
@@ -196,11 +172,11 @@
 
   const powerUps = []; // {x,y,w,h,vy,type,spin}
 
-  // Drop tuning
+  // Drop tuning (rarer overall)
   let powerupTimer = 18 + Math.random()*16; // periodic drop every ~18–34s
   const KILL_DROP_CHANCE = 0.04;            // 4% on normal enemy kills
   const LIFE_SUPER_RARE  = 0.006;           // 0.6% extra life chance on normal kills
-  const SWOOPER_DROP_CHANCE = 0.03;
+  const SWOOPER_DROP_CHANCE = 0.03;         // swoopers slightly lower
   const BOSS_DROP_COUNT = 2;                // more random drops on boss defeat
   const BOSS_LIFE_DROP = 1;                 // +1 Life guaranteed on boss defeat
 
@@ -319,8 +295,7 @@
   function spawnWave(wave){
     boss = null;
     enemies = [];
-    // CHANGED: boss at 10 and every 10
-    const isBossWave = (wave % 10 === 0 && wave >= 10);
+    const isBossWave = (wave % 20 === 0);
 
     const idx = waveLogoIndex(wave);
 
@@ -421,7 +396,6 @@
     window.addEventListener('mouseup',    endDrag);
   } else {
     const bindHold = (el, on, off) => {
-      if (!el) return;
       el.addEventListener('touchstart', (e)=>{ e.preventDefault(); on(); }, {passive:false});
       el.addEventListener('touchend',   (e)=>{ e.preventDefault(); off(); }, {passive:false});
       el.addEventListener('mousedown',  (e)=>{ e.preventDefault(); on(); });
@@ -440,7 +414,7 @@
     autoFireTimer = setInterval(() => attemptShoot(), Math.max(80, currentCooldownMs()));
   }
   function stopAutoFire(){ if (autoFireTimer){ clearInterval(autoFireTimer); autoFireTimer=null; } }
-  if (isTouch){ window.addEventListener('blur', stopAutoFire); window.addEventListener('focus', () => { if (state.playing && !state.paused) startAutoFire(); }); }
+  if (isTouch){ startAutoFire(); window.addEventListener('blur', stopAutoFire); window.addEventListener('focus', startAutoFire); }
 
   // ====== PAUSE ======
   function setPaused(p){
@@ -453,7 +427,7 @@
     if (p){ stopAutoFire(); }
     else if (isTouch){ startAutoFire(); }
   }
-  function togglePause(){ if (!state.playing) return; setPaused(!state.paused); }
+  function togglePause(){ setPaused(!state.paused); }
   if ($pauseBtn){ $pauseBtn.addEventListener('click', togglePause); }
 
   // ====== UTILS (score, speeds) ======
@@ -474,7 +448,6 @@
 
   // ====== SHOOTING with BUFFS ======
   function attemptShoot(){
-    if (!state.playing || state.paused) return;
     const now = performance.now();
     if (now < player.canShootAt) return;
 
@@ -710,18 +683,6 @@
       ctx.beginPath();
       ctx.moveTo(-28, 24); ctx.lineTo(0, -24); ctx.lineTo(28, 24); ctx.closePath();
       ctx.fill();
-      ctx.restore();
-    }
-
-    // Ship Name under the ship
-    if (state.shipName){
-      ctx.save();
-      ctx.font = '16px Orbitron, system-ui';
-      ctx.fillStyle = '#eafffb';
-      ctx.textAlign = 'center';
-      ctx.shadowColor = 'rgba(0,255,200,.45)';
-      ctx.shadowBlur = 10;
-      ctx.fillText(state.shipName, player.x + player.w/2, player.y + player.h + 18);
       ctx.restore();
     }
 
@@ -1029,7 +990,7 @@
     state.score = 0;
     state.lives = 3;
     state.wave  = 1;
-    state.playing = true;     // restart immediately
+    state.playing = true;
     setPaused(false);
 
     $score.textContent = "Score: 0";
@@ -1048,7 +1009,6 @@
     spawnWave(state.wave);
     $gameOver.hidden = true;
 
-    if (isTouch) startAutoFire();
     requestAnimationFrame(ts => { last = ts; loop(ts); });
   }
 
@@ -1058,7 +1018,6 @@
   let widget = null;
   function setupSC(){
     const iframe = document.getElementById('scPlayer');
-    if (!iframe || typeof SC === 'undefined' || !SC.Widget) return;
     // eslint-disable-next-line no-undef
     widget = SC.Widget(iframe);
 
@@ -1069,15 +1028,15 @@
 
     let playing = false;
 
-    if (btnPlay) btnPlay.addEventListener('click', () => { if (!playing) widget.play(); else widget.pause(); });
-    if (btnPrev) btnPrev.addEventListener('click', () => widget.prev());
-    if (btnNext) btnNext.addEventListener('click', () => widget.next());
-    if (vol) vol.addEventListener('input', () => widget.setVolume(parseFloat(vol.value)*100));
+    btnPlay.addEventListener('click', () => { if (!playing) widget.play(); else widget.pause(); });
+    btnPrev.addEventListener('click', () => widget.prev());
+    btnNext.addEventListener('click', () => widget.next());
+    vol.addEventListener('input', () => widget.setVolume(parseFloat(vol.value)*100));
 
-    widget.bind(SC.Widget.Events.PLAY,  () => { playing = true;  if (btnPlay) btnPlay.textContent = '⏸'; });
-    widget.bind(SC.Widget.Events.PAUSE, () => { playing = false; if (btnPlay) btnPlay.textContent = '▶'; });
+    widget.bind(SC.Widget.Events.PLAY,  () => { playing = true;  btnPlay.textContent = '⏸'; });
+    widget.bind(SC.Widget.Events.PAUSE, () => { playing = false; btnPlay.textContent = '▶'; });
 
-    const prime = () => { if (vol) widget.setVolume(parseFloat(vol.value)*100); widget.play(); window.removeEventListener('click', prime); };
+    const prime = () => { widget.setVolume(parseFloat(vol.value)*100); widget.play(); window.removeEventListener('click', prime); };
     window.addEventListener('click', prime, { once: true });
   }
 
@@ -1149,29 +1108,9 @@
   // ====== STARTUP ======
   (async function start(){
     await loadEnemyImages();
+    spawnWave(state.wave);
     setupSC();
-
-    // Start Menu actions
-    $shipInput.value = localStorage.getItem('ebmarah_ship_name') || '';
-    const startGame = () => {
-      state.shipName = ($shipInput.value || "Anonymous").trim().slice(0,20);
-      localStorage.setItem('ebmarah_ship_name', state.shipName);
-      startOverlay.style.display = 'none';
-
-      // Prime HUD
-      $score.textContent = "Score: 0";
-      $lives.textContent = "Lives: 3";
-      $wave.textContent  = "Wave: 1";
-
-      // Begin game
-      state.playing = true;
-      spawnWave(state.wave);
-      if (isTouch) startAutoFire();
-      requestAnimationFrame(loop);
-    };
-    $startBtn.addEventListener('click', startGame);
-    $shipInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') startGame(); });
-    $shipInput.focus({ preventScroll:true });
+    requestAnimationFrame(loop);
   })();
 
 })();
