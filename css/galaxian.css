@@ -16,8 +16,8 @@
   /* tiny right inset to avoid clipping near rounded corners/notches */
   --mobile-right-gutter: 10px;
 
-  /* PUSH HUD + CANVAS DOWN on mobile (increase to go lower) */
-  --mobile-top-offset: 92px;  /* try 84–108px to taste */
+  /* EXTRA top offset on mobile (kept small so it’s not “stuck at the top”) */
+  --mobile-top-offset: 0px;  /* 0 keeps it tight under header; raise to nudge lower */
 }
 @supports (height: 100svh){ :root{ --app-h: 100svh; } }
 @supports (height: 100dvh){ :root{ --app-h: 100dvh; } }
@@ -67,7 +67,7 @@ body {
   .page-offset{ align-content: start; padding-top: var(--desktop-offset); }
 }
 
-/* MOBILE: below fixed header + extra offset; keep full-screen height */
+/* MOBILE: sit directly under the fixed header; occupy full remaining height */
 @media (max-width: 900px){
   .page-offset{
     height: calc(var(--app-h) - var(--site-header-h) - var(--mobile-top-offset));
@@ -100,7 +100,7 @@ body {
   }
 }
 
-/* MOBILE: shell fills available area; keep grid; bigger gap keeps HUD off canvas */
+/* MOBILE: fill the remaining height; keep HUD off the canvas */
 @media (max-width: 900px){
   .game-shell{
     width: 100vw;
@@ -112,7 +112,7 @@ body {
              calc(env(safe-area-inset-right,0px) + 8px)
              calc(env(safe-area-inset-bottom,0px) + 6px)
              calc(env(safe-area-inset-left,0px) + 8px);
-    gap: 12px;
+    gap: 12px; /* keeps HUD separated from canvas */
     display: grid;
     grid-template-rows: auto minmax(0,1fr) auto;
     align-content: stretch;
@@ -147,6 +147,17 @@ body {
 }
 .music-controls input[type="range"]{ width: 80px; }
 
+/* Pause button (match UI; avoid big white pill) */
+.pause-btn{
+  border: 1px solid rgba(53,255,160,0.35);
+  background: rgba(0,0,0,0.55);
+  color: var(--text);
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-weight: 700;
+}
+.pause-btn:hover{ filter: brightness(1.1); }
+
 /* Stage */
 .game-stage{
   position: relative;
@@ -159,10 +170,10 @@ body {
   border: 1px solid rgba(53,255,160,0.2);
 }
 
-/* MOBILE: stage = true full height; no padding that steals pixels */
+/* MOBILE: true full-height stage; tiny top padding so enemies don’t kiss the HUD */
 @media (max-width: 900px){
   .game-stage{
-    padding: 0; /* maximize canvas size */
+    padding: 10px 0 6px 0; /* top/bottom breathing room inside frame */
     padding-inline-end: calc(var(--mobile-right-gutter) + env(safe-area-inset-right, 0px));
     padding-inline-start: calc(env(safe-area-inset-left, 0px));
     display: flex;
@@ -248,3 +259,7 @@ body {
 
 /* Footer */
 .help{ text-align: center; font-size: 14px; opacity: 0.8; }
+@media (max-width: 900px){
+  /* Optional: shrink help text on phones to give the stage a few more pixels */
+  .help{ font-size: 13px; }
+}
