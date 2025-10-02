@@ -1,8 +1,9 @@
 /* Ebmarah Galaxian — Gorilla vs. Dubstep Logos
-   Added in this version:
-   - True full-height mobile stage & canvas stretch support.
-   - Pause system: HUD button + keyboard P/Escape. Shows a small "Paused" badge.
-   - Keeps your uniform-per-wave logos, 5/10/15… switching, and swoopers.
+   Adds:
+   - Boss wave every 20th wave (big logo with HP, does NOT alter 5/10/15… switch rhythm)
+   - Slightly bigger player ship
+   - High Scores modal (local save; future-proofed to sync daily if you add a backend)
+   - Pause system (unchanged), mobile full-height canvas (unchanged)
 */
 (() => {
   // ---- Mobile height helper (robust phone fit) ----
@@ -45,6 +46,12 @@
   const $pauseBtn   = document.getElementById('pauseBtn');
   const $pauseBadge = document.getElementById('pauseBadge');
 
+  // High scores UI
+  const $highBtn = document.getElementById('highBtn');
+  const $highModal = document.getElementById('highModal');
+  const $hsList = document.getElementById('hsList');
+  const $hsClose = document.getElementById('hsClose');
+
   // ====== GAME STATE (px/second speeds) ======
   const state = {
     score: 0,
@@ -70,9 +77,10 @@
   const bullets = [];
   const enemyBullets = [];
 
+  // Slightly bigger player ship (requested)
   const player = {
-    x: canvas.width/2 - 28, y: canvas.height - 110,
-    w: 56, h: 40,
+    x: canvas.width/2 - 36, y: canvas.height - 120,
+    w: 72, h: 52,           // was 56x40
     canShootAt: 0
   };
 
@@ -81,6 +89,10 @@
   let enemyDir = 1;
   let enemySpeed = state.enemyBaseSpeed;
   let enemyImages = [];
+
+  // Boss (every 20th wave)
+  let boss = null; // {x,y,w,h,imgIdx,hp,baseX,amp,freq,t,vy,alive}
+  const BOSS_HP_BASE = 18;
 
   // Swoopers (single special invaders)
   const swoopers = [];
@@ -111,31 +123,55 @@
     return block % LOGO_URLS.length;
   }
 
-  // ====== INIT ENEMY FORMATION ======
+  // ====== INIT ENEMY FORMATION or BOSS ======
   function spawnWave(wave){
+    boss = null;
     enemies = [];
-    const cols = state.enemyCols;
-    const rows = state.enemyRowsBase + Math.floor((wave-1)/2);
-    const startX = 60;
-    const startY = 70;
-    const W = state.enemyW, H = state.enemyH, gapX = state.enemyGapX, gapY = state.enemyGapY;
+    const isBossWave = (wave % 20 === 0);
 
-    // one uniform logo per wave
-    const idx = waveLogoIndex(wave);
+    const idx = waveLogoIndex(wave); // keep your 5/10/15… pattern intact
 
-    for(let r=0; r<rows; r++){
-      for(let c=0; c<cols; c++){
-        enemies.push({
-          x: startX + c*(W+gapX),
-          y: startY + r*(H+gapY),
-          w: W, h: H,
-          imgIdx: idx,     // uniform logo this wave
-          alive: true
-        });
+    if (isBossWave){
+      // One large logo as a boss
+      const w = Math.floor(canvas.width * 0.28);
+      const h = Math.floor(canvas.height * 0.22);
+      const baseX = canvas.width/2;
+      boss = {
+        x: baseX - w/2,
+        y: 90,
+        w, h,
+        imgIdx: idx,
+        hp: BOSS_HP_BASE + Math.floor(wave / 4), // scales slowly
+        baseX,
+        amp: 120,
+        freq: 1.2,
+        t: 0,
+        vy: 20,
+        alive: true
+      };
+      enemySpeed = state.enemyBaseSpeed + (wave-1)*12; // irrelevant this wave, but keep consistent
+    } else {
+      const cols = state.enemyCols;
+      const rows = state.enemyRowsBase + Math.floor((wave-1)/2);
+      const startX = 60;
+      const startY = 70;
+      const W = state.enemyW, H = state.enemyH, gapX = state.enemyGapX, gapY = state.enemyGapY;
+
+      for(let r=0; r<rows; r++){
+        for(let c=0; c<cols; c++){
+          enemies.push({
+            x: startX + c*(W+gapX),
+            y: startY + r*(H+gapY),
+            w: W, h: H,
+            imgIdx: idx,     // uniform logo this wave
+            alive: true
+          });
+        }
       }
+      enemyDir = 1;
+      enemySpeed = state.enemyBaseSpeed + (wave-1)*12; // gentle ramp (px/sec)
     }
-    enemyDir = 1;
-    enemySpeed = state.enemyBaseSpeed + (wave-1)*12; // gentle ramp (px/sec)
+
     $wave.textContent = "Wave: " + wave;
   }
 
@@ -239,12 +275,23 @@
   }
 
   // ====== ENEMY BEHAVIOR (formation) ======
-  function waveLogoIndex(wave){
-    const block = Math.floor((wave - 1) / 5);
-    return block % LOGO_URLS.length;
-  }
-
   function updateEnemies(dt){
+    if (boss && boss.alive){
+      // Boss oscillation + occasional shots
+      boss.t += dt;
+      boss.x = boss.baseX + Math.sin(boss.t * boss.freq) * boss.amp - boss.w/2;
+      // light vertical bob
+      boss.y = 90 + Math.sin(boss.t * 0.7) * 10;
+
+      // boss shooting
+      if (Math.random() < 0.9 * dt){ // slow stream
+        enemyBullets.push({
+          x: boss.x + boss.w/2 - 2, y: boss.y + boss.h, w:4, h:10, vy: 260 + Math.random()*120
+        });
+      }
+      return; // no formation movement when boss wave
+    }
+
     let minX = Infinity, maxX = -Infinity;
     enemies.forEach(e=>{
       if(!e.alive) return;
@@ -303,7 +350,7 @@
     ctx.restore();
   }
 
-  function drawEnemy(e){
+  function drawEnemyRectLikeLogo(e){
     const img = enemyImages[e.imgIdx];
     if (img){ ctx.drawImage(img, e.x, e.y, e.w, e.h); }
     else {
@@ -324,7 +371,7 @@
       ctx.shadowBlur = 18; ctx.shadowColor = 'rgba(53,255,160,0.8)';
       ctx.fillStyle = 'rgba(53,255,160,0.95)';
       ctx.beginPath();
-      ctx.moveTo(-24, 20); ctx.lineTo(0, -20); ctx.lineTo(24, 20); ctx.closePath();
+      ctx.moveTo(-28, 24); ctx.lineTo(0, -24); ctx.lineTo(28, 24); ctx.closePath();
       ctx.fill();
       ctx.restore();
     }
@@ -343,7 +390,6 @@
     }
 
     if (state.paused){
-      // draw "Paused" badge and keep the frame alive but skip updates
       if ($pauseBadge){ $pauseBadge.hidden = false; }
       requestAnimationFrame(loop);
       return;
@@ -376,23 +422,42 @@
     updateEnemies(dt);
     updateSwoopers(dt);
 
-    // Collisions: bullets vs formation
+    // Collisions: bullets vs formation/boss/swoopers
     for (let i=bullets.length-1; i>=0; i--){
       const b = bullets[i];
-      let hit = false;
+      let consumed = false;
+
+      // vs boss
+      if (boss && boss.alive && rectsOverlap(b, boss)){
+        bullets.splice(i,1);
+        consumed = true;
+        boss.hp -= 1;
+        state.score += 25;
+        $score.textContent = "Score: " + state.score;
+        if (boss.hp <= 0){
+          boss.alive = false;
+          state.score += 300; // boss bonus
+          $score.textContent = "Score: " + state.score;
+        }
+      }
+      if (consumed) continue;
+
+      // vs formation
       for (let j=0; j<enemies.length; j++){
         const e = enemies[j];
         if (!e.alive) continue;
         if (rectsOverlap(b, e)){
           e.alive = false;
-          hit = true;
+          bullets.splice(i,1);
           state.score += 50;
           $score.textContent = "Score: " + state.score;
+          consumed = true;
           break;
         }
       }
-      if (hit){ bullets.splice(i,1); continue; }
-      // Collisions: bullets vs swoopers
+      if (consumed) continue;
+
+      // vs swoopers
       for (let k=0; k<swoopers.length; k++){
         const s = swoopers[k];
         if (!s.alive) continue;
@@ -413,26 +478,49 @@
         state.lives--;
         $lives.textContent = "Lives: " + state.lives;
         player.x = canvas.width/2 - player.w/2;
-        player.y = canvas.height - 110;
+        player.y = canvas.height - 120;
         if (state.lives <= 0) gameOver();
       }
     }
 
-    // Endless waves: formation only
-    if (enemies.every(e => !e.alive)){
-      state.wave++;
-      spawnWave(state.wave);
+    // Endless waves:
+    if (boss){
+      if (!boss.alive){
+        state.wave++;
+        spawnWave(state.wave);
+      }
+    } else {
+      if (enemies.length && enemies.every(e => !e.alive)){
+        state.wave++;
+        spawnWave(state.wave);
+      }
     }
 
     // Draw
     ctx.clearRect(0,0,canvas.width,canvas.height);
     drawStarfield(dt);
-    enemies.forEach(e => { if (e.alive) drawEnemy(e); });
-    swoopers.forEach(s => { if (s.alive) drawEnemy(s); });
+
+    // formation / boss / swoopers
+    if (boss && boss.alive){
+      drawEnemyRectLikeLogo(boss);
+      // optional: tiny HP bar
+      ctx.fillStyle = 'rgba(0,0,0,.5)';
+      ctx.fillRect(boss.x, boss.y - 12, boss.w, 6);
+      ctx.fillStyle = '#35ffa0';
+      const hpw = Math.max(0, (boss.hp / (BOSS_HP_BASE + Math.floor(state.wave/4))) * boss.w);
+      ctx.fillRect(boss.x, boss.y - 12, hpw, 6);
+    } else {
+      enemies.forEach(e => { if (e.alive) drawEnemyRectLikeLogo(e); });
+    }
+    swoopers.forEach(s => { if (s.alive) drawEnemyRectLikeLogo(s); });
+
+    // bullets
     ctx.fillStyle = '#7fffd4';
     bullets.forEach(b => ctx.fillRect(b.x,b.y,b.w,b.h));
     ctx.fillStyle = '#ffcf7f';
     enemyBullets.forEach(b => ctx.fillRect(b.x,b.y,b.w,b.h));
+
+    // player
     drawPlayer();
 
     requestAnimationFrame(loop);
@@ -463,6 +551,7 @@
     setPaused(false);
     $finalScore.textContent = state.score.toString();
     $finalWave.textContent = state.wave.toString();
+    saveHighScore(state.score, state.wave);
     $gameOver.hidden = false;
   }
 
@@ -470,6 +559,7 @@
     bullets.length = 0;
     enemyBullets.length = 0;
     swoopers.length = 0;
+    boss = null;
     swooperCooldown = 3.5;
 
     state.score = 0;
@@ -483,7 +573,7 @@
     $wave.textContent  = "Wave: 1";
 
     player.x = canvas.width/2 - player.w/2;
-    player.y = canvas.height - 110;
+    player.y = canvas.height - 120;
     player.canShootAt = 0;
 
     spawnWave(state.wave);
@@ -493,7 +583,7 @@
     requestAnimationFrame(ts => { last = ts; loop(ts); });
   }
 
-  $tryAgain.addEventListener('click', resetGame);
+  if ($tryAgain) $tryAgain.addEventListener('click', resetGame);
 
   // ====== MUSIC (SoundCloud Widget API) ======
   let widget = null;
@@ -519,6 +609,73 @@
 
     const prime = () => { widget.setVolume(parseFloat(vol.value)*100); widget.play(); window.removeEventListener('click', prime); };
     window.addEventListener('click', prime, { once: true });
+  }
+
+  // ====== HIGH SCORES (local, with daily-sync hook) ======
+  const HS_KEY = 'ebmarah_galaxian_highscores';
+  const HS_SYNC_KEY = 'ebmarah_galaxian_last_sync';
+
+  function readHighScores(){
+    try { return JSON.parse(localStorage.getItem(HS_KEY)) || []; }
+    catch { return []; }
+  }
+  function writeHighScores(list){
+    localStorage.setItem(HS_KEY, JSON.stringify(list));
+  }
+
+  function saveHighScore(score, wave){
+    let list = readHighScores();
+    const best = (list[0]?.score || 0);
+    // prompt for name on top-10 or if beating best
+    if (list.length < 10 || score > list[list.length-1].score || score >= best){
+      const name = (prompt("New High Score! Enter your name (or leave blank):","") || "Anonymous").slice(0,24);
+      list.push({ name, score, wave, date: new Date().toISOString() });
+      list.sort((a,b) => b.score - a.score);
+      list = list.slice(0, 15); // keep a little buffer
+      writeHighScores(list);
+    }
+  }
+
+  function renderHighScores(){
+    const list = readHighScores();
+    $hsList.innerHTML = '';
+    if (!list.length){
+      $hsList.innerHTML = '<li>No scores yet. Be the first!</li>';
+      return;
+    }
+    list.slice(0,10).forEach((row, i) => {
+      const li = document.createElement('li');
+      const d = new Date(row.date);
+      li.textContent = `${i+1}. ${row.name || 'Anonymous'} — ${row.score} pts (Wave ${row.wave}) • ${d.toLocaleDateString()} ${d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}`;
+      $hsList.appendChild(li);
+    });
+  }
+
+  function maybeDailySync(){
+    // Placeholder: If you want cross-player/global boards,
+    // call your backend here when 24h has passed since last sync.
+    const last = localStorage.getItem(HS_SYNC_KEY);
+    const now = Date.now();
+    if (!last || (now - Number(last)) > 24*60*60*1000){
+      // TODO: fetch/post to backend (Supabase/Firestore/etc.)
+      localStorage.setItem(HS_SYNC_KEY, String(now));
+    }
+  }
+
+  if ($highBtn){
+    $highBtn.addEventListener('click', () => {
+      maybeDailySync();
+      renderHighScores();
+      $highModal.hidden = false;
+    });
+  }
+  if ($hsClose){
+    $hsClose.addEventListener('click', () => { $highModal.hidden = true; });
+  }
+  if ($highModal){
+    $highModal.addEventListener('click', (e) => {
+      if (e.target === $highModal) $highModal.hidden = true;
+    });
   }
 
   // ====== STARTUP ======
