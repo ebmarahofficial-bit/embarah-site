@@ -2,12 +2,74 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <!-- Ensure phones don’t start zoomed in; keep the viewport locked to device width/scale -->
+  <!-- Lock phones to device width/scale to avoid zoomy first paint -->
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover" />
   <title>Ebmarah Game</title>
+
+  <!-- Header + menu styles pulled from index -->
+  <style>
+    :root { --neon:#00ff99; --glass:rgba(2,13,7,.75); }
+    header{
+      position:fixed; inset:0 0 auto 0;
+      display:flex; align-items:center; justify-content:space-between;
+      padding:12px 18px; background:var(--glass);
+      border-bottom:1px solid rgba(0,255,128,.2);
+      box-shadow:0 6px 24px rgba(0,0,0,.35); z-index:1000;
+      backdrop-filter: blur(10px);
+      font-family:'Orbitron',system-ui,Segoe UI,Roboto,Inter,Arial,sans-serif;
+    }
+    .brand{display:flex; align-items:center; gap:10px; font-weight:800; letter-spacing:.02em}
+    .brand img{height:40px; width:auto}
+    .brand span{font-size:clamp(16px,2.6vw,22px); color:#e0ffe8}
+
+    nav.site-nav{display:flex; align-items:center; gap:22px}
+    nav.site-nav a{
+      color:#76ffb2; text-decoration:none; font-weight:700; font-size:clamp(13px,1.6vw,14px)
+    }
+    nav.site-nav a:hover{ color:#00ffea }
+
+    .menu-btn{
+      display:none; background:none; border:1px solid rgba(0,255,128,.35);
+      color:#b9ffdf; font-size:16px; font-weight:700; padding:8px 12px; border-radius:10px
+    }
+
+    .drawer-overlay{
+      position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:999; opacity:0; pointer-events:none; transition:.25s;
+    }
+    .drawer{
+      position:fixed; top:0; right:-320px; width:min(80vw,320px); height:100%;
+      background:#03140c; border-left:1px solid rgba(0,255,128,.25);
+      box-shadow:-12px 0 40px rgba(0,0,0,.45); z-index:1000; transition: right .25s ease;
+      display:flex; flex-direction:column; padding:18px;
+      font-family:'Orbitron',system-ui,Segoe UI,Roboto,Inter,Arial,sans-serif;
+    }
+    .drawer header{ all:unset; display:flex; align-items:center; justify-content:space-between; margin-bottom:8px }
+    .drawer h2{ margin:0; font-size:18px; color:#9dffd2 }
+    .drawer .close{
+      background:none; border:1px solid rgba(0,255,128,.35); color:#b9ffdf; padding:6px 10px; border-radius:10px
+    }
+    .drawer nav{ display:flex; flex-direction:column; margin-top:12px }
+    .drawer nav a{
+      padding:14px 10px; border-bottom:1px solid rgba(0,255,128,.15);
+      color:#b9ffdf; text-decoration:none; font-weight:800; letter-spacing:.02em;
+      font-size:16px;
+    }
+    .drawer nav a:last-child{ border-bottom:0 }
+    .drawer nav a:active{ background:rgba(0,255,128,.08) }
+
+    .drawer-open .drawer{ right:0 }
+    .drawer-open .drawer-overlay{ opacity:1; pointer-events:auto }
+
+    @media (max-width: 960px){
+      nav.site-nav{ display:none }
+      .menu-btn{ display:inline-flex }
+    }
+  </style>
+
+  <!-- Game CSS -->
   <link rel="stylesheet" href="css/galaxian.css" />
 
-  <!-- Early mobile height fix so first paint uses the true device height (prevents “zoomed-in” start) -->
+  <!-- Early mobile height var so first paint is correct -->
   <script>
     (function () {
       var setAppHeight = function(){ document.documentElement.style.setProperty('--app-h', window.innerHeight + 'px'); };
@@ -18,27 +80,67 @@
   </script>
 </head>
 <body>
-  <!-- Video Background (hidden on mobile via CSS; preload disabled to avoid mobile bandwidth) -->
+  <!-- Site Header / Nav (from index, plus Ebmarah: Game under Hommies) -->
+  <header>
+    <div class="brand">
+      <img src="assets/favicon.png" alt="Ebmarah" />
+      <span>Ebmarah</span>
+    </div>
+    <nav class="site-nav" aria-label="Primary">
+      <a href="index.html">Home</a>
+      <a class="nav-link" href="live.html">Live</a>
+      <a href="sample-packs.html">Sample Packs</a>
+      <a href="about.html">About</a>
+      <a href="virtual-rave-room.html">Virtual Rave Room</a>
+      <a href="drum-pad.html">BeEbmarah</a>
+      <a href="hommies.html">Hommies</a>
+      <!-- NEW: your game link under Hommies -->
+      <a href="ebmarahgame.html">Game</a>
+      <a href="samples.html">Fan Vocal Booth</a>
+      <a href="samples-library.html">Vocal Library</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+    <button class="menu-btn" id="menuBtn" aria-haspopup="true" aria-expanded="false" aria-controls="drawer">Menu</button>
+  </header>
+
+  <div class="drawer-overlay" id="drawerOverlay"></div>
+  <aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-label="Site menu">
+    <header>
+      <h2>Menu</h2>
+      <button class="close" id="drawerClose" aria-label="Close menu">Close</button>
+    </header>
+    <nav aria-label="Mobile">
+      <a href="index.html">Home</a>
+      <a class="nav-link" href="live.html">Live</a>
+      <a href="sample-packs.html">Sample Packs</a>
+      <a href="about.html">About</a>
+      <a href="drum-pad.html">BeEbmarah</a>
+      <a href="hommies.html">Hommies</a>
+      <!-- NEW: your game link under Hommies -->
+      <a href="ebmarahgame.html">Game</a>
+      <a href="samples.html">Fan Vocal Booth</a>
+      <a href="samples-library.html">Vocal Library</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+  </aside>
+
+  <!-- Video Background (hidden on mobile via CSS) -->
   <video id="bgVideo" class="bg-video" autoplay muted playsinline loop preload="none">
     <source src="assets/galaxianbg.mp4" type="video/mp4" />
   </video>
   <div class="bg-overlay"></div>
 
-  <!-- Page offset wrapper (moves game down on desktop) -->
+  <!-- Game -->
   <div class="page-offset">
-    <!-- Game Frame -->
     <main class="game-shell">
       <header class="hud">
-        <div class="hud-left">
-          <span class="title">Ebmarah: Game</span>
-        </div>
+        <div class="hud-left"><span class="title">Ebmarah: Game</span></div>
         <div class="hud-center">
           <span id="score">Score: 0</span>
           <span id="wave">Wave: 1</span>
           <span id="lives">Lives: 3</span>
         </div>
         <div class="hud-right">
-          <!-- Tiny custom music controls -->
           <div class="music-controls">
             <button id="btnPrev" title="Previous">&#9664;&#9664;</button>
             <button id="btnPlay" title="Play/Pause">&#9654;</button>
@@ -51,14 +153,12 @@
       <section class="game-stage">
         <canvas id="game" width="900" height="600"></canvas>
 
-        <!-- Touch buttons (fallback; hidden on drag-enabled mobile) -->
         <div class="touch-controls" id="touchBtns">
           <button class="ctl" id="leftBtn">◀</button>
           <button class="ctl" id="fireBtn">⦿</button>
           <button class="ctl" id="rightBtn">▶</button>
         </div>
 
-        <!-- Game Over Overlay -->
         <div id="gameOver" class="gameover-overlay" hidden>
           <div class="panel">
             <h2>Game Over</h2>
@@ -83,8 +183,24 @@
   </iframe>
   <script src="https://w.soundcloud.com/player/api.js"></script>
 
-  <!-- Your main game script (unchanged) -->
+  <!-- Menu toggles (same behavior as index) -->
+  <script>
+    (function(){
+      const root = document.documentElement;
+      const btn = document.getElementById('menuBtn');
+      const drawer = document.getElementById('drawer');
+      const overlay = document.getElementById('drawerOverlay');
+      const closeBtn = document.getElementById('drawerClose');
+      const openDrawer = () => { root.classList.add('drawer-open'); btn.setAttribute('aria-expanded','true'); drawer.querySelector('a')?.focus(); };
+      const closeDrawer = () => { root.classList.remove('drawer-open'); btn.setAttribute('aria-expanded','false'); btn.focus(); };
+      btn.addEventListener('click', openDrawer);
+      closeBtn.addEventListener('click', closeDrawer);
+      overlay.addEventListener('click', closeDrawer);
+      window.addEventListener('keydown', e => { if(e.key === 'Escape') closeDrawer(); });
+    })();
+  </script>
+
+  <!-- Game JS -->
   <script src="js/galaxian.js"></script>
 </body>
 </html>
-
