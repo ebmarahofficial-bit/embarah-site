@@ -5,6 +5,8 @@
   --panel: rgba(0,0,0,0.55);
   --panel-strong: rgba(0,0,0,0.75);
   --text: #e9ffee;
+  /* new: how far down we nudge the layout on desktop (~8vh ≈ from ~45% to ~53%) */
+  --desktop-offset: 8vh;
 }
 
 * { box-sizing: border-box; }
@@ -33,11 +35,22 @@ body {
   z-index: -1;
 }
 
+/* Centering area; we’ll push content downward on desktop only */
+.page-offset{
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 0 10px;
+}
+@media (min-width: 901px){
+  .page-offset{ align-content: start; padding-top: var(--desktop-offset); }
+}
+
 /* Main shell */
 .game-shell{
   width: min(100vw, var(--frame-w));
   height: min(100vh, var(--frame-h));
-  margin: auto;
+  margin: 0 auto;
   display: grid;
   grid-template-rows: auto 1fr auto;
   gap: 10px;
@@ -49,7 +62,7 @@ body {
   box-shadow: 0 10px 40px rgba(0,0,0,0.45), inset 0 0 80px rgba(53,255,160,0.10);
 }
 
-/* On phones: take over full screen for the game area */
+/* Phones: fullscreen take-over */
 @media (max-width: 900px) {
   .game-shell{
     width: 100vw;
@@ -103,9 +116,10 @@ body {
   border-radius: 10px;
   box-shadow: 0 10px 40px rgba(0,0,0,0.45), inset 0 0 40px rgba(53,255,160,0.08);
   background: transparent;
+  touch-action: none; /* allows smooth drag without scrolling */
 }
 
-/* Touch controls */
+/* Touch controls (fallback only; hidden if drag-mode enabled) */
 .touch-controls{
   position: absolute; inset-inline: 0; bottom: 8px;
   display: none; gap: 10px; justify-content: center;
