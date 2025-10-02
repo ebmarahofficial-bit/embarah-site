@@ -7,10 +7,13 @@
   --text: #e9ffee;
   --desktop-offset: 19.6vh; /* desktop vertical position */
 
-  /* Mobile height (pure CSS; modern units with fallbacks) */
+  /* height units for mobile */
   --app-h: 100vh;
 
-  /* Right-side gutter knob for phones (if you want a tiny inset) */
+  /* site header height on mobile (adjust if your header is taller/shorter) */
+  --site-header-h: 56px;
+
+  /* Right-side gutter knob for phones (tiny inset to avoid clipping) */
   --mobile-right-gutter: 10px; /* tweak 0–16px if needed */
 }
 @supports (height: 100svh){ :root{ --app-h: 100svh; } }
@@ -45,7 +48,7 @@ body {
   z-index: -1;
 }
 
-/* Hide video bg on phones only (per your request) */
+/* Hide video bg on phones only */
 @media (max-width: 900px){
   .bg-video, .bg-overlay { display: none !important; }
 }
@@ -61,14 +64,14 @@ body {
   .page-offset{ align-content: start; padding-top: var(--desktop-offset); }
 }
 
-/* >>> MOBILE LAYOUT FIX: make the whole column fill the viewport and center content <<< */
+/* MOBILE: subtract the fixed site header and push content below it */
 @media (max-width: 900px){
   .page-offset{
     min-height: 0;
-    height: var(--app-h);
-    padding: 0;
-    display: flex;           /* was grid */
-    flex-direction: column;  /* stack header/stage/footer */
+    height: calc(var(--app-h) - var(--site-header-h));
+    padding: var(--site-header-h) 0 0 0;  /* pushes below the menu bar */
+    display: grid;              /* keep grid wrapper */
+    place-items: center;
   }
 }
 
@@ -78,7 +81,7 @@ body {
   height: min(100vh, var(--frame-h));
   margin: 0 auto;
   display: grid;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: auto 1fr auto;  /* HUD / stage / footer */
   gap: 10px;
   padding: 10px;
   background: var(--panel);
@@ -94,24 +97,22 @@ body {
   }
 }
 
-/* >>> MOBILE LAYOUT FIX: center the stage vertically inside the shell <<< */
+/* MOBILE: keep grid so HUD is always visible */
 @media (max-width: 900px){
   .game-shell{
     width: 100vw;
-    height: var(--app-h); /* robust vs. browser UI bars */
+    height: calc(var(--app-h) - var(--site-header-h));
     border-radius: 0;
     border: none;
     background: var(--panel-strong);
-    /* include safe-area LEFT/RIGHT so nothing gets clipped on notches/dynamic island */
     padding: calc(env(safe-area-inset-top,0px) + 6px)
              calc(env(safe-area-inset-right,0px) + 8px)
              calc(env(safe-area-inset-bottom,0px) + 6px)
              calc(env(safe-area-inset-left,0px) + 8px);
     gap: 6px;
-
-    display: flex;           /* was grid */
-    flex-direction: column;
-    justify-content: center; /* centers the .game-stage vertically */
+    display: grid;                          /* ← keep grid */
+    grid-template-rows: auto 1fr auto;      /* HUD / stage / footer */
+    align-content: stretch;
   }
 }
 
@@ -154,15 +155,14 @@ body {
   border: 1px solid rgba(53,255,160,0.2);
 }
 
-/* >>> MOBILE LAYOUT FIX: true centering; add safe right inset so nothing is cropped <<< */
+/* MOBILE: center the canvas & add safe right inset to avoid clipping */
 @media (max-width: 900px){
   .game-stage{
     padding: 0;
-    /* push content in from the right by gutter + safe area */
     padding-inline-end: calc(var(--mobile-right-gutter) + env(safe-area-inset-right, 0px));
     padding-inline-start: calc(env(safe-area-inset-left, 0px));
 
-    display: flex;               /* was grid with justify-items */
+    display: flex;               /* use flex just for centering the canvas */
     justify-content: center;     /* center horizontally */
     align-items: center;         /* center vertically */
     min-height: 0;
@@ -181,11 +181,11 @@ body {
 }
 @media (max-width: 900px){
   #game{
-    width: 100%;          /* let the stage padding handle the right inset */
+    width: 100%;          /* stage padding handles the right inset */
     height: auto;         /* never stretch */
     max-height: 100%;
     aspect-ratio: 3 / 2;  /* reinforce aspect, avoid zoom/crop */
-    margin: 0;            /* no extra margins that could push out of view */
+    margin: 0;
   }
 }
 
