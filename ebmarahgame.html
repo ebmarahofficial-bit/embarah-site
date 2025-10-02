@@ -2,11 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <!-- Lock phones to device width/scale to avoid zoomy first paint -->
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover" />
   <title>Ebmarah Game</title>
 
-  <!-- Header + menu styles pulled from index -->
+  <!-- Header/nav styles (from index) -->
   <style>
     :root { --neon:#00ff99; --glass:rgba(2,13,7,.75); }
     header{
@@ -23,9 +22,7 @@
     .brand span{font-size:clamp(16px,2.6vw,22px); color:#e0ffe8}
 
     nav.site-nav{display:flex; align-items:center; gap:22px}
-    nav.site-nav a{
-      color:#76ffb2; text-decoration:none; font-weight:700; font-size:clamp(13px,1.6vw,14px)
-    }
+    nav.site-nav a{ color:#76ffb2; text-decoration:none; font-weight:700; font-size:clamp(13px,1.6vw,14px) }
     nav.site-nav a:hover{ color:#00ffea }
 
     .menu-btn{
@@ -33,9 +30,7 @@
       color:#b9ffdf; font-size:16px; font-weight:700; padding:8px 12px; border-radius:10px
     }
 
-    .drawer-overlay{
-      position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:999; opacity:0; pointer-events:none; transition:.25s;
-    }
+    .drawer-overlay{ position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:999; opacity:0; pointer-events:none; transition:.25s;}
     .drawer{
       position:fixed; top:0; right:-320px; width:min(80vw,320px); height:100%;
       background:#03140c; border-left:1px solid rgba(0,255,128,.25);
@@ -45,14 +40,11 @@
     }
     .drawer header{ all:unset; display:flex; align-items:center; justify-content:space-between; margin-bottom:8px }
     .drawer h2{ margin:0; font-size:18px; color:#9dffd2 }
-    .drawer .close{
-      background:none; border:1px solid rgba(0,255,128,.35); color:#b9ffdf; padding:6px 10px; border-radius:10px
-    }
+    .drawer .close{ background:none; border:1px solid rgba(0,255,128,.35); color:#b9ffdf; padding:6px 10px; border-radius:10px }
     .drawer nav{ display:flex; flex-direction:column; margin-top:12px }
     .drawer nav a{
       padding:14px 10px; border-bottom:1px solid rgba(0,255,128,.15);
-      color:#b9ffdf; text-decoration:none; font-weight:800; letter-spacing:.02em;
-      font-size:16px;
+      color:#b9ffdf; text-decoration:none; font-weight:800; letter-spacing:.02em; font-size:16px;
     }
     .drawer nav a:last-child{ border-bottom:0 }
     .drawer nav a:active{ background:rgba(0,255,128,.08) }
@@ -66,7 +58,6 @@
     }
   </style>
 
-  <!-- Game CSS -->
   <link rel="stylesheet" href="css/galaxian.css" />
 
   <!-- Early mobile height var so first paint is correct -->
@@ -80,7 +71,7 @@
   </script>
 </head>
 <body>
-  <!-- Site Header / Nav (from index, plus Ebmarah: Game under Hommies) -->
+  <!-- Site Header / Nav -->
   <header>
     <div class="brand">
       <img src="assets/favicon.png" alt="Ebmarah" />
@@ -94,7 +85,6 @@
       <a href="virtual-rave-room.html">Virtual Rave Room</a>
       <a href="drum-pad.html">BeEbmarah</a>
       <a href="hommies.html">Hommies</a>
-      <!-- NEW: your game link under Hommies -->
       <a href="ebmarahgame.html">Game</a>
       <a href="samples.html">Fan Vocal Booth</a>
       <a href="samples-library.html">Vocal Library</a>
@@ -116,7 +106,6 @@
       <a href="about.html">About</a>
       <a href="drum-pad.html">BeEbmarah</a>
       <a href="hommies.html">Hommies</a>
-      <!-- NEW: your game link under Hommies -->
       <a href="ebmarahgame.html">Game</a>
       <a href="samples.html">Fan Vocal Booth</a>
       <a href="samples-library.html">Vocal Library</a>
@@ -141,6 +130,10 @@
           <span id="lives">Lives: 3</span>
         </div>
         <div class="hud-right">
+          <!-- NEW: game pause button -->
+          <button id="pauseBtn" class="pause-btn">Pause</button>
+
+          <!-- existing music controls -->
           <div class="music-controls">
             <button id="btnPrev" title="Previous">&#9664;&#9664;</button>
             <button id="btnPlay" title="Play/Pause">&#9654;</button>
@@ -153,6 +146,10 @@
       <section class="game-stage">
         <canvas id="game" width="900" height="600"></canvas>
 
+        <!-- tiny paused badge -->
+        <div id="pauseBadge" class="paused-badge" hidden>Paused</div>
+
+        <!-- touch buttons (kept but hidden by drag-mode) -->
         <div class="touch-controls" id="touchBtns">
           <button class="ctl" id="leftBtn">◀</button>
           <button class="ctl" id="fireBtn">⦿</button>
@@ -169,7 +166,7 @@
       </section>
 
       <footer class="help">
-        <p><strong>Controls:</strong> ← → ↑ ↓ to move, Space to shoot. On phone: drag ship; it auto-fires.</p>
+        <p><strong>Controls:</strong> ← → ↑ ↓ to move, Space to shoot, <strong>P</strong> or <strong>Esc</strong> to pause/resume. On phone: drag ship; it auto-fires.</p>
       </footer>
     </main>
   </div>
