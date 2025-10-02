@@ -21,6 +21,12 @@
     "assets/logos/barelyalive.png",
     "assets/logos/truth.png",
     "assets/logos/cyclops.png",
+     "assets/logos/hvted.png",
+     "assets/logos/ditrybeats.png",
+     "assets/logos/metallik.png",
+     "assets/logos/fermilat.png",
+     "assets/logos/metvtrxn.png",
+     "assets/logos/espioth.png",
   ];
   const SHIP_IMG = "assets/ship.png";
 
