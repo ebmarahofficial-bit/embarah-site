@@ -12,9 +12,19 @@
   *{ box-sizing:border-box }
   html,body{ margin:0; height:100%; background:#000; color:var(--ink); font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif; overflow:hidden; }
 
-  /* Subtle animated gradient instead of heavy video (smooth on phones) */
+  /* --- Video background layer (behind everything) --- */
+  #bg-video{
+    position:fixed; inset:0;
+    width:100%; height:100%;
+    object-fit:cover;
+    z-index:-2;
+    background:#000;     /* shows while video buffers */
+    pointer-events:none; /* never blocks clicks */
+  }
+
+  /* Subtle animated gradient fallback (under video) */
   body::before{
-    content:""; position:fixed; inset:0; z-index:-1;
+    content:""; position:fixed; inset:0; z-index:-3;
     background:
       radial-gradient(60% 80% at 30% 20%, rgba(0,255,153,.10), transparent 60%),
       radial-gradient(70% 70% at 80% 70%, rgba(0,180,120,.08), transparent 60%),
@@ -117,6 +127,12 @@
 </style>
 </head>
 <body>
+
+  <!-- Site-wide video background (path updated to ./assets/runnerbg.mp4) -->
+  <video id="bg-video" autoplay muted loop playsinline preload="auto">
+    <source src="./assets/runnerbg.mp4" type="video/mp4">
+  </video>
+
   <div class="wrap">
     <div class="stage" id="stage">
       <button id="exitBtn" hidden>Exit</button>
@@ -190,6 +206,14 @@
     const stage = document.getElementById('stage');
     const canvas = document.getElementById('game');
     const ctx = canvas.getContext('2d');
+
+    /* --- Force video autoplay if browser blocks it --- */
+    const bgVid = document.getElementById('bg-video');
+    function tryPlayBG(){ if (bgVid && bgVid.paused) bgVid.play().catch(()=>{}); }
+    window.addEventListener('load', tryPlayBG);
+    document.addEventListener('click', tryPlayBG);
+    document.addEventListener('touchstart', tryPlayBG, {passive:true});
+    document.addEventListener('visibilitychange', tryPlayBG);
 
     // Mobile-only: pin stage to true visual viewport height (iOS bars fix)
     const isTouch = matchMedia('(pointer:coarse)').matches || 'ontouchstart' in window;
@@ -295,6 +319,7 @@
     function resetRun(startLevel=1){
       sizeStageToViewport();   // ensure phone height is correct first
       resizeCanvas();          // then match canvas backing store
+      tryPlayBG();             // encourage bg video to start when game starts
       playing=true; paused=false; frame=0;
       speed = obstacleSpeedBase; spawnEvery = spawnEveryBase;
       score=0; bananas=0; bananasForNext=BANANAS_PER_LEVEL;
@@ -579,12 +604,11 @@
 
     // Init
     function init(){ resizeCanvas(); rebuildLevelGrid(); }
-    window.addEventListener('resize', resizeCanvas);
-    window.addEventListener('orientationchange', resizeCanvas);
-    document.addEventListener('visibilitychange', () => { if(!document.hidden) { sizeStageToViewport(); resizeCanvas(); } });
+    window.addEventListener('resize', () => { sizeStageToViewport(); resizeCanvas(); });
+    window.addEventListener('orientationchange', () => { sizeStageToViewport(); resizeCanvas(); });
+    document.addEventListener('visibilitychange', () => { if(!document.hidden){ tryPlayBG(); sizeStageToViewport(); resizeCanvas(); }});
     init();
   })();
   </script>
 </body>
 </html>
-
