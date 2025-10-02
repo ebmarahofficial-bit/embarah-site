@@ -1,9 +1,11 @@
-/* Ebmarah Galaxian — Gorilla vs. Dubstep Logos
-   Adds:
-   - Boss wave every 20th wave (big logo with HP, does NOT alter 5/10/15… switch rhythm)
-   - Slightly bigger player ship
-   - High Scores modal (local save; future-proofed to sync daily if you add a backend)
-   - Pause system (unchanged), mobile full-height canvas (unchanged)
+/* Ebmarah Galaxian — now with Random Power-Ups
+   Adds falling power-ups:
+   - Rapid Fire (shorter cooldown)
+   - Multishot (2 bullets)
+   - Spread (5-way)
+   - Shield (one free hit, visual ring)
+   - Beam (brief piercing laser)
+   Existing features (boss every 20 waves, bigger ship, highscores, pause, mobile auto-fire) preserved.
 */
 (() => {
   // ---- Mobile height helper (robust phone fit) ----
@@ -74,17 +76,17 @@
   };
 
   const keys = { left:false, right:false, up:false, down:false, fire:false };
-  const bullets = [];
-  const enemyBullets = [];
+  const bullets = [];        // player bullets (also holds beam objects)
+  const enemyBullets = [];   // enemy bullets
 
-  // Slightly bigger player ship (requested)
+  // Slightly bigger player ship (kept)
   const player = {
     x: canvas.width/2 - 36, y: canvas.height - 120,
-    w: 72, h: 52,           // was 56x40
+    w: 72, h: 52,
     canShootAt: 0
   };
 
-  // Enemies (formation)
+  // Enemies (formation) & movement
   let enemies = [];
   let enemyDir = 1;
   let enemySpeed = state.enemyBaseSpeed;
@@ -94,9 +96,129 @@
   let boss = null; // {x,y,w,h,imgIdx,hp,baseX,amp,freq,t,vy,alive}
   const BOSS_HP_BASE = 18;
 
-  // Swoopers (single special invaders)
+  // Swoopers (side attackers)
   const swoopers = [];
   let swooperCooldown = 3.5; // seconds until first spawn
+
+  // ====== POWER-UPS ======
+  // Available types & durations (seconds)
+  const POWER_TYPES = {
+    RAPID:  { key:'RAPID',  label:'R', color:'#7fffd4', dur: 10, effect:'faster_fire'   },
+    MULTI:  { key:'MULTI',  label:'M', color:'#ffd27f', dur: 12, effect:'multishot2'    },
+    SPREAD: { key:'SPREAD', label:'S', color:'#d07fff', dur: 10, effect:'spread5'       },
+    SHIELD: { key:'SHIELD', label:'⭘', color:'#35ffa0', dur: 999, effect:'shield1'      }, // 1-hit, no timer
+    BEAM:   { key:'BEAM',   label:'B', color:'#7fb8ff', dur: 8,  effect:'beam'          },
+  };
+  const POWER_LIST = [POWER_TYPES.RAPID, POWER_TYPES.MULTI, POWER_TYPES.SPREAD, POWER_TYPES.SHIELD, POWER_TYPES.BEAM];
+
+  // active buffs & timers
+  const buffs = {
+    rapidUntil: 0,
+    multishotUntil: 0,
+    spreadUntil: 0,
+    beamUntil: 0,
+    shieldHits: 0, // 0 or 1+
+  };
+
+  // power-up entities
+  const powerUps = []; // {x,y,w,h,vy,type:POWER_TYPES, spin}
+
+  // drop control
+  let powerupTimer = 7 + Math.random()*8; // fallback periodic drop (sec)
+  const KILL_DROP_CHANCE = 0.10;          // 10% on enemy kill
+  const BOSS_DROP_COUNT = 2;              // on boss death
+
+  function randPowerType(){
+    // Slightly bias non-shield (~2x)
+    const pool = [POWER_TYPES.RAPID, POWER_TYPES.MULTI, POWER_TYPES.SPREAD, POWER_TYPES.BEAM,
+                  POWER_TYPES.RAPID, POWER_TYPES.MULTI, POWER_TYPES.SPREAD, POWER_TYPES.BEAM,
+                  POWER_TYPES.SHIELD];
+    return pool[Math.floor(Math.random()*pool.length)];
+  }
+
+  function spawnPowerUp(x, y, forcedType){
+    const t = forcedType || randPowerType();
+    powerUps.push({
+      x: x, y: y, w: 26, h: 26,
+      vy: 120 + Math.random()*80,
+      type: t,
+      spin: Math.random()*Math.PI*2
+    });
+  }
+
+  function updatePowerUps(dt){
+    powerupTimer -= dt;
+    if (powerupTimer <= 0){
+      // periodic spawn from top
+      spawnPowerUp(30 + Math.random()*(canvas.width - 60), -30, undefined);
+      powerupTimer = 10 + Math.random()*10;
+    }
+
+    for (let i=powerUps.length-1; i>=0; i--){
+      const p = powerUps[i];
+      p.y += p.vy * dt;
+      p.spin += dt*3;
+      if (p.y > canvas.height + 40){ powerUps.splice(i,1); continue; }
+
+      // pickup
+      if (rectsOverlap(p, {x:player.x, y:player.y, w:player.w, h:player.h})){
+        applyPowerUp(p.type);
+        // tiny score bonus for pickup
+        state.score += 25;
+        $score.textContent = "Score: " + state.score;
+        powerUps.splice(i,1);
+      }
+    }
+  }
+
+  function drawPowerUps(){
+    powerUps.forEach(p=>{
+      // neon coin w/ letter
+      ctx.save();
+      ctx.translate(p.x + p.w/2, p.y + p.h/2);
+      ctx.rotate(Math.sin(p.spin)*0.3);
+
+      ctx.shadowBlur = 10;
+      ctx.shadowColor = p.type.color;
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = p.type.color;
+      ctx.fillStyle = 'rgba(0,0,0,0.5)';
+      ctx.beginPath();
+      ctx.arc(0,0,p.w/2,0,Math.PI*2);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = p.type.color;
+      ctx.font = 'bold 14px system-ui';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(p.type.label, 0, 1);
+      ctx.restore();
+    });
+  }
+
+  function applyPowerUp(t){
+    const now = performance.now();
+    switch(t.key){
+      case 'RAPID':
+        buffs.rapidUntil = Math.max(buffs.rapidUntil, now) + t.dur*1000;
+        break;
+      case 'MULTI':
+        buffs.multishotUntil = Math.max(buffs.multishotUntil, now) + t.dur*1000;
+        break;
+      case 'SPREAD':
+        buffs.spreadUntil = Math.max(buffs.spreadUntil, now) + t.dur*1000;
+        break;
+      case 'BEAM':
+        buffs.beamUntil = Math.max(buffs.beamUntil, now) + t.dur*1000;
+        break;
+      case 'SHIELD':
+        buffs.shieldHits += 1; // stackable one-hit shields
+        break;
+    }
+  }
+
+  function isBuffActive(until){ return performance.now() < until; }
 
   // ====== LOAD IMAGES ======
   function loadImage(src){
@@ -117,9 +239,8 @@
   let shipImg = null;
   loadImage(SHIP_IMG).then(img => shipImg = img);
 
-  // Determine which logo to use for a given wave block (switches on 5,10,15,...)
   function waveLogoIndex(wave){
-    const block = Math.floor((wave - 1) / 5); // 1-4 -> 0, 5-9 -> 1, etc.
+    const block = Math.floor((wave - 1) / 5);
     return block % LOGO_URLS.length;
   }
 
@@ -129,10 +250,9 @@
     enemies = [];
     const isBossWave = (wave % 20 === 0);
 
-    const idx = waveLogoIndex(wave); // keep your 5/10/15… pattern intact
+    const idx = waveLogoIndex(wave);
 
     if (isBossWave){
-      // One large logo as a boss
       const w = Math.floor(canvas.width * 0.28);
       const h = Math.floor(canvas.height * 0.22);
       const baseX = canvas.width/2;
@@ -141,7 +261,7 @@
         y: 90,
         w, h,
         imgIdx: idx,
-        hp: BOSS_HP_BASE + Math.floor(wave / 4), // scales slowly
+        hp: BOSS_HP_BASE + Math.floor(wave / 4),
         baseX,
         amp: 120,
         freq: 1.2,
@@ -149,7 +269,7 @@
         vy: 20,
         alive: true
       };
-      enemySpeed = state.enemyBaseSpeed + (wave-1)*12; // irrelevant this wave, but keep consistent
+      enemySpeed = state.enemyBaseSpeed + (wave-1)*12;
     } else {
       const cols = state.enemyCols;
       const rows = state.enemyRowsBase + Math.floor((wave-1)/2);
@@ -163,13 +283,13 @@
             x: startX + c*(W+gapX),
             y: startY + r*(H+gapY),
             w: W, h: H,
-            imgIdx: idx,     // uniform logo this wave
+            imgIdx: idx,
             alive: true
           });
         }
       }
       enemyDir = 1;
-      enemySpeed = state.enemyBaseSpeed + (wave-1)*12; // gentle ramp (px/sec)
+      enemySpeed = state.enemyBaseSpeed + (wave-1)*12;
     }
 
     $wave.textContent = "Wave: " + wave;
@@ -241,7 +361,7 @@
   let autoFireTimer = null;
   function startAutoFire(){
     if (autoFireTimer) return;
-    autoFireTimer = setInterval(() => attemptShoot(), Math.max(80, state.playerCooldownMs));
+    autoFireTimer = setInterval(() => attemptShoot(), Math.max(80, currentCooldownMs()));
   }
   function stopAutoFire(){ if (autoFireTimer){ clearInterval(autoFireTimer); autoFireTimer=null; } }
   if (isTouch){ startAutoFire(); window.addEventListener('blur', stopAutoFire); window.addEventListener('focus', startAutoFire); }
@@ -260,13 +380,55 @@
   function togglePause(){ setPaused(!state.paused); }
   if ($pauseBtn){ $pauseBtn.addEventListener('click', togglePause); }
 
-  // ====== SHOOTING ======
+  // ====== SHOOTING with BUFFS ======
+  function currentCooldownMs(){
+    return isBuffActive(buffs.rapidUntil) ? Math.max(80, state.playerCooldownMs * 0.6) : state.playerCooldownMs;
+  }
+
   function attemptShoot(){
     const now = performance.now();
-    if (now >= player.canShootAt){
-      bullets.push({ x: player.x + player.w/2 - 2, y: player.y - 8, w: 4, h: 10, vy: -state.bulletSpeed });
-      player.canShootAt = now + state.playerCooldownMs;
+    if (now < player.canShootAt) return;
+
+    const usingBeam = isBuffActive(buffs.beamUntil);
+
+    if (usingBeam){
+      // short-lived piercing beam
+      bullets.push({
+        type:'beam',
+        x: player.x + player.w/2 - 3,
+        y: 0,                // beam draws from top to player.y
+        w: 6, h: player.y-8, // visual length
+        life: 0.22           // seconds beam lasts
+      });
+      player.canShootAt = now + Math.max(60, currentCooldownMs() * 0.6); // faster cadence with beam
+      return;
     }
+
+    // Standard bullets – apply multishot / spread
+    const shots = [];
+    const centerX = player.x + player.w/2;
+    const baseVy = -state.bulletSpeed;
+
+    const hasMulti  = isBuffActive(buffs.multishotUntil);
+    const hasSpread = isBuffActive(buffs.spreadUntil);
+
+    if (hasSpread){
+      // 5-way spread (angled by vx)
+      const angles = [-0.35, -0.18, 0, 0.18, 0.35];
+      angles.forEach(a => {
+        shots.push({ x: centerX - 2, y: player.y - 8, w: 4, h: 10, vx: a*420, vy: baseVy });
+      });
+    } else if (hasMulti){
+      // 2 parallel shots
+      shots.push({ x: centerX - 10, y: player.y - 8, w: 4, h: 10, vx: 0, vy: baseVy });
+      shots.push({ x: centerX + 6,  y: player.y - 8, w: 4, h: 10, vx: 0, vy: baseVy });
+    } else {
+      // single
+      shots.push({ x: centerX - 2, y: player.y - 8, w: 4, h: 10, vx: 0, vy: baseVy });
+    }
+
+    shots.forEach(s => bullets.push(s));
+    player.canShootAt = now + currentCooldownMs();
   }
 
   // ====== COLLISION ======
@@ -280,16 +442,12 @@
       // Boss oscillation + occasional shots
       boss.t += dt;
       boss.x = boss.baseX + Math.sin(boss.t * boss.freq) * boss.amp - boss.w/2;
-      // light vertical bob
       boss.y = 90 + Math.sin(boss.t * 0.7) * 10;
 
-      // boss shooting
-      if (Math.random() < 0.9 * dt){ // slow stream
-        enemyBullets.push({
-          x: boss.x + boss.w/2 - 2, y: boss.y + boss.h, w:4, h:10, vy: 260 + Math.random()*120
-        });
+      if (Math.random() < 0.9 * dt){
+        enemyBullets.push({ x: boss.x + boss.w/2 - 2, y: boss.y + boss.h, w:4, h:10, vy: 260 + Math.random()*120 });
       }
-      return; // no formation movement when boss wave
+      return;
     }
 
     let minX = Infinity, maxX = -Infinity;
@@ -300,10 +458,7 @@
       maxX = Math.max(maxX, e.x + e.w);
 
       if (Math.random() < state.enemyShotRate * dt){
-        enemyBullets.push({
-          x: e.x+e.w/2-2, y: e.y+e.h, w: 4, h: 10,
-          vy: 270 + Math.random()*90
-        });
+        enemyBullets.push({ x: e.x+e.w/2-2, y: e.y+e.h, w: 4, h: 10, vy: 270 + Math.random()*90 });
       }
       if (e.y > canvas.height - 40){
         e.y = 60;
@@ -375,27 +530,36 @@
       ctx.fill();
       ctx.restore();
     }
+
+    // Shield ring
+    if (buffs.shieldHits > 0){
+      ctx.save();
+      ctx.strokeStyle = 'rgba(53,255,160,0.85)';
+      ctx.lineWidth = 3;
+      ctx.shadowBlur = 12;
+      ctx.shadowColor = 'rgba(53,255,160,0.95)';
+      const cx = player.x + player.w/2, cy = player.y + player.h/2;
+      const r = Math.max(player.w, player.h) * 0.7;
+      ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2); ctx.stroke();
+      ctx.restore();
+    }
   }
 
-  // ====== GAME LOOP (stable timing + pause-safe) ======
+  // ====== GAME LOOP ======
   let last = 0;
   function loop(ts){
     if (!last) last = ts;
-    let dt = (ts - last) / 1000;     // seconds
-    if (dt > 0.05) dt = 0.05;        // clamp to avoid jumps
+    let dt = (ts - last) / 1000;
+    if (dt > 0.05) dt = 0.05;
     last = ts;
 
-    if (!state.playing){
-      return; // stop the loop on game over; resetGame() restarts it
-    }
+    if (!state.playing) return;
 
     if (state.paused){
       if ($pauseBadge){ $pauseBadge.hidden = false; }
       requestAnimationFrame(loop);
       return;
-    } else {
-      if ($pauseBadge){ $pauseBadge.hidden = true; }
-    }
+    } else if ($pauseBadge){ $pauseBadge.hidden = true; }
 
     // Movement
     if (keys.left)  player.x -= state.playerSpeed * dt;
@@ -411,8 +575,19 @@
     if (!isMobile && keys.fire) attemptShoot();
 
     // Bullets
-    bullets.forEach(b => b.y += b.vy * dt);
-    for (let i=bullets.length-1; i>=0; i--) if (bullets[i].y < -20) bullets.splice(i,1);
+    for (let i=bullets.length-1; i>=0; i--){
+      const b = bullets[i];
+      if (b.type === 'beam'){
+        b.life -= dt;
+        if (b.life <= 0){ bullets.splice(i,1); continue; }
+        // beam does not move
+      } else {
+        // standard bullet (vx may exist for spread)
+        b.x += (b.vx || 0) * dt;
+        b.y += b.vy * dt;
+        if (b.y < -20 || b.x < -20 || b.x > canvas.width+20){ bullets.splice(i,1); continue; }
+      }
+    }
 
     // Enemy bullets
     enemyBullets.forEach(b => b.y += b.vy * dt);
@@ -422,9 +597,51 @@
     updateEnemies(dt);
     updateSwoopers(dt);
 
-    // Collisions: bullets vs formation/boss/swoopers
+    // Power-ups
+    updatePowerUps(dt);
+
+    // Collisions: player bullets vs enemies/boss/swoopers
     for (let i=bullets.length-1; i>=0; i--){
       const b = bullets[i];
+
+      if (b.type === 'beam'){
+        // treat beam as tall rect from top to player.y
+        const beamRect = { x: b.x, y: 0, w: b.w, h: player.y - 8 };
+
+        // vs boss
+        if (boss && boss.alive && rectsOverlap(beamRect, boss)){
+          boss.hp -= 0.9; // beam chips per frame
+          if (boss.hp <= 0){ boss.alive = false; state.score += 300; $score.textContent = "Score: " + state.score; }
+          state.score += 2; $score.textContent = "Score: " + state.score;
+        }
+
+        // vs formation
+        for (let j=0; j<enemies.length; j++){
+          const e = enemies[j];
+          if (!e.alive) continue;
+          if (rectsOverlap(beamRect, e)){
+            e.alive = false;
+            state.score += 50;
+            $score.textContent = "Score: " + state.score;
+            if (Math.random() < KILL_DROP_CHANCE) spawnPowerUp(e.x+e.w/2, e.y+e.h/2);
+          }
+        }
+
+        // vs swoopers
+        for (let k=0; k<swoopers.length; k++){
+          const s = swoopers[k];
+          if (!s.alive) continue;
+          if (rectsOverlap(beamRect, s)){
+            s.alive = false;
+            state.score += 100;
+            $score.textContent = "Score: " + state.score;
+            if (Math.random() < KILL_DROP_CHANCE) spawnPowerUp(s.x+s.w/2, s.y+s.h/2);
+          }
+        }
+        continue; // beam persists until life expires
+      }
+
+      // normal bullet
       let consumed = false;
 
       // vs boss
@@ -436,8 +653,12 @@
         $score.textContent = "Score: " + state.score;
         if (boss.hp <= 0){
           boss.alive = false;
-          state.score += 300; // boss bonus
+          state.score += 300;
           $score.textContent = "Score: " + state.score;
+          // drop a couple of power-ups on boss death
+          for (let d=0; d<BOSS_DROP_COUNT; d++){
+            spawnPowerUp(boss.x + boss.w*Math.random(), boss.y + boss.h/2);
+          }
         }
       }
       if (consumed) continue;
@@ -451,6 +672,7 @@
           bullets.splice(i,1);
           state.score += 50;
           $score.textContent = "Score: " + state.score;
+          if (Math.random() < KILL_DROP_CHANCE) spawnPowerUp(e.x+e.w/2, e.y+e.h/2);
           consumed = true;
           break;
         }
@@ -464,26 +686,34 @@
         if (rectsOverlap(b, s)){
           s.alive = false;
           bullets.splice(i,1);
-          state.score += 100; // bonus for swooper
+          state.score += 100;
           $score.textContent = "Score: " + state.score;
+          if (Math.random() < KILL_DROP_CHANCE) spawnPowerUp(s.x+s.w/2, s.y+s.h/2);
           break;
         }
       }
     }
 
-    // Enemy bullets vs player
+    // Enemy bullets vs player (with shield)
     for (let i=enemyBullets.length-1; i>=0; i--){
       if (rectsOverlap(enemyBullets[i], {x:player.x,y:player.y,w:player.w,h:player.h})){
         enemyBullets.splice(i,1);
-        state.lives--;
-        $lives.textContent = "Lives: " + state.lives;
-        player.x = canvas.width/2 - player.w/2;
-        player.y = canvas.height - 120;
-        if (state.lives <= 0) gameOver();
+
+        if (buffs.shieldHits > 0){
+          buffs.shieldHits -= 1; // absorb
+          // tiny flash score for style
+          state.score += 5; $score.textContent = "Score: " + state.score;
+        } else {
+          state.lives--;
+          $lives.textContent = "Lives: " + state.lives;
+          player.x = canvas.width/2 - player.w/2;
+          player.y = canvas.height - 120;
+          if (state.lives <= 0) gameOver();
+        }
       }
     }
 
-    // Endless waves:
+    // Wave progression
     if (boss){
       if (!boss.alive){
         state.wave++;
@@ -503,7 +733,7 @@
     // formation / boss / swoopers
     if (boss && boss.alive){
       drawEnemyRectLikeLogo(boss);
-      // optional: tiny HP bar
+      // HP bar
       ctx.fillStyle = 'rgba(0,0,0,.5)';
       ctx.fillRect(boss.x, boss.y - 12, boss.w, 6);
       ctx.fillStyle = '#35ffa0';
@@ -514,9 +744,24 @@
     }
     swoopers.forEach(s => { if (s.alive) drawEnemyRectLikeLogo(s); });
 
+    // power-ups
+    drawPowerUps();
+
     // bullets
+    // beam first (under), then normal
+    bullets.forEach(b => {
+      if (b.type === 'beam'){
+        ctx.save();
+        ctx.globalAlpha = 0.9;
+        ctx.shadowBlur = 14;
+        ctx.shadowColor = '#7fb8ff';
+        ctx.fillStyle = 'rgba(127,184,255,0.85)';
+        ctx.fillRect(b.x, 0, b.w, player.y - 8);
+        ctx.restore();
+      }
+    });
     ctx.fillStyle = '#7fffd4';
-    bullets.forEach(b => ctx.fillRect(b.x,b.y,b.w,b.h));
+    bullets.forEach(b => { if (b.type !== 'beam') ctx.fillRect(b.x,b.y,b.w,b.h); });
     ctx.fillStyle = '#ffcf7f';
     enemyBullets.forEach(b => ctx.fillRect(b.x,b.y,b.w,b.h));
 
@@ -531,7 +776,7 @@
     x: Math.random()*900,
     y: Math.random()*600,
     s: Math.random()*2 + 0.5,
-    v: 18 + Math.random()*18 // px/sec
+    v: 18 + Math.random()*18
   }));
   function drawStarfield(dt){
     ctx.save();
@@ -559,8 +804,10 @@
     bullets.length = 0;
     enemyBullets.length = 0;
     swoopers.length = 0;
+    powerUps.length = 0;
     boss = null;
     swooperCooldown = 3.5;
+    powerupTimer = 7 + Math.random()*8;
 
     state.score = 0;
     state.lives = 3;
@@ -576,10 +823,16 @@
     player.y = canvas.height - 120;
     player.canShootAt = 0;
 
+    // clear buffs
+    buffs.rapidUntil = 0;
+    buffs.multishotUntil = 0;
+    buffs.spreadUntil = 0;
+    buffs.beamUntil = 0;
+    buffs.shieldHits = 0;
+
     spawnWave(state.wave);
     $gameOver.hidden = true;
 
-    // reset loop timestamp to prevent jump after overlay
     requestAnimationFrame(ts => { last = ts; loop(ts); });
   }
 
@@ -626,12 +879,11 @@
   function saveHighScore(score, wave){
     let list = readHighScores();
     const best = (list[0]?.score || 0);
-    // prompt for name on top-10 or if beating best
     if (list.length < 10 || score > list[list.length-1].score || score >= best){
       const name = (prompt("New High Score! Enter your name (or leave blank):","") || "Anonymous").slice(0,24);
       list.push({ name, score, wave, date: new Date().toISOString() });
       list.sort((a,b) => b.score - a.score);
-      list = list.slice(0, 15); // keep a little buffer
+      list = list.slice(0, 15);
       writeHighScores(list);
     }
   }
@@ -652,8 +904,6 @@
   }
 
   function maybeDailySync(){
-    // Placeholder: If you want cross-player/global boards,
-    // call your backend here when 24h has passed since last sync.
     const last = localStorage.getItem(HS_SYNC_KEY);
     const now = Date.now();
     if (!last || (now - Number(last)) > 24*60*60*1000){
