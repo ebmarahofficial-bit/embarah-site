@@ -237,5 +237,33 @@ body {
 }
 .gameover-overlay .btn:hover{ filter: brightness(1.1); }
 
-/* Footer */
-.help{ text-align: center; font-size: 14px; opacity: 0.8; }
+/* NEW: Paused badge */
+.paused-badge{
+  position:absolute; top:10px; right:10px;
+  background: rgba(0,0,0,0.6);
+  border:1px solid rgba(53,255,160,0.4);
+  padding:4px 8px; border-radius:8px;
+  font-weight:700; color:var(--accent);
+}
+
+/* NEW: High Scores modal */
+.modal{ position:absolute; inset:0; display:grid; place-items:center; background: rgba(0,0,0,0.55); border-radius:10px; }
+.modal[hidden]{ display:none !important; }
+.modal-panel{
+  width:min(90vw, 520px);
+  background: rgba(0,0,0,0.78);
+  border:1px solid rgba(53,255,160,0.35);
+  border-radius:12px; padding:16px 18px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.55), inset 0 0 40px rgba(53,255,160,0.08);
+}
+.modal-panel h3{ margin:0 0 10px; color:var(--accent); }
+.hs-list{ margin:0; padding-left:20px; max-height:50vh; overflow:auto; }
+.modal-actions{ display:flex; justify-content:end; margin-top:12px; }
+.modal .btn{
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(53,255,160,0.5);
+  background: rgba(0,0,0,0.6);
+  color: var(--text);
+  cursor: pointer;
+}
