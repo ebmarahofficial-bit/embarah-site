@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <style>
   :root{
-    --neon:#00ff99; --ink:#eaffef; --bg:#04120d; --panel:#0a1d15; --line:#0b3;
+    --neon:#00ff99; --ink:#eaffef; --panel:#0a1d15; --line:#0b3;
     --shadow:0 0 18px rgba(0,255,153,.35);
   }
   *{ box-sizing:border-box }
@@ -18,11 +18,11 @@
     width:100%; height:100%;
     object-fit:cover;
     z-index:-2;
-    background:#000;     /* shows while video buffers */
-    pointer-events:none; /* never blocks clicks */
+    background:#000;
+    pointer-events:none;
   }
 
-  /* Subtle animated gradient fallback (under video) */
+  /* Lightweight gradient fallback under video */
   body::before{
     content:""; position:fixed; inset:0; z-index:-3;
     background:
@@ -51,13 +51,13 @@
     background:#04120d;
   }
 
-  /* Phone: true fullscreen */
+  /* Phone: true fullscreen (only on touch devices) */
   @media (pointer:coarse) {
-    .wrap { padding: 0; }
+    .wrap{ padding:0; }
     .stage{
       max-width:none;
       width:100vw;
-      height:100svh;      /* true visual height on modern mobile */
+      height:100svh;      /* real visual height on modern mobile */
       aspect-ratio:auto;
       border-radius:0;
       border-width:0;
@@ -75,6 +75,12 @@
     touch-action:none;
   }
 
+  /* Optional start cover image (shows on menu) */
+  .cover{
+    position:absolute; inset:0; width:100%; height:100%; object-fit:cover;
+    opacity:.25; filter:saturate(1.1); z-index:0;
+  }
+
   /* ---------- HUD ---------- */
   .hud{
     position:absolute; top:10px; left:50%; transform:translateX(-50%);
@@ -84,13 +90,13 @@
     z-index:5;
   }
   .pill{ padding:2px 10px; border-radius:999px; background:rgba(0,255,153,.12); border:1px solid rgba(0,255,153,.35) }
-  .hud button{ padding:4px 10px; border-radius:10px; border:1px solid var(--line); background:#062417; color:var(--ink); cursor:pointer }
+  .hud button{ padding:4px 10px; border-radius:10px; border:1px solid var(--line); background:#062417; color:#eaffef; cursor:pointer }
 
   /* Exit button (shows during gameplay) */
   #exitBtn{
     position:absolute; top:10px; right:10px;
     padding:8px 12px; border-radius:8px;
-    border:1px solid var(--line); background:#062417; color:var(--ink);
+    border:1px solid var(--line); background:#062417; color:#eaffef;
     font-weight:700; cursor:pointer; z-index:10;
   }
 
@@ -106,7 +112,7 @@
   .title{ margin:0 0 6px; font-weight:900; letter-spacing:.06em; font-size: clamp(28px, 5.5vw, 56px); color:var(--neon); text-shadow: 0 0 24px rgba(0,255,153,.45); }
   .tagline{ margin:0 0 14px; font-weight:800; letter-spacing:.04em; opacity:.95; }
   .btnrow{ display:flex; gap:10px; justify-content:center; flex-wrap:wrap }
-  .btn{ padding:12px 16px; border:1px solid var(--line); background:#062417; color:var(--ink);
+  .btn{ padding:12px 16px; border:1px solid var(--line); background:#062417; color:#eaffef;
     border-radius:12px; cursor:pointer; font-weight:800; letter-spacing:.03em; box-shadow:var(--shadow) }
 
   /* ---------- Mobile controls ---------- */
@@ -117,7 +123,7 @@
   }
   .controls button{
     pointer-events:auto; min-width:96px; min-height:56px; border-radius:14px;
-    background:rgba(0,0,0,.35); border:1px solid rgba(0,255,153,.5); color:var(--ink); font-weight:800;
+    background:rgba(0,0,0,.35); border:1px solid rgba(0,255,153,.5); color:#eaffef; font-weight:800;
   }
   .controls .jump{ flex:1; min-width:120px }
   @media (max-width:520px){ .controls button{ min-width:78px; min-height:52px } }
@@ -128,13 +134,16 @@
 </head>
 <body>
 
-  <!-- Site-wide video background (path updated to ./assets/runnerbg.mp4) -->
+  <!-- Video background (HTML is in root; video is in ./assets) -->
   <video id="bg-video" autoplay muted loop playsinline preload="auto">
     <source src="./assets/runnerbg.mp4" type="video/mp4">
   </video>
 
   <div class="wrap">
     <div class="stage" id="stage">
+      <!-- Optional menu cover (from ./assets) -->
+      <img class="cover" id="startCover" src="./assets/start_cover.png" alt="" />
+
       <button id="exitBtn" hidden>Exit</button>
       <canvas id="game" width="960" height="540" aria-label="Ebmarah Runner"></canvas>
 
@@ -153,8 +162,10 @@
         <div class="panel" id="panel">
           <h1 class="title">EBMARAH RUNNER</h1>
           <p class="tagline">Running Bass</p>
-          <p style="opacity:.9;margin:.35rem 0 1rem 0">Collect bananas to level up. Avoid hazards.<br>
-          Mobile: on-screen controls. Desktop: Arrow keys + Space/↑ to jump.</p>
+          <p style="opacity:.9;margin:.35rem 0 1rem 0">
+            Collect bananas to level up. Avoid hazards.<br>
+            Mobile: on-screen controls. Desktop: Arrow keys + Space/↑ to jump.
+          </p>
           <div class="btnrow">
             <button class="btn" id="startBtn">Start</button>
             <button class="btn" id="selectBtn">Level Select</button>
@@ -182,433 +193,7 @@
     </div>
   </div>
 
-  <script src="https://w.soundcloud.com/player/api.js"></script>
-  <script>
-  (() => {
-    /* ---------------- Config ---------------- */
-    const lanes = 3;
-    const laneX = [0.22, 0.5, 0.78];  // lane center ratios
-    const gravity = 0.9, jumpV = -16.5;
-
-    // pacing
-    const BANANAS_PER_LEVEL = 10;
-    const MAX_LEVELS = 10;
-    const obstacleSpeedBase = 4.0;
-    const obstacleSpeedGain = 0.004;
-    const spawnEveryBase = 120;
-    const spawnEveryMin  = 80;
-    const bananaSpawnEvery = 140;
-
-    // Debug OFF by default (turn true to see outlines)
-    const DEBUG = false;
-
-    /* ---------------- DOM ---------------- */
-    const stage = document.getElementById('stage');
-    const canvas = document.getElementById('game');
-    const ctx = canvas.getContext('2d');
-
-    /* --- Force video autoplay if browser blocks it --- */
-    const bgVid = document.getElementById('bg-video');
-    function tryPlayBG(){ if (bgVid && bgVid.paused) bgVid.play().catch(()=>{}); }
-    window.addEventListener('load', tryPlayBG);
-    document.addEventListener('click', tryPlayBG);
-    document.addEventListener('touchstart', tryPlayBG, {passive:true});
-    document.addEventListener('visibilitychange', tryPlayBG);
-
-    // Mobile-only: pin stage to true visual viewport height (iOS bars fix)
-    const isTouch = matchMedia('(pointer:coarse)').matches || 'ontouchstart' in window;
-    function sizeStageToViewport() {
-      if (!isTouch) return;
-      const vw = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
-      const vh = (window.visualViewport?.height) || window.innerHeight;
-      stage.style.width  = vw + 'px';
-      stage.style.height = vh + 'px';
-    }
-    sizeStageToViewport();
-    window.addEventListener('resize', sizeStageToViewport);
-    window.addEventListener('orientationchange', sizeStageToViewport);
-    window.visualViewport && window.visualViewport.addEventListener('resize', sizeStageToViewport);
-
-    // DPR scaling for crisp rendering across devices
-    function resizeCanvas(){
-      const ratio = Math.max(1, Math.min(3, Math.floor(window.devicePixelRatio || 1)));
-      const cssW = canvas.clientWidth;
-      const cssH = canvas.clientHeight;
-      canvas.width  = Math.round(cssW * ratio);
-      canvas.height = Math.round(cssH * ratio);
-      ctx.setTransform(ratio,0,0,ratio,0,0);
-      ctx.imageSmoothingEnabled = false;
-    }
-
-    /* ---------------- UI refs ---------------- */
-    const hud = document.getElementById('hud');
-    const scoreEl = document.getElementById('score');
-    const bestEl = document.getElementById('best');
-    const bananasEl = document.getElementById('bananas');
-    const nextReqEl = document.getElementById('nextReq');
-    const levelEl = document.getElementById('level');
-    const pauseBtn = document.getElementById('pauseBtn');
-    const muteBtn  = document.getElementById('muteBtn');
-
-    const overlay   = document.getElementById('overlay');
-    const panel     = document.getElementById('panel');
-    const startBtn  = document.getElementById('startBtn');
-    const selectBtn = document.getElementById('selectBtn');
-    const levelSelect = document.getElementById('levelSelect');
-    const grid = document.getElementById('grid');
-
-    const controls = document.getElementById('controls');
-    const leftBtn  = document.getElementById('leftBtn');
-    const rightBtn = document.getElementById('rightBtn');
-    const jumpBtn  = document.getElementById('jumpBtn');
-    const exitBtn  = document.getElementById('exitBtn');
-
-    /* ---------------- SoundCloud ---------------- */
-    const widget = window.SC.Widget(document.getElementById('sc-iframe'));
-    let musicEnabled = true, widgetReady = false;
-    widget.bind(window.SC.Widget.Events.READY, () => { widgetReady = true; widget.setVolume(70); });
-    const playMusic = () => { if (musicEnabled && widgetReady) widget.play(); };
-    const pauseMusic = () => { if (widgetReady) widget.pause(); };
-    muteBtn.addEventListener('click', () => {
-      musicEnabled = !musicEnabled;
-      muteBtn.textContent = musicEnabled ? '🔊' : '🔇';
-      if (!musicEnabled) pauseMusic(); else playMusic();
-    });
-
-    /* ---------------- Assets ---------------- */
-    function levelPath(i){ return `./runner/assets/levels/level${i}`; }
-    const images = { player:new Image(), banana:new Image(), bg:new Image(), obstacle:new Image(), accent:new Image() };
-    images.player.src = "./runner/assets/runner/gorilla.png";
-    images.banana.src = "./runner/assets/runner/banana.png";
-
-    function loadLevelAssets(i){
-      return new Promise((res,rej)=>{
-        let left = 3;
-        const done = ()=>{ if(--left===0) res(); };
-        images.bg.onload = done; images.obstacle.onload = done; images.accent.onload = done;
-        images.bg.onerror = images.obstacle.onerror = images.accent.onerror = rej;
-        const base = levelPath(i);
-        images.bg.src = `${base}/background.png`;   // make tileable L<->R for seamless loop
-        images.obstacle.src = `${base}/obstacle.png`;
-        images.accent.src   = `${base}/accent.png`;
-      }).catch(()=>{});
-    }
-
-    /* ---------------- Game State ---------------- */
-    let playing=false, paused=false, frame=0;
-    let speed=obstacleSpeedBase, spawnEvery=spawnEveryBase;
-    let score=0, best= +localStorage.getItem('ebmarah_runner_best') || 0;
-    let bananas=0, level=1, bananasForNext=BANANAS_PER_LEVEL;
-
-    let unlocked = JSON.parse(localStorage.getItem('ebmarah_unlocked') || '[1]');
-    const saveUnlocked = () => localStorage.setItem('ebmarah_unlocked', JSON.stringify(unlocked));
-
-    bestEl.textContent = best; nextReqEl.textContent = bananasForNext; levelEl.textContent = level;
-
-    /* Player & world */
-    const player = { lane:1, x(){ return laneX[this.lane]*canvas.clientWidth }, y:0, vy:0, w:64, h:64, jumping:false };
-    const obstacles=[], bananasOnField=[], accents=[];
-    let bgScrollX = 0, mistPhase = 0;
-
-    function groundY(){ return Math.round(canvas.clientHeight*0.81); } // consistent across sizes
-    function spawnAccent(){
-      accents.push({ x:Math.random()*canvas.clientWidth, y:120+Math.random()*220, vy:(Math.random()*0.6)-0.3, vx:(Math.random()*0.2)+0.2 });
-      if (accents.length>10) accents.shift();
-    }
-
-    function resetRun(startLevel=1){
-      sizeStageToViewport();   // ensure phone height is correct first
-      resizeCanvas();          // then match canvas backing store
-      tryPlayBG();             // encourage bg video to start when game starts
-      playing=true; paused=false; frame=0;
-      speed = obstacleSpeedBase; spawnEvery = spawnEveryBase;
-      score=0; bananas=0; bananasForNext=BANANAS_PER_LEVEL;
-      level=startLevel; levelEl.textContent = level;
-      bestEl.textContent = best; bananasEl.textContent = bananas; nextReqEl.textContent = bananasForNext;
-      obstacles.length=0; bananasOnField.length=0; accents.length=0;
-      player.lane=1; player.y=groundY(); player.vy=0; player.jumping=false;
-      bgScrollX=0; mistPhase=0;
-      hud.hidden=false; controls.hidden = isTouch ? false : true; overlay.style.display='none';
-      exitBtn.hidden = false;
-      Promise.resolve(loadLevelAssets(level)).then(()=>{ playMusic(); requestAnimationFrame(loop); }).catch(()=>{ requestAnimationFrame(loop); });
-    }
-
-    /* ---------------- Level Select ---------------- */
-    function rebuildLevelGrid(){
-      grid.innerHTML = '';
-      for(let i=1;i<=MAX_LEVELS;i++){
-        const b = document.createElement('button');
-        b.className = 'btn'; b.textContent = `Level ${i}`;
-        const open = unlocked.includes(i);
-        if (!open) b.disabled = true;
-        b.addEventListener('click', ()=> resetRun(i));
-        grid.appendChild(b);
-      }
-    }
-    selectBtn.addEventListener('click', ()=>{
-      levelSelect.hidden = !levelSelect.hidden;
-      rebuildLevelGrid();
-    });
-    startBtn.addEventListener('click', ()=> resetRun(1));
-
-    /* ---------------- Pause / Exit ---------------- */
-    pauseBtn.addEventListener('click', ()=>{
-      if (!playing) return;
-      paused = !paused;
-      pauseBtn.textContent = paused ? '▶ Resume' : '⏸ Pause';
-      if (!paused) requestAnimationFrame(loop);
-    });
-    exitBtn.addEventListener('click', ()=>{
-      playing=false; paused=false;
-      pauseMusic();
-      hud.hidden=true; controls.hidden=true; exitBtn.hidden=true;
-      overlay.style.display='grid';
-    });
-
-    /* ---------------- Collision helpers ---------------- */
-    function collideRect(ax,ay,aw,ah, bx,by,bw,bh){ return ax < bx+bw && ax+aw > bx && ay < by+bh && ay+ah > by; }
-    function rectIntersectionArea(ax,ay,aw,ah, bx,by,bw,bh){
-      const x1 = Math.max(ax, bx), y1 = Math.max(ay, by);
-      const x2 = Math.min(ax+aw, bx+bw), y2 = Math.min(ay+ah, by+bh);
-      const w = x2 - x1, h = y2 - y1;
-      return (w>0 && h>0) ? w*h : 0;
-    }
-
-    // Tighter but fair hitboxes
-    function getPlayerHitbox(){
-      const px = player.x()-player.w/2;
-      const py = player.y - player.h;
-      const w = player.w * 0.78;
-      const h = player.h * 0.88;
-      const x = px + (player.w - w)/2;
-      const y = py + (player.h - h)/2;
-      return {x,y,w,h};
-    }
-    function getObstacleHitbox(o){
-      const baseY = groundY() - 64 + 6;
-      const near = Math.max(0, 1 - Math.abs(o.x - player.x())/200);
-      const s = 56 + Math.floor(near*3);
-      const w = s*0.88, h = s*0.88;
-      const x = o.x - w/2;
-      const y = baseY - (s-64) + (s-h);
-      return {x,y,w,h};
-    }
-    function bananaHit(b){
-      const s = 40, r = (s*0.58); // a bit more generous so pickups feel right
-      const bx = b.x, by = b.y;
-      const hb = getPlayerHitbox();
-      const cx = Math.max(hb.x, Math.min(bx, hb.x + hb.w));
-      const cy = Math.max(hb.y, Math.min(by, hb.y + hb.h));
-      const dx = bx - cx, dy = by - cy;
-      return (dx*dx + dy*dy) <= (r*r);
-    }
-
-    function levelUp(){
-      if (!unlocked.includes(level+1) && level<MAX_LEVELS){ unlocked.push(level+1); saveUnlocked(); }
-      level = Math.min(MAX_LEVELS, level+1);
-      levelEl.textContent = level;
-      bananasForNext += BANANAS_PER_LEVEL; nextReqEl.textContent = bananasForNext;
-      loadLevelAssets(level);
-      for(let i=0;i<6;i++) spawnAccent();
-    }
-
-    /* ---------------- Drawing (endless BG) ---------------- */
-    function drawScrollingBG(){
-      if (!images.bg.complete) { 
-        ctx.fillStyle='#05150f'; 
-        ctx.fillRect(0,0,canvas.clientWidth,canvas.clientHeight); 
-        return; 
-      }
-      const iw = images.bg.naturalWidth, ih = images.bg.naturalHeight;
-      const scale = canvas.clientHeight/ih;
-      const dw = iw*scale, dh = canvas.clientHeight;
-
-      const pxPerFrame = 1.2 + speed*0.15;
-      bgScrollX = (bgScrollX + pxPerFrame) % dw;
-      let startX = -bgScrollX;
-
-      for(let x = startX; x < canvas.clientWidth; x += dw){
-        ctx.drawImage(images.bg, Math.round(x), 0, Math.round(dw), Math.round(dh));
-      }
-
-      // parallax accents
-      mistPhase += 0.004;
-      if (images.accent.complete){
-        ctx.globalAlpha = 0.35 + 0.25*Math.sin(mistPhase*2);
-        for (let i=0;i<3;i++){
-          const x = (i*320 - (bgScrollX*0.5)%320);
-          const y = 80 + 60*Math.sin(mistPhase*3 + i);
-          ctx.drawImage(images.accent, x, y, 96, 96);
-        }
-        ctx.globalAlpha = 1;
-      }
-
-      // ground highlights
-      ctx.fillStyle = '#0a3'; ctx.fillRect(0, groundY()+32, canvas.clientWidth, 6);
-      ctx.fillStyle = '#0c5'; ctx.fillRect(0, groundY()+38, canvas.clientWidth, 2);
-    }
-
-    function drawPlayer(){
-      const x=player.x()-player.w/2, y=player.y-player.h;
-      if (images.player.complete) ctx.drawImage(images.player, x, y, player.w, player.h);
-      else { ctx.fillStyle='#1b2a28'; ctx.fillRect(x,y,player.w,player.h); }
-      if (DEBUG){ const hb = getPlayerHitbox(); ctx.strokeStyle='#00ffff'; ctx.lineWidth=2; ctx.strokeRect(hb.x, hb.y, hb.w, hb.h); }
-    }
-    function drawObstacle(o){
-      const baseY = groundY() - 64 + 6;
-      if (images.obstacle.complete) {
-        const near = Math.max(0, 1 - Math.abs(o.x - player.x())/200);
-        const s = 56 + Math.floor(near*3);
-        ctx.drawImage(images.obstacle, o.x - s/2, baseY-(s-64), s, s);
-      } else { ctx.fillStyle='#195'; ctx.fillRect(o.x-28, baseY-64, 56, 64); }
-      if (DEBUG){ const ob = getObstacleHitbox(o); ctx.strokeStyle='#ff00ff'; ctx.lineWidth=2; ctx.strokeRect(ob.x, ob.y, ob.w, ob.h); }
-    }
-    function drawBanana(b){
-      const s=40;
-      if (images.banana.complete){
-        const pulse = 1 + 0.05*Math.sin(frame*0.18);
-        ctx.drawImage(images.banana, b.x-(s*pulse)/2, b.y-(s*pulse)/2, s*pulse, s*pulse);
-      } else { ctx.fillStyle='#fd0'; ctx.fillRect(b.x-s/2,b.y-s/2,s,s); }
-      if (DEBUG){ ctx.beginPath(); ctx.arc(b.x, b.y, s*0.58, 0, Math.PI*2); ctx.strokeStyle='#ffff00'; ctx.lineWidth=2; ctx.stroke(); }
-    }
-
-    /* ---------------- Loop ---------------- */
-    function loop(){
-      if (!playing || paused) return;
-
-      frame++;
-      speed += obstacleSpeedGain;
-      spawnEvery = Math.max(spawnEveryMin, spawnEveryBase - Math.floor(frame/220));
-
-      // physics
-      player.vy += gravity;
-      player.y += player.vy;
-      if (player.y > groundY()){ player.y=groundY(); player.vy=0; player.jumping=false; }
-
-      // spawns
-      if (frame % spawnEvery === 0){
-        const lane = Math.floor(Math.random()*lanes);
-        obstacles.push({ lane, x: canvas.clientWidth + 60 });
-      }
-      if (frame % bananaSpawnEvery === 0){
-        const lane = Math.floor(Math.random()*lanes);
-        bananasOnField.push({ lane, x: canvas.clientWidth + 60, y: groundY() - 72 });
-      }
-      if (frame % 140 === 0) spawnAccent();
-
-      // move
-      for (let i=obstacles.length-1;i>=0;i--){
-        obstacles[i].x -= speed;
-        if (obstacles[i].x < -100) obstacles.splice(i,1);
-      }
-      for (let i=bananasOnField.length-1;i>=0;i--){
-        const b = bananasOnField[i];
-        b.x -= speed*0.9;
-        b.y = groundY() - 80 + Math.sin((frame+i)*0.1)*10;
-        if (b.x < -100) bananasOnField.splice(i,1);
-      }
-      accents.forEach(a=>{ a.x -= 0.45; a.y += a.vy; if (a.x < -80) a.x = canvas.clientWidth+80; });
-
-      // collisions (fair & accurate)
-      const hb = getPlayerHitbox();
-      const hbArea = hb.w*hb.h;
-      const HIT_AREA_RATIO = 0.17; // ~17% overlap triggers a hit
-      for (const o of obstacles){
-        if (o.lane === player.lane){
-          const ob = getObstacleHitbox(o);
-          if (collideRect(hb.x,hb.y,hb.w,hb.h, ob.x,ob.y,ob.w,ob.h)){
-            const interA = rectIntersectionArea(hb.x,hb.y,hb.w,hb.h, ob.x,ob.y,ob.w,ob.h);
-            if (interA > HIT_AREA_RATIO * hbArea) return endGame();
-          }
-        }
-      }
-      for (let i=bananasOnField.length-1;i>=0;i--){
-        const b = bananasOnField[i];
-        if (b.lane === player.lane && bananaHit(b)){
-          bananas++; bananasEl.textContent = bananas; score += 10;
-          bananasOnField.splice(i,1);
-          if (bananas >= bananasForNext && level < MAX_LEVELS) levelUp();
-        }
-      }
-
-      // score
-      score += 0.09 + speed*0.015;
-
-      // draw
-      ctx.clearRect(0,0,canvas.clientWidth,canvas.clientHeight);
-      drawScrollingBG();
-      // lane guides (subtle)
-      ctx.save(); ctx.globalAlpha=.14; ctx.setLineDash([10,14]); ctx.lineWidth=2; ctx.strokeStyle='#0f7';
-      for(let i=0;i<lanes;i++){ const x=laneX[i]*canvas.clientWidth; ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,canvas.clientHeight); ctx.stroke(); }
-      ctx.restore();
-      obstacles.forEach(drawObstacle);
-      bananasOnField.forEach(drawBanana);
-      drawPlayer();
-
-      scoreEl.textContent = Math.floor(score);
-      bestEl.textContent  = best;
-
-      requestAnimationFrame(loop);
-    }
-
-    function endGame(){
-      playing=false; pauseMusic();
-      if (Math.floor(score) > best){ best = Math.floor(score); localStorage.setItem('ebmarah_runner_best', best); }
-      hud.hidden=true; controls.hidden=true; exitBtn.hidden=true;
-
-      overlay.style.display='grid';
-      panel.innerHTML = `
-        <h1 class="title">GAME OVER</h1>
-        <p>Level <b>${level}</b> • Bananas <b>${bananas}</b> • Score <b>${Math.floor(score)}</b> • Best <b>${best}</b></p>
-        <div class="btnrow">
-          <button class="btn" id="restartBtn">Play Again</button>
-          <button class="btn" id="selectBtn2">Level Select</button>
-          <button class="btn" id="musicToggle">${musicEnabled ? '🔊 Music' : '🔇 Music'}</button>
-        </div>
-      `;
-      document.getElementById('restartBtn').addEventListener('click', ()=> resetRun(level));
-      document.getElementById('selectBtn2').addEventListener('click', ()=>{
-        panel.innerHTML = '';
-        panel.appendChild(levelSelect);
-        levelSelect.hidden=false;
-        rebuildLevelGrid();
-      });
-      document.getElementById('musicToggle').addEventListener('click', ()=>{
-        musicEnabled = !musicEnabled; if (!musicEnabled) pauseMusic(); else playMusic();
-        document.getElementById('musicToggle').textContent = musicEnabled ? '🔊 Music' : '🔇 Music';
-      });
-    }
-
-    /* ---------------- Controls ---------------- */
-    function moveLeft(){ if (player.lane>0) player.lane--; }
-    function moveRight(){ if (player.lane<lanes-1) player.lane++; }
-    function jump(){ if (!player.jumping){ player.vy = jumpV; player.jumping = true; } }
-
-    window.addEventListener('keydown', e=>{
-      if (e.key==='ArrowLeft'){ e.preventDefault(); moveLeft(); }
-      if (e.key==='ArrowRight'){ e.preventDefault(); moveRight(); }
-      if (e.key===' ' || e.key==='ArrowUp'){ e.preventDefault(); jump(); }
-      if (e.key==='Escape'){
-        if (!playing) return;
-        paused = !paused;
-        pauseBtn.textContent = paused ? '▶ Resume' : '⏸ Pause';
-        if (!paused) requestAnimationFrame(loop);
-      }
-    }, {passive:false});
-
-    leftBtn.addEventListener('click', moveLeft);
-    rightBtn.addEventListener('click', moveRight);
-    jumpBtn.addEventListener('click',  jump);
-
-    if (isTouch) controls.hidden = false;
-
-    // Init
-    function init(){ resizeCanvas(); rebuildLevelGrid(); }
-    window.addEventListener('resize', () => { sizeStageToViewport(); resizeCanvas(); });
-    window.addEventListener('orientationchange', () => { sizeStageToViewport(); resizeCanvas(); });
-    document.addEventListener('visibilitychange', () => { if(!document.hidden){ tryPlayBG(); sizeStageToViewport(); resizeCanvas(); }});
-    init();
-  })();
-  </script>
+  <!-- Game JS (root -> ./js/runner.js) -->
+  <script src="./js/runner.js"></script>
 </body>
 </html>
