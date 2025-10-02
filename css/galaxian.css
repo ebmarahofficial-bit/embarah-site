@@ -7,17 +7,17 @@
   --text: #e9ffee;
   --desktop-offset: 19.6vh; /* desktop vertical position */
 
-  /* height units for mobile */
+  /* mobile viewport height (with modern fallbacks) */
   --app-h: 100vh;
 
-  /* site header height on mobile (adjust if your header is taller/shorter) */
+  /* fixed site header height on mobile */
   --site-header-h: 56px;
 
-  /* Right-side gutter knob for phones (tiny inset to avoid clipping) */
-  --mobile-right-gutter: 10px; /* tweak 0–16px if needed */
+  /* tiny right inset to avoid clipping near rounded corners/notches */
+  --mobile-right-gutter: 10px;
 
-  /* NEW: how much to push the game canvas down on mobile (under the HUD) */
-  --mobile-stage-top: 48px;   /* try 24–48px to taste */
+  /* NEW: extra push from the very top on mobile (moves HUD + canvas down) */
+  --mobile-top-offset: 48px;  /* tweak 24–64px to taste */
 }
 @supports (height: 100svh){ :root{ --app-h: 100svh; } }
 @supports (height: 100dvh){ :root{ --app-h: 100dvh; } }
@@ -67,13 +67,16 @@ body {
   .page-offset{ align-content: start; padding-top: var(--desktop-offset); }
 }
 
-/* MOBILE: subtract the fixed site header and push content below it */
+/* MOBILE: keep everything below the fixed header, add extra top offset,
+   AND keep the total content height full-screen. */
 @media (max-width: 900px){
   .page-offset{
+    /* Reduce the available height by header + extra offset */
+    height: calc(var(--app-h) - var(--site-header-h) - var(--mobile-top-offset));
     min-height: 0;
-    height: calc(var(--app-h) - var(--site-header-h));
-    padding: var(--site-header-h) 0 0 0;  /* pushes below the menu bar */
-    display: grid;              /* keep grid wrapper */
+    /* Push content down so HUD + canvas move lower */
+    padding: calc(var(--site-header-h) + var(--mobile-top-offset)) 0 0 0;
+    display: grid;
     place-items: center;
   }
 }
@@ -100,11 +103,11 @@ body {
   }
 }
 
-/* MOBILE: keep grid so HUD is always visible */
+/* MOBILE: shell fills the adjusted page area; keep grid so HUD is visible */
 @media (max-width: 900px){
   .game-shell{
     width: 100vw;
-    height: calc(var(--app-h) - var(--site-header-h));
+    height: 100%;               /* fill the .page-offset height */
     border-radius: 0;
     border: none;
     background: var(--panel-strong);
@@ -114,7 +117,7 @@ body {
              calc(env(safe-area-inset-left,0px) + 8px);
     gap: 6px;
     display: grid;
-    grid-template-rows: auto 1fr auto;      /* HUD / stage / footer */
+    grid-template-rows: auto 1fr auto;
     align-content: stretch;
   }
 }
@@ -158,25 +161,22 @@ body {
   border: 1px solid rgba(53,255,160,0.2);
 }
 
-/* MOBILE: push the canvas down under the HUD, avoid right clipping */
+/* MOBILE: center the canvas and avoid right-side clipping; let it fill height */
 @media (max-width: 900px){
   .game-stage{
-    /* right/left safe insets + a little gutter on right */
-    padding: var(--mobile-stage-top) 
-             calc(var(--mobile-right-gutter) + env(safe-area-inset-right, 0px))
-             0
-             calc(env(safe-area-inset-left, 0px));
-
-    display: flex;               /* center canvas in remaining area */
-    justify-content: center;     /* center horizontally */
-    align-items: flex-start;     /* start at top of stage area, then padding pushes it down */
+    padding: 0;
+    padding-inline-end: calc(var(--mobile-right-gutter) + env(safe-area-inset-right, 0px));
+    padding-inline-start: calc(env(safe-area-inset-left, 0px));
+    display: flex;
+    justify-content: center;   /* center horizontally */
+    align-items: center;       /* center vertically within the 1fr area */
     min-height: 0;
   }
 }
 
 #game{
   width: 100%;
-  height: auto;               /* preserve intrinsic 900x600 ratio */
+  height: auto;               /* default preserves intrinsic 900x600 ratio */
   max-height: 100%;
   image-rendering: pixelated;
   border-radius: 10px;
@@ -184,12 +184,14 @@ body {
   background: transparent;
   touch-action: none;
 }
+
+/* MOBILE: use available height first (for full-screen feel), keep width in bounds */
 @media (max-width: 900px){
   #game{
-    width: 100%;          /* stage padding handles the right inset */
-    height: auto;         /* never stretch */
-    max-height: 100%;
-    aspect-ratio: 3 / 2;  /* reinforce aspect, avoid zoom/crop */
+    height: 100%;          /* fill the stage height */
+    width: auto;           /* compute width from height to keep aspect */
+    max-width: 100%;       /* never spill past the stage’s width */
+    aspect-ratio: 3 / 2;   /* reinforce aspect ratio for modern engines */
     margin: 0;
   }
 }
