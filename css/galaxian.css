@@ -60,11 +60,15 @@ body {
 @media (min-width: 901px){
   .page-offset{ align-content: start; padding-top: var(--desktop-offset); }
 }
+
+/* >>> MOBILE LAYOUT FIX: make the whole column fill the viewport and center content <<< */
 @media (max-width: 900px){
   .page-offset{
     min-height: 0;
     height: var(--app-h);
     padding: 0;
+    display: flex;           /* was grid */
+    flex-direction: column;  /* stack header/stage/footer */
   }
 }
 
@@ -89,10 +93,12 @@ body {
     transform-origin: top center;
   }
 }
+
+/* >>> MOBILE LAYOUT FIX: center the stage vertically inside the shell <<< */
 @media (max-width: 900px){
   .game-shell{
     width: 100vw;
-    height: var(--app-h);
+    height: var(--app-h); /* robust vs. browser UI bars */
     border-radius: 0;
     border: none;
     background: var(--panel-strong);
@@ -102,6 +108,10 @@ body {
              calc(env(safe-area-inset-bottom,0px) + 6px)
              calc(env(safe-area-inset-left,0px) + 8px);
     gap: 6px;
+
+    display: flex;           /* was grid */
+    flex-direction: column;
+    justify-content: center; /* centers the .game-stage vertically */
   }
 }
 
@@ -143,15 +153,18 @@ body {
     linear-gradient(180deg, rgba(0,0,0,0.35), rgba(0,0,0,0.65));
   border: 1px solid rgba(53,255,160,0.2);
 }
-/* Mobile: zero-stretch + safe right inset so nothing is cropped */
+
+/* >>> MOBILE LAYOUT FIX: true centering; add safe right inset so nothing is cropped <<< */
 @media (max-width: 900px){
   .game-stage{
     padding: 0;
     /* push content in from the right by gutter + safe area */
     padding-inline-end: calc(var(--mobile-right-gutter) + env(safe-area-inset-right, 0px));
     padding-inline-start: calc(env(safe-area-inset-left, 0px));
-    justify-items: stretch;  /* allow canvas to be full width of this padded box */
-    align-items: center;
+
+    display: flex;               /* was grid with justify-items */
+    justify-content: center;     /* center horizontally */
+    align-items: center;         /* center vertically */
     min-height: 0;
   }
 }
