@@ -100,7 +100,7 @@ body {
   }
 }
 
-/* MOBILE: shell fills available area; keep grid; add bigger row gap for HUD clearance */
+/* MOBILE: shell fills available area; keep grid; bigger gap keeps HUD off canvas */
 @media (max-width: 900px){
   .game-shell{
     width: 100vw;
@@ -112,9 +112,9 @@ body {
              calc(env(safe-area-inset-right,0px) + 8px)
              calc(env(safe-area-inset-bottom,0px) + 6px)
              calc(env(safe-area-inset-left,0px) + 8px);
-    gap: 12px; /* ↑ ensures HUD never overlaps the canvas */
+    gap: 12px;
     display: grid;
-    grid-template-rows: auto minmax(0,1fr) auto; /* prevent overflow pushing under HUD */
+    grid-template-rows: auto minmax(0,1fr) auto;
     align-content: stretch;
   }
 }
@@ -129,11 +129,11 @@ body {
   border-radius: 12px;
   background: rgba(0,0,0,0.45);
   border: 1px solid rgba(53,255,160,0.2);
-  z-index: 1; /* always above stage visuals */
+  z-index: 1;
 }
 .hud .title { color: var(--accent); font-weight: 700; letter-spacing: 0.5px; }
 .hud-center { display: flex; gap: 16px; justify-content: center; }
-.hud-right { display: flex; justify-content: end; }
+.hud-right { display: flex; gap: 8px; justify-content: end; }
 .music-controls{
   display: inline-flex; gap: 6px; align-items: center;
   background: rgba(0,0,0,0.35);
@@ -159,10 +159,10 @@ body {
   border: 1px solid rgba(53,255,160,0.2);
 }
 
-/* MOBILE: full-bleed canvas inside the stage, centered; safe right inset */
+/* MOBILE: stage = true full height; no padding that steals pixels */
 @media (max-width: 900px){
   .game-stage{
-    padding: 8px; /* tiny visual breathing room below the HUD */
+    padding: 0; /* maximize canvas size */
     padding-inline-end: calc(var(--mobile-right-gutter) + env(safe-area-inset-right, 0px));
     padding-inline-start: calc(env(safe-area-inset-left, 0px));
     display: flex;
@@ -187,7 +187,7 @@ body {
 @media (max-width: 900px){
   #game{
     width: 100%;
-    height: 100%;   /* fill height as well */
+    height: 100%;
     max-width: 100%;
     max-height: 100%;
     margin: 0;
@@ -208,6 +208,15 @@ body {
   color: var(--text); backdrop-filter: blur(6px);
 }
 @media (max-width: 900px) { .touch-controls{ display: flex; } }
+
+/* Paused badge (overlay text) */
+.paused-badge{
+  position:absolute; top:8px; right:10px;
+  background: rgba(0,0,0,0.55);
+  border:1px solid rgba(53,255,160,0.35);
+  padding:4px 8px; border-radius:8px;
+  font-weight:700; color:#b9ffe6;
+}
 
 /* Game Over Overlay */
 .gameover-overlay{
