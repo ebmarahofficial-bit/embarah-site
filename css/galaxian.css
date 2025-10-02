@@ -17,7 +17,7 @@
   --mobile-right-gutter: 10px; /* tweak 0–16px if needed */
 
   /* NEW: how much to push the game canvas down on mobile (under the HUD) */
-  --mobile-stage-top: 36px;   /* try 24–48px to taste */
+  --mobile-stage-top: 48px;   /* try 24–48px to taste */
 }
 @supports (height: 100svh){ :root{ --app-h: 100svh; } }
 @supports (height: 100dvh){ :root{ --app-h: 100dvh; } }
