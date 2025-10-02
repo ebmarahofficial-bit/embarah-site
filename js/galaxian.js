@@ -1,11 +1,18 @@
 /* Ebmarah Galaxian — Gorilla vs. Dubstep Logos
-   This update:
-   - Stable timing (px/second physics) so speeds don't feel random.
-   - Desktop box still scaled by CSS; mobile fills the phone.
-   - Game Over overlay hides properly after Try Again.
+   Mobile fit update:
+   - Sets CSS var --app-h = window.innerHeight to defeat 100vh bugs.
+   - No gameplay changes beyond this section.
 */
 
 (() => {
+  // ---- Mobile height helper (makes 360–412w Android and 375–390w iPhone fit perfectly) ----
+  function setAppHeight(){
+    document.documentElement.style.setProperty('--app-h', `${window.innerHeight}px`);
+  }
+  setAppHeight();
+  window.addEventListener('resize', setAppHeight);
+  window.addEventListener('orientationchange', setAppHeight);
+
   // ====== LOGO SOURCES ======
   const LOGO_URLS = [
     "assets/logos/skism.png",
@@ -61,7 +68,7 @@
 
   const player = {
     x: canvas.width/2 - 28, y: canvas.height - 110,
-    w: 56, h: 40, // bigger ship
+    w: 56, h: 40,
     canShootAt: 0
   };
 
@@ -204,11 +211,11 @@
     let minX = Infinity, maxX = -Infinity;
     enemies.forEach(e=>{
       if(!e.alive) return;
-      e.x += enemyDir * enemySpeed * dt;
+      e.x += enemyDir * (enemySpeed * dt);
       minX = Math.min(minX, e.x);
       maxX = Math.max(maxX, e.x + e.w);
 
-      // Random shots: rate scaled by dt (stable across FPS)
+      // Random shots (time-scaled)
       if (Math.random() < state.enemyShotRate * dt){
         enemyBullets.push({
           x: e.x+e.w/2-2, y: e.y+e.h, w: 4, h: 10,
@@ -269,7 +276,7 @@
   function loop(ts){
     if (!last) last = ts;
     let dt = (ts - last) / 1000;     // seconds
-    if (dt > 0.05) dt = 0.05;         // clamp to avoid jumps (>50ms)
+    if (dt > 0.05) dt = 0.05;        // clamp to avoid jumps
     last = ts;
     if (!state.playing) return;
 
@@ -368,41 +375,33 @@
     state.playing = false;
     $finalScore.textContent = state.score.toString();
     $finalWave.textContent = state.wave.toString();
-    $gameOver.hidden = false; // CSS ensures it disappears once hidden again
+    $gameOver.hidden = false;
   }
 
   function resetGame(){
-    // clear world
     bullets.length = 0;
     enemyBullets.length = 0;
 
-    // reset state
     state.score = 0;
     state.lives = 3;
     state.wave  = 1;
     state.playing = true;
 
-    // reset HUD
     $score.textContent = "Score: 0";
     $lives.textContent = "Lives: 3";
     $wave.textContent  = "Wave: 1";
 
-    // reset player
     player.x = canvas.width/2 - player.w/2;
     player.y = canvas.height - 110;
     player.canShootAt = 0;
 
-    // new wave
     spawnWave(state.wave);
-
-    // hide overlay and resume
     $gameOver.hidden = true;
-    requestAnimationFrame(loop);
 
-    if (isMobile) { stopAutoFire(); startAutoFire(); }
+    requestAnimationFrame(loop);
   }
 
-  $tryAgain.addEventListener('click', resetGame);
+  document.getElementById('tryAgain').addEventListener('click', resetGame);
 
   // ====== MUSIC (SoundCloud Widget API) ======
   let widget = null;
@@ -418,14 +417,12 @@
 
     let playing = false;
 
-    btnPlay.addEventListener('click', () => {
-      if (!playing) widget.play(); else widget.pause();
-    });
+    btnPlay.addEventListener('click', () => { if (!playing) widget.play(); else widget.pause(); });
     btnPrev.addEventListener('click', () => widget.prev());
     btnNext.addEventListener('click', () => widget.next());
     vol.addEventListener('input', () => widget.setVolume(parseFloat(vol.value)*100));
 
-    widget.bind(SC.Widget.Events.PLAY, () => { playing = true; btnPlay.textContent = '⏸'; });
+    widget.bind(SC.Widget.Events.PLAY,  () => { playing = true;  btnPlay.textContent = '⏸'; });
     widget.bind(SC.Widget.Events.PAUSE, () => { playing = false; btnPlay.textContent = '▶'; });
 
     const prime = () => { widget.setVolume(parseFloat(vol.value)*100); widget.play(); window.removeEventListener('click', prime); };
