@@ -13,7 +13,7 @@
   </video>
   <div class="bg-overlay"></div>
 
-  <!-- Page offset wrapper (moves game down a bit on desktop) -->
+  <!-- Page offset wrapper (moves game down on desktop) -->
   <div class="page-offset">
     <!-- Game Frame -->
     <main class="game-shell">
@@ -40,11 +40,20 @@
       <section class="game-stage">
         <canvas id="game" width="900" height="600"></canvas>
 
-        <!-- Touch buttons kept as fallback; hidden on drag-enabled mobile -->
+        <!-- Touch buttons (fallback; hidden on drag-enabled mobile) -->
         <div class="touch-controls" id="touchBtns">
           <button class="ctl" id="leftBtn">◀</button>
           <button class="ctl" id="fireBtn">⦿</button>
           <button class="ctl" id="rightBtn">▶</button>
+        </div>
+
+        <!-- Game Over Overlay -->
+        <div id="gameOver" class="gameover-overlay" hidden>
+          <div class="panel">
+            <h2>Game Over</h2>
+            <p>Score: <span id="finalScore">0</span> • Wave: <span id="finalWave">1</span></p>
+            <button id="tryAgain" class="btn">Try Again</button>
+          </div>
         </div>
       </section>
 
@@ -66,4 +75,5 @@
   <script src="js/galaxian.js"></script>
 </body>
 </html>
+
 
