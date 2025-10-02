@@ -1,12 +1,9 @@
 /* Ebmarah Galaxian — Gorilla vs. Dubstep Logos
-   Changes in this version:
-   - Formation uses ONE logo per wave (uniform).
-   - Logo switches on waves 5, 10, 15, ... (every 5th wave).
-   - Swooper invaders: occasional single enemies that move differently
-     from the formation and use a different logo than the current wave.
-   - Desktop/mobile behavior otherwise unchanged.
+   Added in this version:
+   - True full-height mobile stage & canvas stretch support.
+   - Pause system: HUD button + keyboard P/Escape. Shows a small "Paused" badge.
+   - Keeps your uniform-per-wave logos, 5/10/15… switching, and swoopers.
 */
-
 (() => {
   // ---- Mobile height helper (robust phone fit) ----
   function setAppHeight(){
@@ -45,12 +42,16 @@
   const $finalWave  = document.getElementById('finalWave');
   const $tryAgain   = document.getElementById('tryAgain');
 
+  const $pauseBtn   = document.getElementById('pauseBtn');
+  const $pauseBadge = document.getElementById('pauseBadge');
+
   // ====== GAME STATE (px/second speeds) ======
   const state = {
     score: 0,
     lives: 3,
     wave: 1,
     playing: true,
+    paused: false,
     playerSpeed: 320,       // px/sec
     bulletSpeed: 700,       // px/sec
     enemyH: 48,
@@ -145,6 +146,7 @@
     if (e.code === 'ArrowUp' || e.code === 'KeyW') keys.up = true;
     if (e.code === 'ArrowDown' || e.code === 'KeyS') keys.down = true;
     if (e.code === 'Space') { keys.fire = true; e.preventDefault(); }
+    if (e.code === 'KeyP' || e.code === 'Escape'){ togglePause(); }
   });
   window.addEventListener('keyup', (e) => {
     if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = false;
@@ -177,7 +179,8 @@
     player.y = Math.max(60, Math.min(canvas.height - player.h - 10, y - player.h/2));
   }
 
-  if (isMobile){
+  const isTouch = ("ontouchstart" in window) || navigator.maxTouchPoints > 0;
+  if (isTouch){
     touchBtns.style.display = 'none';
     canvas.addEventListener('touchstart', startDrag, {passive:false});
     canvas.addEventListener('touchmove',  moveDrag,  {passive:false});
@@ -205,7 +208,21 @@
     autoFireTimer = setInterval(() => attemptShoot(), Math.max(80, state.playerCooldownMs));
   }
   function stopAutoFire(){ if (autoFireTimer){ clearInterval(autoFireTimer); autoFireTimer=null; } }
-  if (isMobile){ startAutoFire(); window.addEventListener('blur', stopAutoFire); window.addEventListener('focus', startAutoFire); }
+  if (isTouch){ startAutoFire(); window.addEventListener('blur', stopAutoFire); window.addEventListener('focus', startAutoFire); }
+
+  // ====== PAUSE ======
+  function setPaused(p){
+    state.paused = p;
+    if ($pauseBtn){
+      $pauseBtn.textContent = p ? 'Resume' : 'Pause';
+      $pauseBtn.setAttribute('aria-pressed', p ? 'true' : 'false');
+    }
+    if ($pauseBadge){ $pauseBadge.hidden = !p; }
+    if (p){ stopAutoFire(); }
+    else if (isTouch){ startAutoFire(); }
+  }
+  function togglePause(){ setPaused(!state.paused); }
+  if ($pauseBtn){ $pauseBtn.addEventListener('click', togglePause); }
 
   // ====== SHOOTING ======
   function attemptShoot(){
@@ -222,6 +239,11 @@
   }
 
   // ====== ENEMY BEHAVIOR (formation) ======
+  function waveLogoIndex(wave){
+    const block = Math.floor((wave - 1) / 5);
+    return block % LOGO_URLS.length;
+  }
+
   function updateEnemies(dt){
     let minX = Infinity, maxX = -Infinity;
     enemies.forEach(e=>{
@@ -230,14 +252,12 @@
       minX = Math.min(minX, e.x);
       maxX = Math.max(maxX, e.x + e.w);
 
-      // Random shots (time scaled)
       if (Math.random() < state.enemyShotRate * dt){
         enemyBullets.push({
           x: e.x+e.w/2-2, y: e.y+e.h, w: 4, h: 10,
-          vy: 270 + Math.random()*90 // px/sec
+          vy: 270 + Math.random()*90
         });
       }
-      // Wrap from bottom to top
       if (e.y > canvas.height - 40){
         e.y = 60;
         e.x = 40 + Math.random()*(canvas.width - e.w - 80);
@@ -249,34 +269,20 @@
     }
   }
 
-  // ====== SWOOPERS (move differently, different logo) ======
+  // Swoopers
   function spawnSwooper(){
     const waveIdx = waveLogoIndex(state.wave);
-    const altIdx  = (waveIdx + 1) % LOGO_URLS.length; // different than the formation
+    const altIdx  = (waveIdx + 1) % LOGO_URLS.length;
     const baseX = 60 + Math.random()*(canvas.width - 120);
     swoopers.push({
-      baseX,
-      x: baseX,
-      y: -40,
-      w: state.enemyW,
-      h: state.enemyH,
-      imgIdx: altIdx,
-      t: 0,                     // time since spawn
-      vy: 180 + Math.random()*80, // downward speed px/s
-      amp: 60 + Math.random()*50, // sine amplitude
-      freq: 2 + Math.random()*1.5, // sine frequency
-      alive: true
+      baseX, x: baseX, y: -40, w: state.enemyW, h: state.enemyH,
+      imgIdx: altIdx, t: 0, vy: 180 + Math.random()*80,
+      amp: 60 + Math.random()*50, freq: 2 + Math.random()*1.5, alive: true
     });
   }
-
   function updateSwoopers(dt){
-    // spawn every ~4–8s
     swooperCooldown -= dt;
-    if (swooperCooldown <= 0){
-      spawnSwooper();
-      swooperCooldown = 4 + Math.random()*4;
-    }
-    // move & cull
+    if (swooperCooldown <= 0){ spawnSwooper(); swooperCooldown = 4 + Math.random()*4; }
     for (let i=swoopers.length-1; i>=0; i--){
       const s = swoopers[i];
       if (!s.alive) { swoopers.splice(i,1); continue; }
@@ -324,14 +330,26 @@
     }
   }
 
-  // ====== GAME LOOP (stable timing) ======
+  // ====== GAME LOOP (stable timing + pause-safe) ======
   let last = 0;
   function loop(ts){
     if (!last) last = ts;
     let dt = (ts - last) / 1000;     // seconds
     if (dt > 0.05) dt = 0.05;        // clamp to avoid jumps
     last = ts;
-    if (!state.playing) return;
+
+    if (!state.playing){
+      return; // stop the loop on game over; resetGame() restarts it
+    }
+
+    if (state.paused){
+      // draw "Paused" badge and keep the frame alive but skip updates
+      if ($pauseBadge){ $pauseBadge.hidden = false; }
+      requestAnimationFrame(loop);
+      return;
+    } else {
+      if ($pauseBadge){ $pauseBadge.hidden = true; }
+    }
 
     // Movement
     if (keys.left)  player.x -= state.playerSpeed * dt;
@@ -442,6 +460,7 @@
   // ====== GAME OVER + RESTART ======
   function gameOver(){
     state.playing = false;
+    setPaused(false);
     $finalScore.textContent = state.score.toString();
     $finalWave.textContent = state.wave.toString();
     $gameOver.hidden = false;
@@ -457,6 +476,7 @@
     state.lives = 3;
     state.wave  = 1;
     state.playing = true;
+    setPaused(false);
 
     $score.textContent = "Score: 0";
     $lives.textContent = "Lives: 3";
@@ -469,8 +489,8 @@
     spawnWave(state.wave);
     $gameOver.hidden = true;
 
-    requestAnimationFrame(loop);
-    if (isMobile){ /* auto-fire remains active */ }
+    // reset loop timestamp to prevent jump after overlay
+    requestAnimationFrame(ts => { last = ts; loop(ts); });
   }
 
   $tryAgain.addEventListener('click', resetGame);
