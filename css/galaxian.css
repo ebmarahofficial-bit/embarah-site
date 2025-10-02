@@ -5,7 +5,7 @@
   --panel: rgba(0,0,0,0.55);
   --panel-strong: rgba(0,0,0,0.75);
   --text: #e9ffee;
-  --desktop-offset: 18.6vh; /* sits inside your green frame */
+  --desktop-offset: 19.6vh; /* moved down just a little */
   --app-h: 100dvh;          /* dynamic viewport height for mobile */
 }
 
@@ -70,19 +70,21 @@ body {
   border-radius: 16px;
   box-shadow: 0 10px 40px rgba(0,0,0,0.45), inset 0 0 80px rgba(53,255,160,0.10);
 }
-/* Desktop: keep width scale, squeeze height a bit, anchored to top */
+/* Desktop: keep same height factor, stretch width slightly */
 @media (min-width: 901px){
   .game-shell{
-    transform: scale(.9) scaleY(.94);
+    /* Previously: scale(.9) scaleY(.94)
+       Now: add scaleX(1.035) to widen ~3.5% while keeping height unchanged. */
+    transform: scale(.9) scaleY(.94) scaleX(1.035);
     transform-origin: top center;
   }
 }
 
-/* Phones: take the whole device height cleanly (handles 360–412, 375–390 widths) */
+/* Phones: full device height (fits 360–412w Android, 375–390w iPhone) */
 @media (max-width: 900px) {
   .game-shell{
     width: 100vw;
-    height: var(--app-h); /* robust vs. browser UI bars */
+    height: var(--app-h);
     border-radius: 0;
     border: none;
     background: var(--panel-strong);
@@ -147,14 +149,11 @@ body {
   border-radius: 10px;
   box-shadow: 0 10px 40px rgba(0,0,0,0.45), inset 0 0 40px rgba(53,255,160,0.08);
   background: transparent;
-  touch-action: none; /* allows smooth drag without scrolling */
+  touch-action: none;
 }
-/* Mobile: consume every pixel of the stage */
+/* Mobile: fill vertical space */
 @media (max-width: 900px){
-  #game{
-    width: 100%;
-    height: 100%;   /* fill vertical space */
-  }
+  #game{ height: 100%; }
 }
 
 /* Touch controls (fallback only; hidden if drag-mode enabled) */
