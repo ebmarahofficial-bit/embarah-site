@@ -35,7 +35,6 @@
     "assets/logos/espioth.png",
     "assets/logos/fermilat.png",
     "assets/logos/metallik.png",
-    "assets/logos/metvtrxn.png",
     "assets/logos/hvted.png",
   ];
 
