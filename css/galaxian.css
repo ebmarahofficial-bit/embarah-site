@@ -78,7 +78,7 @@ body {
 /* Desktop: width/height transforms (leave as you tuned earlier) */
 @media (min-width: 901px){
   .game-shell{
-    transform: scale(.9) scaleY(.94) scaleX(1.110);
+    transform: scale(.9) scaleY(.94) scaleX(1.140);
     transform-origin: top center;
   }
 }
