@@ -1,13 +1,13 @@
 /* Ebmarah Galaxian — Gorilla vs. Dubstep Logos
    This update:
-   - Ship size bumped to 56x40 (drop your sprite at assets/ship.png).
-   - Game Over overlay with Try Again button to fully reset the run.
-   - Desktop/mobile behavior unchanged otherwise.
+   - Stable timing (px/second physics) so speeds don't feel random.
+   - Desktop box still scaled by CSS; mobile fills the phone.
+   - Game Over overlay hides properly after Try Again.
 */
 
 (() => {
   // ====== LOGO SOURCES ======
- const LOGO_URLS = [
+  const LOGO_URLS = [
     "assets/logos/skism.png",
     "assets/logos/skrillex.png",
     "assets/logos/eptic.png",
@@ -15,7 +15,7 @@
     "assets/logos/calcium.png",
     "assets/logos/barelyalive.png",
     "assets/logos/truth.png",
-     "assets/logos/cyclops.png",
+    "assets/logos/cyclops.png",
   ];
 
   // Player ship sprite
@@ -35,24 +35,23 @@
   const $finalWave  = document.getElementById('finalWave');
   const $tryAgain   = document.getElementById('tryAgain');
 
-  // ====== GAME STATE ======
+  // ====== GAME STATE (px/second speeds) ======
   const state = {
     score: 0,
     lives: 3,
     wave: 1,
     playing: true,
-    // tuning
-    playerSpeed: 6,
-    bulletSpeed: 10,
+    playerSpeed: 320,       // px/sec
+    bulletSpeed: 700,       // px/sec
     enemyH: 48,
     enemyW: 64,
     enemyGapX: 18,
     enemyGapY: 20,
     enemyRowsBase: 3,
     enemyCols: 7,
-    enemyBaseSpeed: 0.6,
-    enemyDrop: 18,
-    enemyShotChance: 0.00075,
+    enemyBaseSpeed: 80,     // px/sec
+    enemyDrop: 18,          // px (when bouncing wall)
+    enemyShotRate: 0.045,   // shots per enemy per second (scaled by dt)
     playerCooldownMs: 220,
   };
 
@@ -113,7 +112,7 @@
       }
     }
     enemyDir = 1;
-    enemySpeed = state.enemyBaseSpeed + (wave-1)*0.12;
+    enemySpeed = state.enemyBaseSpeed + (wave-1)*12; // gentle ramp (px/sec)
     $wave.textContent = "Wave: " + wave;
   }
 
@@ -156,7 +155,7 @@
     player.y = Math.max(60, Math.min(canvas.height - player.h - 10, y - player.h/2));
   }
 
-  if (("ontouchstart" in window) || navigator.maxTouchPoints > 0 || window.matchMedia("(max-width: 900px)").matches){
+  if (isMobile){
     touchBtns.style.display = 'none';
     canvas.addEventListener('touchstart', startDrag, {passive:false});
     canvas.addEventListener('touchmove',  moveDrag,  {passive:false});
@@ -208,10 +207,15 @@
       e.x += enemyDir * enemySpeed * dt;
       minX = Math.min(minX, e.x);
       maxX = Math.max(maxX, e.x + e.w);
-      if (Math.random() < state.enemyShotChance){
-        enemyBullets.push({ x: e.x+e.w/2-2, y: e.y+e.h, w: 4, h: 10, vy: 4.5 + Math.random()*1.5 });
+
+      // Random shots: rate scaled by dt (stable across FPS)
+      if (Math.random() < state.enemyShotRate * dt){
+        enemyBullets.push({
+          x: e.x+e.w/2-2, y: e.y+e.h, w: 4, h: 10,
+          vy: 270 + Math.random()*90 // px/sec
+        });
       }
-      // Wrap from bottom to top instead of penalizing
+      // Wrap from bottom to top
       if (e.y > canvas.height - 40){
         e.y = 60;
         e.x = 40 + Math.random()*(canvas.width - e.w - 80);
@@ -260,30 +264,37 @@
     }
   }
 
-  // ====== GAME LOOP ======
+  // ====== GAME LOOP (stable timing) ======
   let last = 0;
   function loop(ts){
     if (!last) last = ts;
-    const dt = Math.min(32, ts - last);
+    let dt = (ts - last) / 1000;     // seconds
+    if (dt > 0.05) dt = 0.05;         // clamp to avoid jumps (>50ms)
     last = ts;
     if (!state.playing) return;
 
-    if (keys.left)  player.x -= state.playerSpeed;
-    if (keys.right) player.x += state.playerSpeed;
-    if (keys.up)    player.y -= state.playerSpeed;
-    if (keys.down)  player.y += state.playerSpeed;
+    // Movement
+    if (keys.left)  player.x -= state.playerSpeed * dt;
+    if (keys.right) player.x += state.playerSpeed * dt;
+    if (keys.up)    player.y -= state.playerSpeed * dt;
+    if (keys.down)  player.y += state.playerSpeed * dt;
 
+    // Bounds
     player.x = Math.max(10, Math.min(canvas.width - player.w - 10, player.x));
     player.y = Math.max(60, Math.min(canvas.height - player.h - 10, player.y));
 
+    // Manual fire (desktop)
     if (!isMobile && keys.fire) attemptShoot();
 
-    bullets.forEach(b => b.y += b.vy);
+    // Bullets
+    bullets.forEach(b => b.y += b.vy * dt);
     for (let i=bullets.length-1; i>=0; i--) if (bullets[i].y < -20) bullets.splice(i,1);
 
-    enemyBullets.forEach(b => b.y += b.vy);
+    // Enemy bullets
+    enemyBullets.forEach(b => b.y += b.vy * dt);
     for (let i=enemyBullets.length-1; i>=0; i--) if (enemyBullets[i].y > canvas.height+20) enemyBullets.splice(i,1);
 
+    // Enemies
     updateEnemies(dt);
 
     // Collisions: bullets vs enemies
@@ -314,6 +325,7 @@
       }
     }
 
+    // Endless waves
     if (enemies.every(e => !e.alive)){
       state.wave++;
       spawnWave(state.wave);
@@ -321,7 +333,7 @@
 
     // Draw
     ctx.clearRect(0,0,canvas.width,canvas.height);
-    drawStarfield();
+    drawStarfield(dt);
     enemies.forEach(e => { if (e.alive) drawEnemy(e); });
     ctx.fillStyle = '#7fffd4';
     bullets.forEach(b => ctx.fillRect(b.x,b.y,b.w,b.h));
@@ -337,13 +349,13 @@
     x: Math.random()*900,
     y: Math.random()*600,
     s: Math.random()*2 + 0.5,
-    v: Math.random()*0.3 + 0.1
+    v: 18 + Math.random()*18 // px/sec
   }));
-  function drawStarfield(){
+  function drawStarfield(dt){
     ctx.save();
     stars.forEach(st => {
-      st.y += st.v;
-      if (st.y > canvas.height) st.y = -2, st.x = Math.random()*canvas.width;
+      st.y += st.v * (dt ?? 0.016);
+      if (st.y > canvas.height) { st.y = -2; st.x = Math.random()*canvas.width; }
       ctx.globalAlpha = 0.6;
       ctx.fillStyle = '#9ffff0';
       ctx.fillRect(st.x, st.y, st.s, st.s);
@@ -356,7 +368,7 @@
     state.playing = false;
     $finalScore.textContent = state.score.toString();
     $finalWave.textContent = state.wave.toString();
-    $gameOver.hidden = false;
+    $gameOver.hidden = false; // CSS ensures it disappears once hidden again
   }
 
   function resetGame(){
@@ -380,13 +392,13 @@
     player.y = canvas.height - 110;
     player.canShootAt = 0;
 
+    // new wave
     spawnWave(state.wave);
-    $gameOver.hidden = true;
 
-    // resume loop
+    // hide overlay and resume
+    $gameOver.hidden = true;
     requestAnimationFrame(loop);
 
-    // ensure auto-fire back on mobile
     if (isMobile) { stopAutoFire(); startAutoFire(); }
   }
 
