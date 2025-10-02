@@ -2,14 +2,24 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <!-- Ensure phones don’t start zoomed in; keep the viewport locked to device width/scale -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover" />
   <title>Ebmarah Game</title>
   <link rel="stylesheet" href="css/galaxian.css" />
+
+  <!-- Early mobile height fix so first paint uses the true device height (prevents “zoomed-in” start) -->
+  <script>
+    (function () {
+      var setAppHeight = function(){ document.documentElement.style.setProperty('--app-h', window.innerHeight + 'px'); };
+      setAppHeight();
+      window.addEventListener('orientationchange', setAppHeight);
+      window.addEventListener('resize', setAppHeight);
+    })();
+  </script>
 </head>
 <body>
-  <!-- Video Background -->
-  <video id="bgVideo" class="bg-video" autoplay muted playsinline loop>
-    <!-- Keep your current background video name/path intact -->
+  <!-- Video Background (hidden on mobile via CSS; preload disabled to avoid mobile bandwidth) -->
+  <video id="bgVideo" class="bg-video" autoplay muted playsinline loop preload="none">
     <source src="assets/galaxianbg.mp4" type="video/mp4" />
   </video>
   <div class="bg-overlay"></div>
@@ -73,6 +83,7 @@
   </iframe>
   <script src="https://w.soundcloud.com/player/api.js"></script>
 
+  <!-- Your main game script (unchanged) -->
   <script src="js/galaxian.js"></script>
 </body>
 </html>
