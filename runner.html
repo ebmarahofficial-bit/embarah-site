@@ -12,12 +12,12 @@
   *{ box-sizing:border-box }
   html,body{ margin:0; height:100%; background:#000; color:var(--ink); font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif; overflow:hidden; }
 
-  /* Lightweight animated backdrop (not a video) */
+  /* Subtle animated gradient instead of heavy video (smooth on phones) */
   body::before{
     content:""; position:fixed; inset:0; z-index:-1;
     background:
-      radial-gradient(60% 80% at 30% 20%, rgba(0,255,153,.12), transparent 60%),
-      radial-gradient(70% 70% at 80% 70%, rgba(0,180,120,.10), transparent 60%),
+      radial-gradient(60% 80% at 30% 20%, rgba(0,255,153,.10), transparent 60%),
+      radial-gradient(70% 70% at 80% 70%, rgba(0,180,120,.08), transparent 60%),
       linear-gradient(180deg, #030a07 0%, #061f16 100%);
     animation: glow 10s linear infinite alternate;
   }
@@ -26,28 +26,46 @@
     100%{ filter:hue-rotate(10deg) brightness(1.05); }
   }
 
-  .wrap{ height:100%; width:100%; display:flex; align-items:center; justify-content:center; }
+  .wrap{ min-height:100dvh; display:flex; align-items:center; justify-content:center; padding:16px }
 
-  /* Stage fullscreen */
+  /* Desktop/tablet stage: classic 16:9 with max 960px */
   .stage{
     position:relative;
-    width:100vw;
-    height:100vh;          /* true fullscreen on phone */
+    width:100%;
+    max-width:960px;
+    aspect-ratio:16/9;
     border:1px solid var(--line);
-    border-radius:0;
+    border-radius:16px;
     box-shadow:var(--shadow);
     overflow:hidden;
     background:#04120d;
   }
 
+  /* Phone: true fullscreen */
+  @media (pointer:coarse) {
+    .wrap { padding: 0; }
+    .stage{
+      max-width:none;
+      width:100vw;
+      height:100svh;      /* true visual height on modern mobile */
+      aspect-ratio:auto;
+      border-radius:0;
+      border-width:0;
+    }
+    @supports not (height: 100svh) {
+      .stage{ height:100vh; }
+    }
+  }
+
   canvas{
     position:absolute; inset:0;
-    width:100%; height:100%; /* CSS size follows stage */
-    image-rendering:crisp-edges; image-rendering:pixelated; /* helps low-res art pop */
+    width:100%; height:100%;
+    image-rendering:crisp-edges;
+    image-rendering:pixelated;
     touch-action:none;
   }
 
-  /* ---------- HUD (in-game UI) ---------- */
+  /* ---------- HUD ---------- */
   .hud{
     position:absolute; top:10px; left:50%; transform:translateX(-50%);
     display:flex; gap:10px; align-items:center; font-weight:700; font-size:14px;
@@ -58,7 +76,7 @@
   .pill{ padding:2px 10px; border-radius:999px; background:rgba(0,255,153,.12); border:1px solid rgba(0,255,153,.35) }
   .hud button{ padding:4px 10px; border-radius:10px; border:1px solid var(--line); background:#062417; color:var(--ink); cursor:pointer }
 
-  /* Exit button */
+  /* Exit button (shows during gameplay) */
   #exitBtn{
     position:absolute; top:10px; right:10px;
     padding:8px 12px; border-radius:8px;
@@ -100,7 +118,7 @@
 </head>
 <body>
   <div class="wrap">
-    <div class="stage">
+    <div class="stage" id="stage">
       <button id="exitBtn" hidden>Exit</button>
       <canvas id="game" width="960" height="540" aria-label="Ebmarah Runner"></canvas>
 
@@ -156,7 +174,7 @@
     const laneX = [0.22, 0.5, 0.78];  // lane center ratios
     const gravity = 0.9, jumpV = -16.5;
 
-    // pacing (a bit slower)
+    // pacing
     const BANANAS_PER_LEVEL = 10;
     const MAX_LEVELS = 10;
     const obstacleSpeedBase = 4.0;
@@ -165,14 +183,29 @@
     const spawnEveryMin  = 80;
     const bananaSpawnEvery = 140;
 
-    // Debug switch
-    const DEBUG = true;
+    // Debug OFF by default (turn true to see outlines)
+    const DEBUG = false;
 
     /* ---------------- DOM ---------------- */
+    const stage = document.getElementById('stage');
     const canvas = document.getElementById('game');
     const ctx = canvas.getContext('2d');
 
-    // DPR scaling for crisp & smooth rendering on phones
+    // Mobile-only: pin stage to true visual viewport height (iOS bars fix)
+    const isTouch = matchMedia('(pointer:coarse)').matches || 'ontouchstart' in window;
+    function sizeStageToViewport() {
+      if (!isTouch) return;
+      const vw = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
+      const vh = (window.visualViewport?.height) || window.innerHeight;
+      stage.style.width  = vw + 'px';
+      stage.style.height = vh + 'px';
+    }
+    sizeStageToViewport();
+    window.addEventListener('resize', sizeStageToViewport);
+    window.addEventListener('orientationchange', sizeStageToViewport);
+    window.visualViewport && window.visualViewport.addEventListener('resize', sizeStageToViewport);
+
+    // DPR scaling for crisp rendering across devices
     function resizeCanvas(){
       const ratio = Math.max(1, Math.min(3, Math.floor(window.devicePixelRatio || 1)));
       const cssW = canvas.clientWidth;
@@ -180,12 +213,10 @@
       canvas.width  = Math.round(cssW * ratio);
       canvas.height = Math.round(cssH * ratio);
       ctx.setTransform(ratio,0,0,ratio,0,0);
+      ctx.imageSmoothingEnabled = false;
     }
-    window.addEventListener('resize', resizeCanvas);
-    window.addEventListener('orientationchange', resizeCanvas);
-    // iOS 15+ address bar hide/show: redraw safe
-    document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) resizeCanvas(); });
 
+    /* ---------------- UI refs ---------------- */
     const hud = document.getElementById('hud');
     const scoreEl = document.getElementById('score');
     const bestEl = document.getElementById('best');
@@ -206,8 +237,7 @@
     const leftBtn  = document.getElementById('leftBtn');
     const rightBtn = document.getElementById('rightBtn');
     const jumpBtn  = document.getElementById('jumpBtn');
-
-    const exitBtn = document.getElementById('exitBtn');
+    const exitBtn  = document.getElementById('exitBtn');
 
     /* ---------------- SoundCloud ---------------- */
     const widget = window.SC.Widget(document.getElementById('sc-iframe'));
@@ -234,7 +264,7 @@
         images.bg.onload = done; images.obstacle.onload = done; images.accent.onload = done;
         images.bg.onerror = images.obstacle.onerror = images.accent.onerror = rej;
         const base = levelPath(i);
-        images.bg.src = `${base}/background.png`;   // make these tileable left-right for perfect endless
+        images.bg.src = `${base}/background.png`;   // make tileable L<->R for seamless loop
         images.obstacle.src = `${base}/obstacle.png`;
         images.accent.src   = `${base}/accent.png`;
       }).catch(()=>{});
@@ -251,20 +281,20 @@
 
     bestEl.textContent = best; nextReqEl.textContent = bananasForNext; levelEl.textContent = level;
 
-    // Ground depends on canvas size, so compute each frame
+    /* Player & world */
     const player = { lane:1, x(){ return laneX[this.lane]*canvas.clientWidth }, y:0, vy:0, w:64, h:64, jumping:false };
     const obstacles=[], bananasOnField=[], accents=[];
     let bgScrollX = 0, mistPhase = 0;
 
-    function groundY(){ return Math.round(canvas.clientHeight*0.81); } // based on viewport height
-
+    function groundY(){ return Math.round(canvas.clientHeight*0.81); } // consistent across sizes
     function spawnAccent(){
       accents.push({ x:Math.random()*canvas.clientWidth, y:120+Math.random()*220, vy:(Math.random()*0.6)-0.3, vx:(Math.random()*0.2)+0.2 });
       if (accents.length>10) accents.shift();
     }
 
     function resetRun(startLevel=1){
-      resizeCanvas();                  // ensure fresh DPR size
+      sizeStageToViewport();   // ensure phone height is correct first
+      resizeCanvas();          // then match canvas backing store
       playing=true; paused=false; frame=0;
       speed = obstacleSpeedBase; spawnEvery = spawnEveryBase;
       score=0; bananas=0; bananasForNext=BANANAS_PER_LEVEL;
@@ -304,22 +334,27 @@
       if (!paused) requestAnimationFrame(loop);
     });
     exitBtn.addEventListener('click', ()=>{
-      // return to overlay
       playing=false; paused=false;
       pauseMusic();
       hud.hidden=true; controls.hidden=true; exitBtn.hidden=true;
       overlay.style.display='grid';
     });
 
-    /* ---------------- Helpers ---------------- */
+    /* ---------------- Collision helpers ---------------- */
     function collideRect(ax,ay,aw,ah, bx,by,bw,bh){ return ax < bx+bw && ax+aw > bx && ay < by+bh && ay+ah > by; }
+    function rectIntersectionArea(ax,ay,aw,ah, bx,by,bw,bh){
+      const x1 = Math.max(ax, bx), y1 = Math.max(ay, by);
+      const x2 = Math.min(ax+aw, bx+bw), y2 = Math.min(ay+ah, by+bh);
+      const w = x2 - x1, h = y2 - y1;
+      return (w>0 && h>0) ? w*h : 0;
+    }
 
-    // Tighter hitboxes (debug-draw below)
+    // Tighter but fair hitboxes
     function getPlayerHitbox(){
       const px = player.x()-player.w/2;
       const py = player.y - player.h;
-      const w = player.w * 0.75;
-      const h = player.h * 0.85;
+      const w = player.w * 0.78;
+      const h = player.h * 0.88;
       const x = px + (player.w - w)/2;
       const y = py + (player.h - h)/2;
       return {x,y,w,h};
@@ -328,13 +363,13 @@
       const baseY = groundY() - 64 + 6;
       const near = Math.max(0, 1 - Math.abs(o.x - player.x())/200);
       const s = 56 + Math.floor(near*3);
-      const w = s*0.85, h = s*0.85;
+      const w = s*0.88, h = s*0.88;
       const x = o.x - w/2;
       const y = baseY - (s-64) + (s-h);
       return {x,y,w,h};
     }
     function bananaHit(b){
-      const s = 40, r = (s*0.48);
+      const s = 40, r = (s*0.58); // a bit more generous so pickups feel right
       const bx = b.x, by = b.y;
       const hb = getPlayerHitbox();
       const cx = Math.max(hb.x, Math.min(bx, hb.x + hb.w));
@@ -352,9 +387,8 @@
       for(let i=0;i<6;i++) spawnAccent();
     }
 
-    /* ---------------- Drawing (endless) ---------------- */
+    /* ---------------- Drawing (endless BG) ---------------- */
     function drawScrollingBG(){
-      // endless tile: requires background.png to be seamless left-right
       if (!images.bg.complete) { 
         ctx.fillStyle='#05150f'; 
         ctx.fillRect(0,0,canvas.clientWidth,canvas.clientHeight); 
@@ -368,7 +402,6 @@
       bgScrollX = (bgScrollX + pxPerFrame) % dw;
       let startX = -bgScrollX;
 
-      // draw enough tiles to cover full width
       for(let x = startX; x < canvas.clientWidth; x += dw){
         ctx.drawImage(images.bg, Math.round(x), 0, Math.round(dw), Math.round(dh));
       }
@@ -385,7 +418,7 @@
         ctx.globalAlpha = 1;
       }
 
-      // ground highlight line
+      // ground highlights
       ctx.fillStyle = '#0a3'; ctx.fillRect(0, groundY()+32, canvas.clientWidth, 6);
       ctx.fillStyle = '#0c5'; ctx.fillRect(0, groundY()+38, canvas.clientWidth, 2);
     }
@@ -411,7 +444,7 @@
         const pulse = 1 + 0.05*Math.sin(frame*0.18);
         ctx.drawImage(images.banana, b.x-(s*pulse)/2, b.y-(s*pulse)/2, s*pulse, s*pulse);
       } else { ctx.fillStyle='#fd0'; ctx.fillRect(b.x-s/2,b.y-s/2,s,s); }
-      if (DEBUG){ ctx.beginPath(); ctx.arc(b.x, b.y, s*0.48, 0, Math.PI*2); ctx.strokeStyle='#ffff00'; ctx.lineWidth=2; ctx.stroke(); }
+      if (DEBUG){ ctx.beginPath(); ctx.arc(b.x, b.y, s*0.58, 0, Math.PI*2); ctx.strokeStyle='#ffff00'; ctx.lineWidth=2; ctx.stroke(); }
     }
 
     /* ---------------- Loop ---------------- */
@@ -451,13 +484,16 @@
       }
       accents.forEach(a=>{ a.x -= 0.45; a.y += a.vy; if (a.x < -80) a.x = canvas.clientWidth+80; });
 
-      // collisions
+      // collisions (fair & accurate)
       const hb = getPlayerHitbox();
+      const hbArea = hb.w*hb.h;
+      const HIT_AREA_RATIO = 0.17; // ~17% overlap triggers a hit
       for (const o of obstacles){
         if (o.lane === player.lane){
           const ob = getObstacleHitbox(o);
-          if (collideRect(hb.x,hb.y,hb.w,hb.h, ob.x,ob.y,ob.w,ob.h) && player.y>=groundY()-40){
-            return endGame();
+          if (collideRect(hb.x,hb.y,hb.w,hb.h, ob.x,ob.y,ob.w,ob.h)){
+            const interA = rectIntersectionArea(hb.x,hb.y,hb.w,hb.h, ob.x,ob.y,ob.w,ob.h);
+            if (interA > HIT_AREA_RATIO * hbArea) return endGame();
           }
         }
       }
@@ -539,13 +575,16 @@
     rightBtn.addEventListener('click', moveRight);
     jumpBtn.addEventListener('click',  jump);
 
-    const isTouch = matchMedia('(pointer:coarse)').matches || 'ontouchstart' in window;
     if (isTouch) controls.hidden = false;
 
-    // Build initial Level Select
+    // Init
     function init(){ resizeCanvas(); rebuildLevelGrid(); }
+    window.addEventListener('resize', resizeCanvas);
+    window.addEventListener('orientationchange', resizeCanvas);
+    document.addEventListener('visibilitychange', () => { if(!document.hidden) { sizeStageToViewport(); resizeCanvas(); } });
     init();
   })();
   </script>
 </body>
 </html>
+
