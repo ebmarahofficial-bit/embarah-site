@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>Spacemarah</title>
+  <title>Ebmarah Galaxian</title>
   <link rel="stylesheet" href="css/galaxian.css" />
 </head>
 <body>
@@ -13,43 +13,46 @@
   </video>
   <div class="bg-overlay"></div>
 
-  <!-- Game Frame (desktop shows framed, mobile goes fullscreen) -->
-  <main class="game-shell">
-    <header class="hud">
-      <div class="hud-left">
-        <span class="title">Ebmarah: Galaxian</span>
-      </div>
-      <div class="hud-center">
-        <span id="score">Score: 0</span>
-        <span id="wave">Wave: 1</span>
-        <span id="lives">Lives: 3</span>
-      </div>
-      <div class="hud-right">
-        <!-- Tiny custom music controls -->
-        <div class="music-controls">
-          <button id="btnPrev" title="Previous">&#9664;&#9664;</button>
-          <button id="btnPlay" title="Play/Pause">&#9654;</button>
-          <button id="btnNext" title="Next">&#9654;&#9654;</button>
-          <input id="vol" type="range" min="0" max="1" step="0.01" value="0.8" title="Volume"/>
+  <!-- Page offset wrapper (moves game down a bit on desktop) -->
+  <div class="page-offset">
+    <!-- Game Frame -->
+    <main class="game-shell">
+      <header class="hud">
+        <div class="hud-left">
+          <span class="title">Ebmarah: Galaxian</span>
         </div>
-      </div>
-    </header>
+        <div class="hud-center">
+          <span id="score">Score: 0</span>
+          <span id="wave">Wave: 1</span>
+          <span id="lives">Lives: 3</span>
+        </div>
+        <div class="hud-right">
+          <!-- Tiny custom music controls -->
+          <div class="music-controls">
+            <button id="btnPrev" title="Previous">&#9664;&#9664;</button>
+            <button id="btnPlay" title="Play/Pause">&#9654;</button>
+            <button id="btnNext" title="Next">&#9654;&#9654;</button>
+            <input id="vol" type="range" min="0" max="1" step="0.01" value="0.8" title="Volume"/>
+          </div>
+        </div>
+      </header>
 
-    <section class="game-stage">
-      <canvas id="game" width="900" height="600"></canvas>
+      <section class="game-stage">
+        <canvas id="game" width="900" height="600"></canvas>
 
-      <!-- Touch controls (auto shown on mobile) -->
-      <div class="touch-controls">
-        <button class="ctl" id="leftBtn">◀</button>
-        <button class="ctl" id="fireBtn">⦿</button>
-        <button class="ctl" id="rightBtn">▶</button>
-      </div>
-    </section>
+        <!-- Touch buttons kept as fallback; hidden on drag-enabled mobile -->
+        <div class="touch-controls" id="touchBtns">
+          <button class="ctl" id="leftBtn">◀</button>
+          <button class="ctl" id="fireBtn">⦿</button>
+          <button class="ctl" id="rightBtn">▶</button>
+        </div>
+      </section>
 
-    <footer class="help">
-      <p><strong>Controls:</strong> ← → to move, Space to shoot. On phone: buttons below.</p>
-    </footer>
-  </main>
+      <footer class="help">
+        <p><strong>Controls:</strong> ← → ↑ ↓ to move, Space to shoot. On phone: drag ship; it auto-fires.</p>
+      </footer>
+    </main>
+  </div>
 
   <!-- Hidden SoundCloud Embed + API -->
   <iframe
@@ -63,3 +66,4 @@
   <script src="js/galaxian.js"></script>
 </body>
 </html>
+
