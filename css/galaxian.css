@@ -17,7 +17,7 @@
   --mobile-right-gutter: 10px;
 
   /* Extra push below header on phones; raise if you want the game lower */
-  --mobile-top-offset: 0px;
+  --mobile-top-offset: 60px;
 }
 @supports (height: 100svh){ :root{ --app-h: 100svh; } }
 @supports (height: 100dvh){ :root{ --app-h: 100dvh; } }
