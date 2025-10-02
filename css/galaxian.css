@@ -9,6 +9,9 @@
 
   /* Mobile height variable (CSS-only): prefer svh/dvh; fallback is 100vh */
   --app-h: 100vh;
+
+  /* NEW: right-side gutter for mobile (pulls game in from right) */
+  --mobile-right-gutter: 12px; /* adjust 8–20px to taste */
 }
 @supports (height: 100svh){
   :root{ --app-h: 100svh; }
@@ -145,12 +148,14 @@ body {
     linear-gradient(180deg, rgba(0,0,0,0.35), rgba(0,0,0,0.65));
   border: 1px solid rgba(53,255,160,0.2);
 }
-/* Mobile: keep centered so canvas can preserve aspect ratio (no stretch) */
+/* Mobile: keep centered so canvas can preserve aspect ratio (no stretch),
+   BUT anchor content to the left and leave a fixed gutter on the right. */
 @media (max-width: 900px){
   .game-stage{
     padding: 0;
-    place-items: center;   /* center instead of stretch to avoid distortion */
-    min-height: 0;         /* prevent grid from forcing extra height */
+    justify-items: start;   /* left-align the canvas */
+    align-items: center;
+    min-height: 0;
   }
 }
 
@@ -164,13 +169,15 @@ body {
   background: transparent;
   touch-action: none; /* allows smooth drag without scrolling */
 }
-/* Mobile: do NOT force height; let canvas keep its ratio so it won't stretch/zoom */
+/* Mobile: keep aspect; pull in from the RIGHT only */
 @media (max-width: 900px){
   #game{
-    width: 100%;
-    height: auto;        /* was 100% — that could stretch; this fixes it */
-    max-height: 100%;    /* ensure it never exceeds available space */
-    aspect-ratio: 3 / 2; /* reinforce intrinsic ratio for modern engines */
+    width: calc(100% - var(--mobile-right-gutter)); /* add right gutter */
+    height: auto;        /* no stretch */
+    max-height: 100%;    /* never exceed available height */
+    aspect-ratio: 3 / 2; /* reinforce intrinsic ratio */
+    margin-left: 0;
+    margin-right: var(--mobile-right-gutter);
   }
 }
 
