@@ -1,11 +1,14 @@
 /* Ebmarah Galaxian — Gorilla vs. Dubstep Logos
-   Mobile fit update:
-   - Sets CSS var --app-h = window.innerHeight to defeat 100vh bugs.
-   - No gameplay changes beyond this section.
+   Changes in this version:
+   - Formation uses ONE logo per wave (uniform).
+   - Logo switches on waves 5, 10, 15, ... (every 5th wave).
+   - Swooper invaders: occasional single enemies that move differently
+     from the formation and use a different logo than the current wave.
+   - Desktop/mobile behavior otherwise unchanged.
 */
 
 (() => {
-  // ---- Mobile height helper (makes 360–412w Android and 375–390w iPhone fit perfectly) ----
+  // ---- Mobile height helper (robust phone fit) ----
   function setAppHeight(){
     document.documentElement.style.setProperty('--app-h', `${window.innerHeight}px`);
   }
@@ -13,7 +16,7 @@
   window.addEventListener('resize', setAppHeight);
   window.addEventListener('orientationchange', setAppHeight);
 
-  // ====== LOGO SOURCES ======
+  // ====== LOGO SOURCES (order matters for wave switching) ======
   const LOGO_URLS = [
     "assets/logos/skism.png",
     "assets/logos/skrillex.png",
@@ -57,8 +60,8 @@
     enemyRowsBase: 3,
     enemyCols: 7,
     enemyBaseSpeed: 80,     // px/sec
-    enemyDrop: 18,          // px (when bouncing wall)
-    enemyShotRate: 0.045,   // shots per enemy per second (scaled by dt)
+    enemyDrop: 18,          // px when bouncing
+    enemyShotRate: 0.045,   // per enemy per sec
     playerCooldownMs: 220,
   };
 
@@ -72,11 +75,15 @@
     canShootAt: 0
   };
 
-  // Enemies
+  // Enemies (formation)
   let enemies = [];
   let enemyDir = 1;
   let enemySpeed = state.enemyBaseSpeed;
   let enemyImages = [];
+
+  // Swoopers (single special invaders)
+  const swoopers = [];
+  let swooperCooldown = 3.5; // seconds until first spawn
 
   // ====== LOAD IMAGES ======
   function loadImage(src){
@@ -97,6 +104,12 @@
   let shipImg = null;
   loadImage(SHIP_IMG).then(img => shipImg = img);
 
+  // Determine which logo to use for a given wave block (switches on 5,10,15,...)
+  function waveLogoIndex(wave){
+    const block = Math.floor((wave - 1) / 5); // 1-4 -> 0, 5-9 -> 1, etc.
+    return block % LOGO_URLS.length;
+  }
+
   // ====== INIT ENEMY FORMATION ======
   function spawnWave(wave){
     enemies = [];
@@ -106,14 +119,16 @@
     const startY = 70;
     const W = state.enemyW, H = state.enemyH, gapX = state.enemyGapX, gapY = state.enemyGapY;
 
+    // one uniform logo per wave
+    const idx = waveLogoIndex(wave);
+
     for(let r=0; r<rows; r++){
       for(let c=0; c<cols; c++){
-        const idx = Math.floor(Math.random() * Math.max(1, enemyImages.length));
         enemies.push({
           x: startX + c*(W+gapX),
           y: startY + r*(H+gapY),
           w: W, h: H,
-          imgIdx: idx,
+          imgIdx: idx,     // uniform logo this wave
           alive: true
         });
       }
@@ -151,7 +166,7 @@
     const touch = e.touches ? e.touches[0] : e;
     return {
       x: (touch.clientX - rect.left) * (canvas.width / rect.width),
-      y: (touch.clientY - rect.top) * (canvas.height / rect.height)
+      y: (touch.clientY - rect.top)  * (canvas.height / rect.height)
     };
   }
   function startDrag(e){ dragging = true; const p=canvasToLocal(e); setPlayerTo(p.x,p.y); e.preventDefault(); }
@@ -206,7 +221,7 @@
     return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
   }
 
-  // ====== ENEMY BEHAVIOR ======
+  // ====== ENEMY BEHAVIOR (formation) ======
   function updateEnemies(dt){
     let minX = Infinity, maxX = -Infinity;
     enemies.forEach(e=>{
@@ -215,7 +230,7 @@
       minX = Math.min(minX, e.x);
       maxX = Math.max(maxX, e.x + e.w);
 
-      // Random shots (time-scaled)
+      // Random shots (time scaled)
       if (Math.random() < state.enemyShotRate * dt){
         enemyBullets.push({
           x: e.x+e.w/2-2, y: e.y+e.h, w: 4, h: 10,
@@ -231,6 +246,44 @@
     if (minX < 20 || maxX > canvas.width - 20){
       enemyDir *= -1;
       enemies.forEach(e=> { if(e.alive) e.y += state.enemyDrop; });
+    }
+  }
+
+  // ====== SWOOPERS (move differently, different logo) ======
+  function spawnSwooper(){
+    const waveIdx = waveLogoIndex(state.wave);
+    const altIdx  = (waveIdx + 1) % LOGO_URLS.length; // different than the formation
+    const baseX = 60 + Math.random()*(canvas.width - 120);
+    swoopers.push({
+      baseX,
+      x: baseX,
+      y: -40,
+      w: state.enemyW,
+      h: state.enemyH,
+      imgIdx: altIdx,
+      t: 0,                     // time since spawn
+      vy: 180 + Math.random()*80, // downward speed px/s
+      amp: 60 + Math.random()*50, // sine amplitude
+      freq: 2 + Math.random()*1.5, // sine frequency
+      alive: true
+    });
+  }
+
+  function updateSwoopers(dt){
+    // spawn every ~4–8s
+    swooperCooldown -= dt;
+    if (swooperCooldown <= 0){
+      spawnSwooper();
+      swooperCooldown = 4 + Math.random()*4;
+    }
+    // move & cull
+    for (let i=swoopers.length-1; i>=0; i--){
+      const s = swoopers[i];
+      if (!s.alive) { swoopers.splice(i,1); continue; }
+      s.t += dt;
+      s.y += s.vy * dt;
+      s.x = s.baseX + Math.sin(s.t * s.freq) * s.amp;
+      if (s.y > canvas.height + 60) swoopers.splice(i,1);
     }
   }
 
@@ -301,19 +354,34 @@
     enemyBullets.forEach(b => b.y += b.vy * dt);
     for (let i=enemyBullets.length-1; i>=0; i--) if (enemyBullets[i].y > canvas.height+20) enemyBullets.splice(i,1);
 
-    // Enemies
+    // Enemies & swoopers
     updateEnemies(dt);
+    updateSwoopers(dt);
 
-    // Collisions: bullets vs enemies
+    // Collisions: bullets vs formation
     for (let i=bullets.length-1; i>=0; i--){
       const b = bullets[i];
+      let hit = false;
       for (let j=0; j<enemies.length; j++){
         const e = enemies[j];
         if (!e.alive) continue;
         if (rectsOverlap(b, e)){
           e.alive = false;
-          bullets.splice(i,1);
+          hit = true;
           state.score += 50;
+          $score.textContent = "Score: " + state.score;
+          break;
+        }
+      }
+      if (hit){ bullets.splice(i,1); continue; }
+      // Collisions: bullets vs swoopers
+      for (let k=0; k<swoopers.length; k++){
+        const s = swoopers[k];
+        if (!s.alive) continue;
+        if (rectsOverlap(b, s)){
+          s.alive = false;
+          bullets.splice(i,1);
+          state.score += 100; // bonus for swooper
           $score.textContent = "Score: " + state.score;
           break;
         }
@@ -332,7 +400,7 @@
       }
     }
 
-    // Endless waves
+    // Endless waves: formation only
     if (enemies.every(e => !e.alive)){
       state.wave++;
       spawnWave(state.wave);
@@ -342,6 +410,7 @@
     ctx.clearRect(0,0,canvas.width,canvas.height);
     drawStarfield(dt);
     enemies.forEach(e => { if (e.alive) drawEnemy(e); });
+    swoopers.forEach(s => { if (s.alive) drawEnemy(s); });
     ctx.fillStyle = '#7fffd4';
     bullets.forEach(b => ctx.fillRect(b.x,b.y,b.w,b.h));
     ctx.fillStyle = '#ffcf7f';
@@ -381,6 +450,8 @@
   function resetGame(){
     bullets.length = 0;
     enemyBullets.length = 0;
+    swoopers.length = 0;
+    swooperCooldown = 3.5;
 
     state.score = 0;
     state.lives = 3;
@@ -399,9 +470,10 @@
     $gameOver.hidden = true;
 
     requestAnimationFrame(loop);
+    if (isMobile){ /* auto-fire remains active */ }
   }
 
-  document.getElementById('tryAgain').addEventListener('click', resetGame);
+  $tryAgain.addEventListener('click', resetGame);
 
   // ====== MUSIC (SoundCloud Widget API) ======
   let widget = null;
