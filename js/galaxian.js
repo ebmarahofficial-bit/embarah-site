@@ -12,13 +12,14 @@
   // ====== LOGO SOURCES ======
   // Recommend storing locally in /assets/logos for reliability.
   const LOGO_URLS = [
-    "assets/logos/excision.png",
-    "assets/logos/skrill.png",
-    "assets/logos/zedsdead.png",
-    "assets/logos/virtual_riot.png",
-    "assets/logos/subtronics.png",
-    "assets/logos/rusko.png",
-    "assets/logos/ebmarah.png",
+    "assets/logos/skism.png",
+    "assets/logos/skrillex.png",
+    "assets/logos/eptic.png",
+    "assets/logos/knife_party.png",
+    "assets/logos/calcium.png",
+    "assets/logos/barelyalive.png",
+    "assets/logos/truth.png",
+     "assets/logos/cyclops.png",
   ];
 
   // Player ship sprite (drop your file here)
