@@ -1,17 +1,13 @@
 /* Ebmarah Galaxian — Gorilla vs. Dubstep Logos
-   Updates in this version:
-   - Desktop layout nudged downward via CSS wrapper (no game logic change).
-   - Endless waves (already supported), plus per-cell random logo selection.
-   - Up/Down movement added (ArrowUp/ArrowDown or W/S).
-   - Mobile drag-to-move (ship follows your finger); auto-fire enabled on mobile.
-   - If enemies pass the bottom, they wrap back to the top instead of costing a life.
-   - Ship image path set to assets/ship.png (place your sprite there).
+   This update:
+   - Ship size bumped to 56x40 (drop your sprite at assets/ship.png).
+   - Game Over overlay with Try Again button to fully reset the run.
+   - Desktop/mobile behavior unchanged otherwise.
 */
 
 (() => {
   // ====== LOGO SOURCES ======
-  // Recommend storing locally in /assets/logos for reliability.
-  const LOGO_URLS = [
+ const LOGO_URLS = [
     "assets/logos/skism.png",
     "assets/logos/skrillex.png",
     "assets/logos/eptic.png",
@@ -22,15 +18,22 @@
      "assets/logos/cyclops.png",
   ];
 
-  // Player ship sprite (drop your file here)
-  const SHIP_IMG = "assets/ship.png"; // new name/location per your request
+  // Player ship sprite
+  const SHIP_IMG = "assets/ship.png";
 
-  // ====== CANVAS & CONTEXT ======
+  // ====== DOM ======
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d');
-
-  // Simple mobile detection (touch capability or small width)
   const isMobile = ("ontouchstart" in window) || navigator.maxTouchPoints > 0 || window.matchMedia("(max-width: 900px)").matches;
+
+  const $score = document.getElementById('score');
+  const $wave  = document.getElementById('wave');
+  const $lives = document.getElementById('lives');
+
+  const $gameOver   = document.getElementById('gameOver');
+  const $finalScore = document.getElementById('finalScore');
+  const $finalWave  = document.getElementById('finalWave');
+  const $tryAgain   = document.getElementById('tryAgain');
 
   // ====== GAME STATE ======
   const state = {
@@ -38,7 +41,7 @@
     lives: 3,
     wave: 1,
     playing: true,
-    // Tuned a bit easier
+    // tuning
     playerSpeed: 6,
     bulletSpeed: 10,
     enemyH: 48,
@@ -50,7 +53,7 @@
     enemyBaseSpeed: 0.6,
     enemyDrop: 18,
     enemyShotChance: 0.00075,
-    playerCooldownMs: 220, // slightly snappier
+    playerCooldownMs: 220,
   };
 
   const keys = { left:false, right:false, up:false, down:false, fire:false };
@@ -58,16 +61,16 @@
   const enemyBullets = [];
 
   const player = {
-    x: canvas.width/2 - 23, y: canvas.height - 100,
-    w: 46, h: 32,
+    x: canvas.width/2 - 28, y: canvas.height - 110,
+    w: 56, h: 40, // bigger ship
     canShootAt: 0
   };
 
   // Enemies
   let enemies = [];
-  let enemyDir = 1; // 1 →, -1 ←
+  let enemyDir = 1;
   let enemySpeed = state.enemyBaseSpeed;
-  let enemyImages = []; // loaded Image objects matched to logos
+  let enemyImages = [];
 
   // ====== LOAD IMAGES ======
   function loadImage(src){
@@ -92,14 +95,13 @@
   function spawnWave(wave){
     enemies = [];
     const cols = state.enemyCols;
-    const rows = state.enemyRowsBase + Math.floor((wave-1)/2); // gradually add rows
+    const rows = state.enemyRowsBase + Math.floor((wave-1)/2);
     const startX = 60;
     const startY = 70;
     const W = state.enemyW, H = state.enemyH, gapX = state.enemyGapX, gapY = state.enemyGapY;
 
     for(let r=0; r<rows; r++){
       for(let c=0; c<cols; c++){
-        // pick a random image per enemy (randomized enemies)
         const idx = Math.floor(Math.random() * Math.max(1, enemyImages.length));
         enemies.push({
           x: startX + c*(W+gapX),
@@ -111,8 +113,8 @@
       }
     }
     enemyDir = 1;
-    enemySpeed = state.enemyBaseSpeed + (wave-1)*0.12; // endless scaling
-    document.getElementById('wave').textContent = "Wave: " + wave;
+    enemySpeed = state.enemyBaseSpeed + (wave-1)*0.12;
+    $wave.textContent = "Wave: " + wave;
   }
 
   // ====== INPUT ======
@@ -131,13 +133,12 @@
     if (e.code === 'Space') keys.fire = false;
   });
 
-  // Fallback touch buttons (hidden when drag mode is active)
-  const leftBtn = document.getElementById('leftBtn');
+  // Touch/drag and fallback buttons
+  const leftBtn  = document.getElementById('leftBtn');
   const rightBtn = document.getElementById('rightBtn');
-  const fireBtn = document.getElementById('fireBtn');
-  const touchBtns = document.getElementById('touchBtns');
+  const fireBtn  = document.getElementById('fireBtn');
+  const touchBtns= document.getElementById('touchBtns');
 
-  // Drag-to-move on mobile
   let dragging = false;
   function canvasToLocal(e){
     const rect = canvas.getBoundingClientRect();
@@ -147,40 +148,23 @@
       y: (touch.clientY - rect.top) * (canvas.height / rect.height)
     };
   }
-
-  function startDrag(e){
-    dragging = true;
-    const p = canvasToLocal(e);
-    setPlayerTo(p.x, p.y);
-    e.preventDefault();
-  }
-  function moveDrag(e){
-    if(!dragging) return;
-    const p = canvasToLocal(e);
-    setPlayerTo(p.x, p.y);
-    e.preventDefault();
-  }
-  function endDrag(){
-    dragging = false;
-  }
-  function setPlayerTo(x, y){
+  function startDrag(e){ dragging = true; const p=canvasToLocal(e); setPlayerTo(p.x,p.y); e.preventDefault(); }
+  function moveDrag(e){ if(!dragging) return; const p=canvasToLocal(e); setPlayerTo(p.x,p.y); e.preventDefault(); }
+  function endDrag(){ dragging = false; }
+  function setPlayerTo(x,y){
     player.x = Math.max(10, Math.min(canvas.width - player.w - 10, x - player.w/2));
     player.y = Math.max(60, Math.min(canvas.height - player.h - 10, y - player.h/2));
   }
 
-  if (isMobile){
-    // Hide button controls if drag available
+  if (("ontouchstart" in window) || navigator.maxTouchPoints > 0 || window.matchMedia("(max-width: 900px)").matches){
     touchBtns.style.display = 'none';
-
-    // Enable drag on canvas
     canvas.addEventListener('touchstart', startDrag, {passive:false});
-    canvas.addEventListener('touchmove', moveDrag, {passive:false});
-    canvas.addEventListener('touchend', endDrag, {passive:false});
-    canvas.addEventListener('mousedown', startDrag);
-    window.addEventListener('mousemove', moveDrag);
-    window.addEventListener('mouseup', endDrag);
+    canvas.addEventListener('touchmove',  moveDrag,  {passive:false});
+    canvas.addEventListener('touchend',   endDrag,   {passive:false});
+    canvas.addEventListener('mousedown',  startDrag);
+    window.addEventListener('mousemove',  moveDrag);
+    window.addEventListener('mouseup',    endDrag);
   } else {
-    // Keep button controls available on non-drag contexts
     const bindHold = (el, on, off) => {
       el.addEventListener('touchstart', (e)=>{ e.preventDefault(); on(); }, {passive:false});
       el.addEventListener('touchend',   (e)=>{ e.preventDefault(); off(); }, {passive:false});
@@ -188,31 +172,19 @@
       el.addEventListener('mouseup',    (e)=>{ e.preventDefault(); off(); });
       el.addEventListener('mouseleave', off);
     };
-    bindHold(leftBtn, ()=>keys.left=true, ()=>keys.left=false);
+    bindHold(leftBtn,  ()=>keys.left=true,  ()=>keys.left=false);
     bindHold(rightBtn, ()=>keys.right=true, ()=>keys.right=false);
-    bindHold(fireBtn, ()=>{ attemptShoot(); keys.fire=true; }, ()=>keys.fire=false);
+    bindHold(fireBtn,  ()=>{ attemptShoot(); keys.fire=true; }, ()=>keys.fire=false);
   }
 
-  // ====== AUTO-FIRE ON MOBILE ======
+  // Auto-fire on mobile
   let autoFireTimer = null;
   function startAutoFire(){
     if (autoFireTimer) return;
-    autoFireTimer = setInterval(() => {
-      attemptShoot();
-    }, Math.max(80, state.playerCooldownMs)); // auto cadence tuned to cooldown
+    autoFireTimer = setInterval(() => attemptShoot(), Math.max(80, state.playerCooldownMs));
   }
-  function stopAutoFire(){
-    if (autoFireTimer){
-      clearInterval(autoFireTimer);
-      autoFireTimer = null;
-    }
-  }
-  if (isMobile){
-    startAutoFire();
-    // Stop on blur, resume on focus (battery friendly)
-    window.addEventListener('blur', stopAutoFire);
-    window.addEventListener('focus', startAutoFire);
-  }
+  function stopAutoFire(){ if (autoFireTimer){ clearInterval(autoFireTimer); autoFireTimer=null; } }
+  if (isMobile){ startAutoFire(); window.addEventListener('blur', stopAutoFire); window.addEventListener('focus', startAutoFire); }
 
   // ====== SHOOTING ======
   function attemptShoot(){
@@ -230,25 +202,21 @@
 
   // ====== ENEMY BEHAVIOR ======
   function updateEnemies(dt){
-    // Move horizontally and find edges
     let minX = Infinity, maxX = -Infinity;
     enemies.forEach(e=>{
       if(!e.alive) return;
       e.x += enemyDir * enemySpeed * dt;
       minX = Math.min(minX, e.x);
       maxX = Math.max(maxX, e.x + e.w);
-      // Random shots
       if (Math.random() < state.enemyShotChance){
         enemyBullets.push({ x: e.x+e.w/2-2, y: e.y+e.h, w: 4, h: 10, vy: 4.5 + Math.random()*1.5 });
       }
-      // If enemy slips past the bottom, wrap to top (no penalty)
+      // Wrap from bottom to top instead of penalizing
       if (e.y > canvas.height - 40){
-        e.y = 60; // back to top band
-        // randomize its X within safe bounds on wrap
+        e.y = 60;
         e.x = 40 + Math.random()*(canvas.width - e.w - 80);
       }
     });
-    // Bounce and drop the formation
     if (minX < 20 || maxX > canvas.width - 20){
       enemyDir *= -1;
       enemies.forEach(e=> { if(e.alive) e.y += state.enemyDrop; });
@@ -267,10 +235,8 @@
 
   function drawEnemy(e){
     const img = enemyImages[e.imgIdx];
-    if (img){
-      ctx.drawImage(img, e.x, e.y, e.w, e.h);
-    } else {
-      // Fallback: glowing badge
+    if (img){ ctx.drawImage(img, e.x, e.y, e.w, e.h); }
+    else {
       drawGlowRect(e.x, e.y, e.w, e.h, 'rgba(0,255,200,0.8)');
       ctx.fillStyle = '#b7ffe6';
       ctx.font = 'bold 14px system-ui';
@@ -281,16 +247,14 @@
   }
 
   function drawPlayer(){
-    if (shipImg){
-      ctx.drawImage(shipImg, player.x, player.y, player.w, player.h);
-    } else {
-      // Neon triangle fallback
+    if (shipImg){ ctx.drawImage(shipImg, player.x, player.y, player.w, player.h); }
+    else {
       ctx.save();
       ctx.translate(player.x + player.w/2, player.y + player.h/2);
       ctx.shadowBlur = 18; ctx.shadowColor = 'rgba(53,255,160,0.8)';
       ctx.fillStyle = 'rgba(53,255,160,0.95)';
       ctx.beginPath();
-      ctx.moveTo(-20, 16); ctx.lineTo(0, -16); ctx.lineTo(20, 16); ctx.closePath();
+      ctx.moveTo(-24, 20); ctx.lineTo(0, -20); ctx.lineTo(24, 20); ctx.closePath();
       ctx.fill();
       ctx.restore();
     }
@@ -300,36 +264,26 @@
   let last = 0;
   function loop(ts){
     if (!last) last = ts;
-    const dt = Math.min(32, ts - last); // clamp dt for stability
+    const dt = Math.min(32, ts - last);
     last = ts;
     if (!state.playing) return;
 
-    // Update player position (keys)
     if (keys.left)  player.x -= state.playerSpeed;
     if (keys.right) player.x += state.playerSpeed;
     if (keys.up)    player.y -= state.playerSpeed;
     if (keys.down)  player.y += state.playerSpeed;
 
-    // Bound player
     player.x = Math.max(10, Math.min(canvas.width - player.w - 10, player.x));
     player.y = Math.max(60, Math.min(canvas.height - player.h - 10, player.y));
 
-    // Manual shooting (desktop)
     if (!isMobile && keys.fire) attemptShoot();
 
-    // Bullets
     bullets.forEach(b => b.y += b.vy);
-    for (let i=bullets.length-1; i>=0; i--){
-      if (bullets[i].y < -20) bullets.splice(i,1);
-    }
+    for (let i=bullets.length-1; i>=0; i--) if (bullets[i].y < -20) bullets.splice(i,1);
 
-    // Enemy bullets
     enemyBullets.forEach(b => b.y += b.vy);
-    for (let i=enemyBullets.length-1; i>=0; i--){
-      if (enemyBullets[i].y > canvas.height+20) enemyBullets.splice(i,1);
-    }
+    for (let i=enemyBullets.length-1; i>=0; i--) if (enemyBullets[i].y > canvas.height+20) enemyBullets.splice(i,1);
 
-    // Enemies move
     updateEnemies(dt);
 
     // Collisions: bullets vs enemies
@@ -342,7 +296,7 @@
           e.alive = false;
           bullets.splice(i,1);
           state.score += 50;
-          document.getElementById('score').textContent = "Score: " + state.score;
+          $score.textContent = "Score: " + state.score;
           break;
         }
       }
@@ -353,16 +307,13 @@
       if (rectsOverlap(enemyBullets[i], {x:player.x,y:player.y,w:player.w,h:player.h})){
         enemyBullets.splice(i,1);
         state.lives--;
-        document.getElementById('lives').textContent = "Lives: " + state.lives;
+        $lives.textContent = "Lives: " + state.lives;
         player.x = canvas.width/2 - player.w/2;
-        player.y = canvas.height - 100;
-        if (state.lives <= 0){
-          gameOver();
-        }
+        player.y = canvas.height - 110;
+        if (state.lives <= 0) gameOver();
       }
     }
 
-    // Endless waves: when all current enemies are dead, spawn the next
     if (enemies.every(e => !e.alive)){
       state.wave++;
       spawnWave(state.wave);
@@ -370,7 +321,7 @@
 
     // Draw
     ctx.clearRect(0,0,canvas.width,canvas.height);
-    drawStarfield(ts);
+    drawStarfield();
     enemies.forEach(e => { if (e.alive) drawEnemy(e); });
     ctx.fillStyle = '#7fffd4';
     bullets.forEach(b => ctx.fillRect(b.x,b.y,b.w,b.h));
@@ -400,19 +351,46 @@
     ctx.restore();
   }
 
+  // ====== GAME OVER + RESTART ======
   function gameOver(){
     state.playing = false;
-    ctx.save();
-    ctx.fillStyle = 'rgba(0,0,0,0.6)';
-    ctx.fillRect(0,0,canvas.width,canvas.height);
-    ctx.fillStyle = '#ffffff';
-    ctx.textAlign = 'center';
-    ctx.font = 'bold 36px system-ui';
-    ctx.fillText('Game Over', canvas.width/2, canvas.height/2 - 10);
-    ctx.font = '16px system-ui';
-    ctx.fillText('Refresh to play again', canvas.width/2, canvas.height/2 + 22);
-    ctx.restore();
+    $finalScore.textContent = state.score.toString();
+    $finalWave.textContent = state.wave.toString();
+    $gameOver.hidden = false;
   }
+
+  function resetGame(){
+    // clear world
+    bullets.length = 0;
+    enemyBullets.length = 0;
+
+    // reset state
+    state.score = 0;
+    state.lives = 3;
+    state.wave  = 1;
+    state.playing = true;
+
+    // reset HUD
+    $score.textContent = "Score: 0";
+    $lives.textContent = "Lives: 3";
+    $wave.textContent  = "Wave: 1";
+
+    // reset player
+    player.x = canvas.width/2 - player.w/2;
+    player.y = canvas.height - 110;
+    player.canShootAt = 0;
+
+    spawnWave(state.wave);
+    $gameOver.hidden = true;
+
+    // resume loop
+    requestAnimationFrame(loop);
+
+    // ensure auto-fire back on mobile
+    if (isMobile) { stopAutoFire(); startAutoFire(); }
+  }
+
+  $tryAgain.addEventListener('click', resetGame);
 
   // ====== MUSIC (SoundCloud Widget API) ======
   let widget = null;
@@ -438,7 +416,6 @@
     widget.bind(SC.Widget.Events.PLAY, () => { playing = true; btnPlay.textContent = '⏸'; });
     widget.bind(SC.Widget.Events.PAUSE, () => { playing = false; btnPlay.textContent = '▶'; });
 
-    // Prime on first user interaction
     const prime = () => { widget.setVolume(parseFloat(vol.value)*100); widget.play(); window.removeEventListener('click', prime); };
     window.addEventListener('click', prime, { once: true });
   }
