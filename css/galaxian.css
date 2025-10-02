@@ -5,7 +5,7 @@
   --panel: rgba(0,0,0,0.55);
   --panel-strong: rgba(0,0,0,0.75);
   --text: #e9ffee;
-  --desktop-offset: 14.6vh; /* sits inside your green frame */
+  --desktop-offset: 16.6vh; /* sits inside your green frame */
   --app-h: 100dvh;          /* dynamic viewport height for mobile */
 }
 
