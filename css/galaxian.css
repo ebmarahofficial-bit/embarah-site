@@ -5,8 +5,8 @@
   --panel: rgba(0,0,0,0.55);
   --panel-strong: rgba(0,0,0,0.75);
   --text: #e9ffee;
-  /* nudged further down so it sits inside your green frame */
-  --desktop-offset: 12vh; /* was 8vh */
+  /* slightly lower on desktop so it sits inside your BG frame */
+  --desktop-offset: 12vh;
 }
 
 * { box-sizing: border-box; }
@@ -61,8 +61,15 @@ body {
   border-radius: 16px;
   box-shadow: 0 10px 40px rgba(0,0,0,0.45), inset 0 0 80px rgba(53,255,160,0.10);
 }
+/* Desktop: scale the whole game box down about 10% from the TOP so it fits your frame */
+@media (min-width: 901px){
+  .game-shell{
+    transform: scale(.9);
+    transform-origin: top center;
+  }
+}
 
-/* Phones: fullscreen take-over */
+/* Phones: fullscreen take-over and tight padding so the canvas fits */
 @media (max-width: 900px) {
   .game-shell{
     width: 100vw;
@@ -70,6 +77,7 @@ body {
     border-radius: 0;
     border: none;
     background: var(--panel-strong);
+    padding: 8px;
   }
 }
 
@@ -111,7 +119,9 @@ body {
   border: 1px solid rgba(53,255,160,0.2);
 }
 #game{
-  width: 100%; height: auto; max-height: 100%;
+  width: 100%;
+  height: auto;
+  max-height: 100%;
   image-rendering: pixelated;
   border-radius: 10px;
   box-shadow: 0 10px 40px rgba(0,0,0,0.45), inset 0 0 40px rgba(53,255,160,0.08);
@@ -143,6 +153,7 @@ body {
   background: rgba(0,0,0,0.55);
   border-radius: 10px;
 }
+.gameover-overlay[hidden]{ display: none !important; } /* ensure it fully disappears */
 .gameover-overlay .panel{
   background: rgba(0,0,0,0.75);
   border: 1px solid rgba(53,255,160,0.35);
