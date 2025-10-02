@@ -5,8 +5,8 @@
   --panel: rgba(0,0,0,0.55);
   --panel-strong: rgba(0,0,0,0.75);
   --text: #e9ffee;
-  /* new: how far down we nudge the layout on desktop (~8vh ≈ from ~45% to ~53%) */
-  --desktop-offset: 8vh;
+  /* nudged further down so it sits inside your green frame */
+  --desktop-offset: 12vh; /* was 8vh */
 }
 
 * { box-sizing: border-box; }
@@ -35,7 +35,7 @@ body {
   z-index: -1;
 }
 
-/* Centering area; we’ll push content downward on desktop only */
+/* Centering area; push content downward on desktop */
 .page-offset{
   min-height: 100vh;
   display: grid;
@@ -135,6 +135,35 @@ body {
 @media (max-width: 900px) {
   .touch-controls{ display: flex; }
 }
+
+/* Game Over Overlay */
+.gameover-overlay{
+  position: absolute; inset: 0;
+  display: grid; place-items: center;
+  background: rgba(0,0,0,0.55);
+  border-radius: 10px;
+}
+.gameover-overlay .panel{
+  background: rgba(0,0,0,0.75);
+  border: 1px solid rgba(53,255,160,0.35);
+  border-radius: 12px;
+  padding: 18px 20px;
+  text-align: center;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.5), inset 0 0 40px rgba(53,255,160,0.08);
+}
+.gameover-overlay h2{
+  margin: 0 0 8px; color: var(--accent);
+}
+.gameover-overlay .btn{
+  margin-top: 10px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(53,255,160,0.5);
+  background: rgba(0,0,0,0.6);
+  color: var(--text);
+  cursor: pointer;
+}
+.gameover-overlay .btn:hover{ filter: brightness(1.1); }
 
 /* Footer */
 .help{
