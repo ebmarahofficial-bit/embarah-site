@@ -1,6 +1,7 @@
 /* Ebmarah Galaxian — bosses every 10 waves starting at 10
-   - Start menu with ship naming + background (assets/ebmarahgamestart.png)
-   - Ship name renders under the ship during gameplay
+   - Start menu overlay uses site bg video (#bgVideo) behind it
+   - Ship name persisted to localStorage and rendered under the ship
+   - Title-screen BGM with play/pause, mute, and volume; stops on game start
    - All existing features preserved (power-ups, swoopers, pause, SC widget, highscores, etc.)
 */
 (() => {
@@ -30,6 +31,7 @@
   ];
 
   const SHIP_IMG = "assets/ship.png";
+  const SHIP_NAME_KEY = 'ebmarah_ship_name';
 
   // ====== DOM ======
   const canvas = document.getElementById('game');
@@ -54,29 +56,93 @@
   const $hsList = document.getElementById('hsList');
   const $hsClose = document.getElementById('hsClose');
 
-  // ===== START MENU OVERLAY (ship naming) =====
+  // ===== START MENU OVERLAY (ship naming + BGM over site bg video) =====
   const startOverlay = document.createElement('div');
   startOverlay.id = 'startOverlay';
-  startOverlay.style = "position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:#000;";
+  startOverlay.style = [
+    "position:fixed","inset:0","z-index:9999",
+    "display:flex","align-items:center","justify-content:center",
+    "background:rgba(0,0,0,.35)","backdrop-filter:blur(2px)"
+  ].join(';');
+
+  const savedName = (localStorage.getItem(SHIP_NAME_KEY) || "").slice(0,20);
+
   startOverlay.innerHTML = `
-    <div style="position:relative;width:min(100%,1000px);">
-      <img src="assets/ebmarahgamestart.png" alt="Start" style="width:100%;height:auto;display:block;"/>
-      <div style="position:absolute;left:50%;bottom:10%;transform:translateX(-50%);
-                  background:rgba(0,0,0,.65);padding:16px 18px;border-radius:10px;
-                  border:1px solid rgba(0,255,200,.35);display:flex;flex-direction:column;gap:10px;align-items:center;
-                  box-shadow:0 0 24px rgba(0,255,180,.25);">
-        <h1 style="margin:4px 0 2px;color:#e9fef8;letter-spacing:.06em;">SPACEMARAH</h1>
+    <div style="position:relative;width:min(100%,1000px);height:auto;padding:16px;">
+      <div style="
+        position:relative;left:50%;transform:translateX(-50%);
+        background:rgba(0,0,0,.65);padding:16px 18px;border-radius:12px;
+        border:1px solid rgba(0,255,200,.35);
+        display:flex;flex-direction:column;gap:10px;align-items:center;
+        box-shadow:0 0 24px rgba(0,255,180,.25); max-width:580px;">
+        <h1 style="margin:2px 0 0;color:#e9fef8;letter-spacing:.06em;">SPACEMARAH</h1>
+
         <label for="shipNameInput" style="color:#b9fff0;font-size:14px;">Name your ship</label>
         <input id="shipNameInput" type="text" maxlength="20" placeholder="My Ship"
-          style="width:220px;padding:10px 12px;border-radius:8px;border:1px solid #39fbd1;background:#061a17;color:#eafffb;outline:none;"/>
-        <button id="startBtn" style="padding:10px 16px;border-radius:10px;border:1px solid #39fbd1;background:#0b2e28;color:#cafff4;cursor:pointer;font-weight:700;letter-spacing:.04em;">
+          style="width:260px;padding:10px 12px;border-radius:8px;border:1px solid #39fbd1;background:#061a17;color:#eafffb;outline:none;"
+          value="${savedName.replace(/"/g,'&quot;')}"/>
+
+        <!-- Title-screen BGM (only plays on this screen) -->
+        <!-- Background music -->
+        <audio id="bgm" src="assets/hommies.mp3" preload="auto" loop playsinline></audio>
+
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:center;margin-top:6px">
+          <button id="bgmPlay"  style="padding:8px 12px;border-radius:10px;border:1px solid #39fbd1;background:#0b2e28;color:#cafff4;cursor:pointer;font-weight:700;">Play</button>
+          <button id="bgmMute"  style="padding:8px 12px;border-radius:10px;border:1px solid #39fbd1;background:#0b2e28;color:#cafff4;cursor:pointer;font-weight:700;">Mute</button>
+          <label style="color:#b9fff0;font-size:13px;display:flex;align-items:center;gap:8px">
+            Vol
+            <input id="bgmVol" type="range" min="0" max="1" step="0.01" value="0.7" style="width:160px">
+          </label>
+        </div>
+
+        <button id="startBtn" style="padding:10px 16px;border-radius:10px;border:1px solid #39fbd1;background:#0b2e28;color:#cafff4;cursor:pointer;font-weight:800;letter-spacing:.04em;margin-top:6px">
           Start Game
         </button>
+        <p style="color:#8deed6;font-size:12px;margin:6px 0 0;">Press <strong>Enter</strong> to start</p>
       </div>
     </div>`;
   document.body.appendChild(startOverlay);
+
   const $shipInput = startOverlay.querySelector('#shipNameInput');
-  const $startBtn = startOverlay.querySelector('#startBtn');
+  const $startBtn  = startOverlay.querySelector('#startBtn');
+
+  // BGM controls (title screen only)
+  const titleBgm   = startOverlay.querySelector('#bgm');
+  const $bgmPlay   = startOverlay.querySelector('#bgmPlay');
+  const $bgmMute   = startOverlay.querySelector('#bgmMute');
+  const $bgmVol    = startOverlay.querySelector('#bgmVol');
+
+  // Keep bg video rolling under the overlay (if present)
+  const bgVideo = document.getElementById('bgVideo'); // from page HTML
+  const primeMedia = () => {
+    try { bgVideo && bgVideo.play && bgVideo.play(); } catch {}
+    try { if (titleBgm && titleBgm.paused) titleBgm.play(); } catch {}
+    window.removeEventListener('pointerdown', primeMedia);
+    window.removeEventListener('keydown', primeOnKey);
+  };
+  const primeOnKey = (e) => { if (e.key === ' ' || e.key === 'Enter') primeMedia(); };
+  window.addEventListener('pointerdown', primeMedia, { once: true });
+  window.addEventListener('keydown', primeOnKey);
+
+  if (titleBgm){
+    titleBgm.volume = parseFloat($bgmVol.value);
+
+    $bgmPlay.addEventListener('click', async () => {
+      try{
+        if (titleBgm.paused){ await titleBgm.play(); $bgmPlay.textContent = 'Pause'; }
+        else { titleBgm.pause(); $bgmPlay.textContent = 'Play'; }
+      }catch{}
+    });
+
+    $bgmMute.addEventListener('click', () => {
+      titleBgm.muted = !titleBgm.muted;
+      $bgmMute.textContent = titleBgm.muted ? 'Unmute' : 'Mute';
+    });
+
+    $bgmVol.addEventListener('input', () => {
+      titleBgm.volume = parseFloat($bgmVol.value);
+    });
+  }
 
   // ====== GAME STATE ======
   const state = {
@@ -85,7 +151,7 @@
     wave: 1,
     playing: false,
     paused: false,
-    shipName: "",
+    shipName: savedName,
     playerSpeed: 320,       // base px/sec (Super Speed scales this)
     bulletSpeed: 700,       // px/sec
     enemyH: 48,
@@ -360,7 +426,7 @@
 
   const isTouch = ("ontouchstart" in window) || navigator.maxTouchPoints > 0;
   if (isTouch){
-    touchBtns.style.display = 'none';
+    if (touchBtns) touchBtns.style.display = 'none';
     canvas.addEventListener('touchstart', startDrag, {passive:false});
     canvas.addEventListener('touchmove',  moveDrag,  {passive:false});
     canvas.addEventListener('touchend',   endDrag,   {passive:false});
@@ -653,7 +719,6 @@
   function drawPlayer(){
     if (shipImg){ ctx.drawImage(shipImg, player.x, player.y, player.w, player.h); }
     else {
-      // fallback triangle
       ctx.save();
       ctx.translate(player.x + player.w/2, player.y + player.h/2);
       ctx.shadowBlur = 18; ctx.shadowColor = 'rgba(53,255,160,0.8)';
@@ -664,7 +729,6 @@
       ctx.restore();
     }
 
-    // Ship Name under the ship
     if (state.shipName){
       ctx.save();
       ctx.font = '16px Orbitron, system-ui';
@@ -1102,9 +1166,17 @@
     await loadEnemyImages();
     setupSC();
 
-    // Start Menu actions
-    const begin = () => {
-      state.shipName = ($shipInput.value || "Anonymous").trim().slice(0,20);
+    const endTitleScreen = () => {
+      // Stop/clear title BGM when game begins
+      if (titleBgm){
+        try { titleBgm.pause(); } catch {}
+        try { titleBgm.currentTime = 0; } catch {}
+      }
+      // Persist name
+      const name = ($shipInput.value || "Anonymous").trim().slice(0,20);
+      state.shipName = name;
+      try { localStorage.setItem(SHIP_NAME_KEY, name); } catch {}
+      // Hide overlay, begin game
       startOverlay.style.display = "none";
 
       // Prime HUD
@@ -1118,8 +1190,15 @@
       if (isTouch) startAutoFire();
       requestAnimationFrame(loop);
     };
-    $startBtn.addEventListener('click', begin);
-    $shipInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') begin(); });
+
+    // Start on button or Enter key while overlay is visible
+    $startBtn.addEventListener('click', endTitleScreen);
+    $shipInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') endTitleScreen(); });
+    document.addEventListener('keydown', (e) => {
+      if (startOverlay.style.display !== "none" && e.key === 'Enter') endTitleScreen();
+    });
+
+    // Focus name input
     $shipInput.focus({ preventScroll:true });
   })();
 
