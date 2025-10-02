@@ -15,6 +15,9 @@
 
   /* Right-side gutter knob for phones (tiny inset to avoid clipping) */
   --mobile-right-gutter: 10px; /* tweak 0–16px if needed */
+
+  /* NEW: how much to push the game canvas down on mobile (under the HUD) */
+  --mobile-stage-top: 36px;   /* try 24–48px to taste */
 }
 @supports (height: 100svh){ :root{ --app-h: 100svh; } }
 @supports (height: 100dvh){ :root{ --app-h: 100dvh; } }
@@ -110,7 +113,7 @@ body {
              calc(env(safe-area-inset-bottom,0px) + 6px)
              calc(env(safe-area-inset-left,0px) + 8px);
     gap: 6px;
-    display: grid;                          /* ← keep grid */
+    display: grid;
     grid-template-rows: auto 1fr auto;      /* HUD / stage / footer */
     align-content: stretch;
   }
@@ -155,16 +158,18 @@ body {
   border: 1px solid rgba(53,255,160,0.2);
 }
 
-/* MOBILE: center the canvas & add safe right inset to avoid clipping */
+/* MOBILE: push the canvas down under the HUD, avoid right clipping */
 @media (max-width: 900px){
   .game-stage{
-    padding: 0;
-    padding-inline-end: calc(var(--mobile-right-gutter) + env(safe-area-inset-right, 0px));
-    padding-inline-start: calc(env(safe-area-inset-left, 0px));
+    /* right/left safe insets + a little gutter on right */
+    padding: var(--mobile-stage-top) 
+             calc(var(--mobile-right-gutter) + env(safe-area-inset-right, 0px))
+             0
+             calc(env(safe-area-inset-left, 0px));
 
-    display: flex;               /* use flex just for centering the canvas */
+    display: flex;               /* center canvas in remaining area */
     justify-content: center;     /* center horizontally */
-    align-items: center;         /* center vertically */
+    align-items: flex-start;     /* start at top of stage area, then padding pushes it down */
     min-height: 0;
   }
 }
