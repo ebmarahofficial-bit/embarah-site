@@ -6,7 +6,7 @@
   --panel-strong: rgba(0,0,0,0.75);
   --text: #e9ffee;
   /* slightly lower on desktop so it sits inside your BG frame */
-  --desktop-offset: 12vh;
+  --desktop-offset: 13.5vh; /* was 12vh */
 }
 
 * { box-sizing: border-box; }
@@ -61,10 +61,12 @@ body {
   border-radius: 16px;
   box-shadow: 0 10px 40px rgba(0,0,0,0.45), inset 0 0 80px rgba(53,255,160,0.10);
 }
-/* Desktop: scale the whole game box down about 10% from the TOP so it fits your frame */
+/* Desktop:
+   - Keep the existing 0.9 overall scale (width stays the same as before)
+   - Add height-only squeeze to make it a bit shorter without changing width */
 @media (min-width: 901px){
   .game-shell{
-    transform: scale(.9);
+    transform: scale(.9) scaleY(.94);  /* width ~0.9, height ~0.9*0.94 */
     transform-origin: top center;
   }
 }
