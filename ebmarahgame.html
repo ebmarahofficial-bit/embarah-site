@@ -129,7 +129,9 @@
           <span id="wave">Wave: 1</span>
           <span id="lives">Lives: 3</span>
         </div>
-        <div class="hud-right">
+        <div class="hud-right" style="display:flex; gap:8px; align-items:center;">
+          <!-- NEW: High Scores button -->
+          <button id="highBtn" class="pause-btn" title="View High Scores">High Scores</button>
           <!-- NEW: game pause button -->
           <button id="pauseBtn" class="pause-btn">Pause</button>
 
@@ -163,6 +165,18 @@
             <button id="tryAgain" class="btn">Try Again</button>
           </div>
         </div>
+
+        <!-- NEW: High Scores Modal -->
+        <div id="highModal" class="modal" hidden>
+          <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="hsTitle">
+            <h3 id="hsTitle">High Scores</h3>
+            <ol id="hsList" class="hs-list"></ol>
+            <div class="modal-actions">
+              <button id="hsClose" class="btn">Close</button>
+            </div>
+          </div>
+        </div>
+
       </section>
 
       <footer class="help">
