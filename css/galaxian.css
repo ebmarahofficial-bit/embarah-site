@@ -11,7 +11,7 @@
   --app-h: 100vh;
 
   /* NEW: right-side gutter for mobile (pulls game in from right) */
-  --mobile-right-gutter: 12px; /* adjust 8–20px to taste */
+  --mobile-right-gutter: 8px; /* adjust 8–20px to taste */
 }
 @supports (height: 100svh){
   :root{ --app-h: 100svh; }
