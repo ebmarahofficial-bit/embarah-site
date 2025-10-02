@@ -1,16 +1,7 @@
-/* Ebmarah Galaxian — bosses tankier, 7 new power-ups, truly random swoopers
-   - Boss HP increased + explicit maxHp bar
-   - 7 NEW power-ups:
-     • Shield x2 (two-hit shield)
-     • Drone (auto ally fires at targets)
-     • Freeze (slow enemies & enemy bullets)
-     • Magnet (pulls drops toward you)
-     • Double Score (2x points)
-     • Pierce (regular bullets pierce 1 target)
-     • Super Speed (move faster)
-   - Swoopers now pick a RANDOM logo (not tied to next stage)
-   - Desktop pause with P (and Esc) remains
-   - Beam stays the MOST rare drop
+/* Ebmarah Galaxian — bosses every 10 waves starting at 10
+   - Start menu with ship naming + background (assets/ebmarahgamestart.png)
+   - Ship name renders under the ship during gameplay
+   - All existing features preserved (power-ups, swoopers, pause, SC widget, highscores, etc.)
 */
 (() => {
   // ---- Mobile height helper ----
@@ -38,7 +29,6 @@
     "assets/logos/hvted.png",
   ];
 
-  // Player ship sprite
   const SHIP_IMG = "assets/ship.png";
 
   // ====== DOM ======
@@ -64,13 +54,38 @@
   const $hsList = document.getElementById('hsList');
   const $hsClose = document.getElementById('hsClose');
 
+  // ===== START MENU OVERLAY (ship naming) =====
+  const startOverlay = document.createElement('div');
+  startOverlay.id = 'startOverlay';
+  startOverlay.style = "position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:#000;";
+  startOverlay.innerHTML = `
+    <div style="position:relative;width:min(100%,1000px);">
+      <img src="assets/ebmarahgamestart.png" alt="Start" style="width:100%;height:auto;display:block;"/>
+      <div style="position:absolute;left:50%;bottom:10%;transform:translateX(-50%);
+                  background:rgba(0,0,0,.65);padding:16px 18px;border-radius:10px;
+                  border:1px solid rgba(0,255,200,.35);display:flex;flex-direction:column;gap:10px;align-items:center;
+                  box-shadow:0 0 24px rgba(0,255,180,.25);">
+        <h1 style="margin:4px 0 2px;color:#e9fef8;letter-spacing:.06em;">SPACEMARAH</h1>
+        <label for="shipNameInput" style="color:#b9fff0;font-size:14px;">Name your ship</label>
+        <input id="shipNameInput" type="text" maxlength="20" placeholder="My Ship"
+          style="width:220px;padding:10px 12px;border-radius:8px;border:1px solid #39fbd1;background:#061a17;color:#eafffb;outline:none;"/>
+        <button id="startBtn" style="padding:10px 16px;border-radius:10px;border:1px solid #39fbd1;background:#0b2e28;color:#cafff4;cursor:pointer;font-weight:700;letter-spacing:.04em;">
+          Start Game
+        </button>
+      </div>
+    </div>`;
+  document.body.appendChild(startOverlay);
+  const $shipInput = startOverlay.querySelector('#shipNameInput');
+  const $startBtn = startOverlay.querySelector('#startBtn');
+
   // ====== GAME STATE ======
   const state = {
     score: 0,
     lives: 3,
     wave: 1,
-    playing: true,
+    playing: false,
     paused: false,
+    shipName: "",
     playerSpeed: 320,       // base px/sec (Super Speed scales this)
     bulletSpeed: 700,       // px/sec
     enemyH: 48,
@@ -89,7 +104,7 @@
   const bullets = [];        // player bullets (also holds beam)
   const enemyBullets = [];   // enemy bullets
 
-  // Slightly bigger player ship (kept)
+  // Player ship
   const player = {
     x: canvas.width/2 - 36, y: canvas.height - 120,
     w: 72, h: 52,
@@ -102,35 +117,32 @@
   let enemySpeed = state.enemyBaseSpeed;
   let enemyImages = [];
 
-  // Boss (every 20th wave) — more health + maxHp
+  // Boss (every 10th wave starting at 10)
   let boss = null; // {x,y,w,h,imgIdx,hp,maxHp,baseX,amp,freq,t,vy,alive}
-  const BOSS_HP_BASE = 42;     // ↑ more tanky base
-  const BOSS_HP_STEP = 8;      // extra every few waves
+  const BOSS_HP_BASE = 42;
+  const BOSS_HP_STEP = 8;
 
   // Swoopers (side attackers)
   const swoopers = [];
   let swooperCooldown = 3.5;
 
   // ====== POWER-UPS ======
-  // Existing types
   const POWER_TYPES = {
     RAPID:  { key:'RAPID',  label:'R',  color:'#7fffd4', dur: 10, effect:'faster_fire'   },
     MULTI:  { key:'MULTI',  label:'M',  color:'#ffd27f', dur: 12, effect:'multishot2'    },
     SPREAD: { key:'SPREAD', label:'S',  color:'#d07fff', dur: 10, effect:'spread5'       },
-    SHIELD: { key:'SHIELD', label:'⭘',  color:'#35ffa0', dur: 999,effect:'shield1'      }, // 1-hit (stacks)
-    BEAM:   { key:'BEAM',   label:'B',  color:'#7fb8ff', dur: 8,  effect:'beam'          }, // most rare
-    LIFE:   { key:'LIFE',   label:'+1', color:'#fff37f', dur: 0,  effect:'extra_life'    }, // +1 life
-    // NEW 7 ideas:
-    SHIELD2:{ key:'SHIELD2',label:'⭘2', color:'#92ffc6', dur: 999,effect:'shield2'      }, // 2-hit (stacks)
-    DRONE:  { key:'DRONE',  label:'D',  color:'#9fe0ff', dur: 12, effect:'drone'         }, // ally shooter
-    FREEZE: { key:'FREEZE', label:'Fz', color:'#aff8ff', dur: 6,  effect:'freeze'        }, // slows enemies/bullets
-    MAGNET: { key:'MAGNET', label:'Mg', color:'#c0ff9f', dur: 12, effect:'magnet'        }, // pull pickups
-    DOUBLE: { key:'DOUBLE', label:'2x', color:'#ffe49f', dur: 15, effect:'double'        }, // double score
-    PIERCE: { key:'PIERCE', label:'P',  color:'#9fb8ff', dur: 10, effect:'pierce'        }, // bullets pierce 1
-    SUPER:  { key:'SUPER',  label:'Sp', color:'#a2ffcf', dur: 10, effect:'superspeed'    }, // faster move
+    SHIELD: { key:'SHIELD', label:'⭘',  color:'#35ffa0', dur: 999,effect:'shield1'      },
+    BEAM:   { key:'BEAM',   label:'B',  color:'#7fb8ff', dur: 8,  effect:'beam'          },
+    LIFE:   { key:'LIFE',   label:'+1', color:'#fff37f', dur: 0,  effect:'extra_life'    },
+    SHIELD2:{ key:'SHIELD2',label:'⭘2', color:'#92ffc6', dur: 999,effect:'shield2'      },
+    DRONE:  { key:'DRONE',  label:'D',  color:'#9fe0ff', dur: 12, effect:'drone'         },
+    FREEZE: { key:'FREEZE', label:'Fz', color:'#aff8ff', dur: 6,  effect:'freeze'        },
+    MAGNET: { key:'MAGNET', label:'Mg', color:'#c0ff9f', dur: 12, effect:'magnet'        },
+    DOUBLE: { key:'DOUBLE', label:'2x', color:'#ffe49f', dur: 15, effect:'double'        },
+    PIERCE: { key:'PIERCE', label:'P',  color:'#9fb8ff', dur: 10, effect:'pierce'        },
+    SUPER:  { key:'SUPER',  label:'Sp', color:'#a2ffcf', dur: 10, effect:'superspeed'    },
   };
 
-  // Weighted rarity (higher weight = more common). Beam is MOST rare.
   const POWER_WEIGHTS = [
     [POWER_TYPES.RAPID,   5.0],
     [POWER_TYPES.MULTI,   3.5],
@@ -144,24 +156,22 @@
     [POWER_TYPES.SHIELD,  0.7],
     [POWER_TYPES.SHIELD2, 0.6],
     [POWER_TYPES.LIFE,    0.35],
-    [POWER_TYPES.BEAM,    0.10], // MOST rare
+    [POWER_TYPES.BEAM,    0.10],
   ];
-  function weightedChoice(weighted) {
+  function weightedChoice(weighted){
     const total = weighted.reduce((s,[,w])=>s+w,0);
     let r = Math.random()*total;
     for (const [t,w] of weighted){ if ((r-=w)<=0) return t; }
     return weighted[0][0];
   }
 
-  // Active buffs/timers
   const buffs = {
     rapidUntil: 0,
     multishotUntil: 0,
     spreadUntil: 0,
     beamUntil: 0,
     shieldHits: 0,
-
-    shield2Hits: 0,        // stacks with shieldHits
+    shield2Hits: 0,
     droneUntil: 0, droneAccum: 0,
     freezeUntil: 0,
     magnetUntil: 0,
@@ -170,45 +180,36 @@
     superUntil: 0,
   };
 
-  const powerUps = []; // {x,y,w,h,vy,type,spin}
+  const powerUps = [];
+  let powerupTimer = 18 + Math.random()*16;
+  const KILL_DROP_CHANCE = 0.04;    // 4% on normal enemy kills
+  const LIFE_SUPER_RARE  = 0.006;   // 0.6% extra life chance
+  const SWOOPER_DROP_CHANCE = 0.03;
+  const BOSS_DROP_COUNT = 2;
+  const BOSS_LIFE_DROP = 1;
 
-  // Drop tuning (rarer overall)
-  let powerupTimer = 18 + Math.random()*16; // periodic drop every ~18–34s
-  const KILL_DROP_CHANCE = 0.04;            // 4% on normal enemy kills
-  const LIFE_SUPER_RARE  = 0.006;           // 0.6% extra life chance on normal kills
-  const SWOOPER_DROP_CHANCE = 0.03;         // swoopers slightly lower
-  const BOSS_DROP_COUNT = 2;                // more random drops on boss defeat
-  const BOSS_LIFE_DROP = 1;                 // +1 Life guaranteed on boss defeat
-
-  function spawnPowerUp(x, y, forcedType){
+  function spawnPowerUp(x,y,forcedType){
     const t = forcedType || weightedChoice(POWER_WEIGHTS);
-    powerUps.push({
-      x, y, w: 26, h: 26,
-      vy: 120 + Math.random()*80,
-      type: t,
-      spin: Math.random()*Math.PI*2
-    });
+    powerUps.push({ x,y,w:26,h:26, vy:120+Math.random()*80, type:t, spin:Math.random()*Math.PI*2 });
   }
-
   function updatePowerUps(dt){
     powerupTimer -= dt;
     if (powerupTimer <= 0){
       spawnPowerUp(30 + Math.random()*(canvas.width - 60), -30, undefined);
       powerupTimer = 20 + Math.random()*18;
     }
-
     for (let i=powerUps.length-1; i>=0; i--){
       const p = powerUps[i];
 
       // Magnet pull
-      if (isBuffActive(buffs.magnetUntil)){
+      if (performance.now() < buffs.magnetUntil){
         const pcx = p.x + p.w/2, pcy = p.y + p.h/2;
         const cx = player.x + player.w/2, cy = player.y + player.h/2;
         const dx = cx - pcx, dy = cy - pcy;
         const dist = Math.hypot(dx,dy) || 1;
         const R = 240;
         if (dist < R){
-          const pull = 220; // px/s toward player
+          const pull = 220;
           p.x += (dx/dist) * pull * dt;
           p.y += (dy/dist) * pull * dt;
         }
@@ -218,20 +219,18 @@
       p.spin += dt*3;
 
       if (p.y > canvas.height + 40){ powerUps.splice(i,1); continue; }
-      if (rectsOverlap(p, {x:player.x, y:player.y, w:player.w, h:player.h})){
+      if (rectsOverlap(p, {x:player.x,y:player.y,w:player.w,h:player.h})){
         applyPowerUp(p.type);
         addScore(25);
         powerUps.splice(i,1);
       }
     }
   }
-
   function drawPowerUps(){
     powerUps.forEach(p=>{
       ctx.save();
-      ctx.translate(p.x + p.w/2, p.y + p.h/2);
+      ctx.translate(p.x+p.w/2,p.y+p.h/2);
       ctx.rotate(Math.sin(p.spin)*0.3);
-
       ctx.shadowBlur = 10;
       ctx.shadowColor = p.type.color;
       ctx.lineWidth = 2;
@@ -246,11 +245,10 @@
       ctx.font = 'bold 14px system-ui';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(p.type.label, 0, 1);
+      ctx.fillText(p.type.label,0,1);
       ctx.restore();
     });
   }
-
   function applyPowerUp(t){
     const now = performance.now();
     switch(t.key){
@@ -260,9 +258,7 @@
       case 'BEAM':   buffs.beamUntil      = Math.max(buffs.beamUntil, now) + t.dur*1000; break;
       case 'SHIELD': buffs.shieldHits    += 1; break;
       case 'LIFE':   state.lives += 1; $lives.textContent = "Lives: " + state.lives; break;
-
-      // NEW:
-      case 'SHIELD2': buffs.shield2Hits += 2; break; // two hits
+      case 'SHIELD2': buffs.shield2Hits += 2; break;
       case 'DRONE':    buffs.droneUntil  = Math.max(buffs.droneUntil, now) + t.dur*1000; break;
       case 'FREEZE':   buffs.freezeUntil = Math.max(buffs.freezeUntil, now) + t.dur*1000; break;
       case 'MAGNET':   buffs.magnetUntil = Math.max(buffs.magnetUntil, now) + t.dur*1000; break;
@@ -271,9 +267,8 @@
       case 'SUPER':    buffs.superUntil  = Math.max(buffs.superUntil, now) + t.dur*1000; break;
     }
   }
-  function isBuffActive(until){ return performance.now() < until; }
 
-  // ====== LOAD IMAGES ======
+  // ====== IMAGE LOADING ======
   function loadImage(src){
     return new Promise((resolve) => {
       const img = new Image();
@@ -287,61 +282,39 @@
     const results = await Promise.all(LOGO_URLS.map(loadImage));
     enemyImages = results;
   }
-  let shipImg = null; loadImage(SHIP_IMG).then(img => shipImg = img);
+  let shipImg = null;
+  loadImage(SHIP_IMG).then(img=>shipImg=img);
 
   function waveLogoIndex(wave){ return Math.floor((wave - 1) / 5) % LOGO_URLS.length; }
 
   // ====== INIT ENEMY FORMATION or BOSS ======
   function spawnWave(wave){
     boss = null;
-    enemies = [];
-    const isBossWave = (wave % 20 === 0);
+    enemies.length = 0;
 
+    // Boss waves at 10 and every 10 thereafter
+    const isBossWave = (wave % 10 === 0 && wave >= 10);
     const idx = waveLogoIndex(wave);
 
     if (isBossWave){
       const w = Math.floor(canvas.width * 0.28);
       const h = Math.floor(canvas.height * 0.22);
       const baseX = canvas.width/2;
-
-      const hp = BOSS_HP_BASE + Math.floor(wave / 3) * BOSS_HP_STEP; // beefier scaling
-      boss = {
-        x: baseX - w/2,
-        y: 90,
-        w, h,
-        imgIdx: idx,
-        hp,
-        maxHp: hp,
-        baseX,
-        amp: 120,
-        freq: 1.2,
-        t: 0,
-        vy: 20,
-        alive: true
-      };
+      const hp = BOSS_HP_BASE + Math.floor(wave / 3) * BOSS_HP_STEP;
+      boss = { x: baseX - w/2, y: 90, w, h, imgIdx: idx, hp, maxHp: hp, baseX, amp: 120, freq: 1.2, t: 0, vy: 20, alive: true };
       enemySpeed = state.enemyBaseSpeed + (wave-1)*12;
     } else {
       const cols = state.enemyCols;
       const rows = state.enemyRowsBase + Math.floor((wave-1)/2);
-      const startX = 60;
-      const startY = 70;
-      const W = state.enemyW, H = state.enemyH, gapX = state.enemyGapX, gapY = state.enemyGapY;
-
-      for(let r=0; r<rows; r++){
-        for(let c=0; c<cols; c++){
-          enemies.push({
-            x: startX + c*(W+gapX),
-            y: startY + r*(H+gapY),
-            w: W, h: H,
-            imgIdx: idx,     // uniform logo this wave
-            alive: true
-          });
+      const startX = 60, startY = 70;
+      for(let r=0;r<rows;r++){
+        for(let c=0;c<cols;c++){
+          enemies.push({ x:startX+c*(state.enemyW+state.enemyGapX), y:startY+r*(state.enemyH+state.enemyGapY), w:state.enemyW,h:state.enemyH,imgIdx:idx, alive:true });
         }
       }
       enemyDir = 1;
       enemySpeed = state.enemyBaseSpeed + (wave-1)*12;
     }
-
     $wave.textContent = "Wave: " + wave;
   }
 
@@ -352,7 +325,7 @@
     if (e.code === 'ArrowUp' || e.code === 'KeyW') keys.up = true;
     if (e.code === 'ArrowDown' || e.code === 'KeyS') keys.down = true;
     if (e.code === 'Space') { keys.fire = true; e.preventDefault(); }
-    if (e.code === 'KeyP' || e.code === 'Escape'){ togglePause(); } // desktop pause with P (and Esc)
+    if (e.code === 'KeyP' || e.code === 'Escape'){ togglePause(); }
   });
   window.addEventListener('keyup', (e) => {
     if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = false;
@@ -362,7 +335,7 @@
     if (e.code === 'Space') keys.fire = false;
   });
 
-  // Touch/drag and fallback buttons
+  // Touch + buttons
   const leftBtn  = document.getElementById('leftBtn');
   const rightBtn = document.getElementById('rightBtn');
   const fireBtn  = document.getElementById('fireBtn');
@@ -396,6 +369,7 @@
     window.addEventListener('mouseup',    endDrag);
   } else {
     const bindHold = (el, on, off) => {
+      if (!el) return;
       el.addEventListener('touchstart', (e)=>{ e.preventDefault(); on(); }, {passive:false});
       el.addEventListener('touchend',   (e)=>{ e.preventDefault(); off(); }, {passive:false});
       el.addEventListener('mousedown',  (e)=>{ e.preventDefault(); on(); });
@@ -414,7 +388,10 @@
     autoFireTimer = setInterval(() => attemptShoot(), Math.max(80, currentCooldownMs()));
   }
   function stopAutoFire(){ if (autoFireTimer){ clearInterval(autoFireTimer); autoFireTimer=null; } }
-  if (isTouch){ startAutoFire(); window.addEventListener('blur', stopAutoFire); window.addEventListener('focus', startAutoFire); }
+  if (isTouch){
+    window.addEventListener('blur', stopAutoFire);
+    window.addEventListener('focus', () => { if (state.playing && !state.paused) startAutoFire(); });
+  }
 
   // ====== PAUSE ======
   function setPaused(p){
@@ -427,31 +404,32 @@
     if (p){ stopAutoFire(); }
     else if (isTouch){ startAutoFire(); }
   }
-  function togglePause(){ setPaused(!state.paused); }
+  function togglePause(){ if (!state.playing) return; setPaused(!state.paused); }
   if ($pauseBtn){ $pauseBtn.addEventListener('click', togglePause); }
 
   // ====== UTILS (score, speeds) ======
   function addScore(n){
-    const mult = isBuffActive(buffs.doubleUntil) ? 2 : 1;
+    const mult = performance.now() < buffs.doubleUntil ? 2 : 1;
     state.score += n * mult;
     $score.textContent = "Score: " + state.score;
   }
   function currentCooldownMs(){
-    return isBuffActive(buffs.rapidUntil) ? Math.max(80, state.playerCooldownMs * 0.6) : state.playerCooldownMs;
+    return (performance.now() < buffs.rapidUntil) ? Math.max(80, state.playerCooldownMs * 0.6) : state.playerCooldownMs;
   }
   function currentPlayerSpeed(){
-    return isBuffActive(buffs.superUntil) ? state.playerSpeed * 1.5 : state.playerSpeed;
+    return (performance.now() < buffs.superUntil) ? state.playerSpeed * 1.5 : state.playerSpeed;
   }
   function freezeFactor(){ // < 1 = slower enemies
-    return isBuffActive(buffs.freezeUntil) ? 0.55 : 1;
+    return (performance.now() < buffs.freezeUntil) ? 0.55 : 1;
   }
 
   // ====== SHOOTING with BUFFS ======
   function attemptShoot(){
+    if (!state.playing || state.paused) return;
     const now = performance.now();
     if (now < player.canShootAt) return;
 
-    const usingBeam = isBuffActive(buffs.beamUntil);
+    const usingBeam = (now < buffs.beamUntil);
 
     if (usingBeam){
       bullets.push({
@@ -468,9 +446,9 @@
     const shots = [];
     const centerX = player.x + player.w/2;
     const baseVy = -state.bulletSpeed;
-    const hasMulti  = isBuffActive(buffs.multishotUntil);
-    const hasSpread = isBuffActive(buffs.spreadUntil);
-    const hasPierce = isBuffActive(buffs.pierceUntil);
+    const hasMulti  = (now < buffs.multishotUntil);
+    const hasSpread = (now < buffs.spreadUntil);
+    const hasPierce = (now < buffs.pierceUntil);
 
     const makeShot = (x, vx=0) => ({ x, y: player.y - 8, w: 4, h: 10, vx, vy: baseVy, pierce: hasPierce ? 1 : 0 });
 
@@ -576,7 +554,7 @@
     }
   }
 
-  // Swoopers — RANDOM logo each time (not next stage)
+  // Swoopers — random logo
   function spawnSwooper(){
     const randIdx  = Math.floor(Math.random() * LOGO_URLS.length);
     const baseX = 60 + Math.random()*(canvas.width - 120);
@@ -602,16 +580,15 @@
 
   // ====== DRONE (ally shooter) ======
   function updateDrone(dt){
-    if (!isBuffActive(buffs.droneUntil)) return;
+    if (!(performance.now() < buffs.droneUntil)) return;
     buffs.droneAccum += dt;
     const interval = 0.35; // seconds per shot
     while (buffs.droneAccum >= interval){
       buffs.droneAccum -= interval;
 
-      // Aim at nearest target (enemy, swooper, or boss center)
+      // Aim at nearest target
       let target = null;
       let bestD = Infinity;
-
       const centerOf = (o)=>({ x:o.x + o.w/2, y:o.y + o.h/2 });
 
       enemies.forEach(e=>{
@@ -659,7 +636,6 @@
     ctx.fillRect(x,y,w,h);
     ctx.restore();
   }
-
   function drawEnemyRectLikeLogo(e){
     const img = enemyImages[e.imgIdx];
     if (img){ ctx.drawImage(img, e.x, e.y, e.w, e.h); }
@@ -673,9 +649,11 @@
     }
   }
 
+  // ====== DRAW PLAYER + NAME ======
   function drawPlayer(){
     if (shipImg){ ctx.drawImage(shipImg, player.x, player.y, player.w, player.h); }
     else {
+      // fallback triangle
       ctx.save();
       ctx.translate(player.x + player.w/2, player.y + player.h/2);
       ctx.shadowBlur = 18; ctx.shadowColor = 'rgba(53,255,160,0.8)';
@@ -683,6 +661,18 @@
       ctx.beginPath();
       ctx.moveTo(-28, 24); ctx.lineTo(0, -24); ctx.lineTo(28, 24); ctx.closePath();
       ctx.fill();
+      ctx.restore();
+    }
+
+    // Ship Name under the ship
+    if (state.shipName){
+      ctx.save();
+      ctx.font = '16px Orbitron, system-ui';
+      ctx.fillStyle = '#eafffb';
+      ctx.textAlign = 'center';
+      ctx.shadowColor = 'rgba(0,255,200,.45)';
+      ctx.shadowBlur = 10;
+      ctx.fillText(state.shipName, player.x + player.w/2, player.y + player.h + 18);
       ctx.restore();
     }
 
@@ -707,8 +697,8 @@
   let last = 0;
   function loop(ts){
     if (!last) last = ts;
-    let dt = (ts - last) / 1000;     // seconds
-    if (dt > 0.05) dt = 0.05;        // clamp big frames
+    let dt = (ts - last) / 1000;  // seconds
+    if (dt > 0.05) dt = 0.05;     // clamp big frames
     last = ts;
 
     if (!state.playing) return;
@@ -892,7 +882,7 @@
       }
     }
 
-    // Endless waves
+    // Wave progression (endless)
     if (boss){
       if (!boss.alive){
         state.wave++;
@@ -1009,6 +999,7 @@
     spawnWave(state.wave);
     $gameOver.hidden = true;
 
+    if (isTouch) startAutoFire();
     requestAnimationFrame(ts => { last = ts; loop(ts); });
   }
 
@@ -1018,6 +1009,7 @@
   let widget = null;
   function setupSC(){
     const iframe = document.getElementById('scPlayer');
+    if (!iframe || typeof SC === 'undefined' || !SC.Widget) return;
     // eslint-disable-next-line no-undef
     widget = SC.Widget(iframe);
 
@@ -1028,19 +1020,19 @@
 
     let playing = false;
 
-    btnPlay.addEventListener('click', () => { if (!playing) widget.play(); else widget.pause(); });
-    btnPrev.addEventListener('click', () => widget.prev());
-    btnNext.addEventListener('click', () => widget.next());
-    vol.addEventListener('input', () => widget.setVolume(parseFloat(vol.value)*100));
+    if (btnPlay) btnPlay.addEventListener('click', () => { if (!playing) widget.play(); else widget.pause(); });
+    if (btnPrev) btnPrev.addEventListener('click', () => widget.prev());
+    if (btnNext) btnNext.addEventListener('click', () => widget.next());
+    if (vol) vol.addEventListener('input', () => widget.setVolume(parseFloat(vol.value)*100));
 
-    widget.bind(SC.Widget.Events.PLAY,  () => { playing = true;  btnPlay.textContent = '⏸'; });
-    widget.bind(SC.Widget.Events.PAUSE, () => { playing = false; btnPlay.textContent = '▶'; });
+    widget.bind(SC.Widget.Events.PLAY,  () => { playing = true;  if (btnPlay) btnPlay.textContent = '⏸'; });
+    widget.bind(SC.Widget.Events.PAUSE, () => { playing = false; if (btnPlay) btnPlay.textContent = '▶'; });
 
-    const prime = () => { widget.setVolume(parseFloat(vol.value)*100); widget.play(); window.removeEventListener('click', prime); };
+    const prime = () => { if (vol) widget.setVolume(parseFloat(vol.value)*100); widget.play(); window.removeEventListener('click', prime); };
     window.addEventListener('click', prime, { once: true });
   }
 
-  // ====== HIGH SCORES (local, with daily-sync hook) ======
+  // ====== HIGH SCORES (local) ======
   const HS_KEY = 'ebmarah_galaxian_highscores';
   const HS_SYNC_KEY = 'ebmarah_galaxian_last_sync';
 
@@ -1084,7 +1076,7 @@
     const last = localStorage.getItem(HS_SYNC_KEY);
     const now = Date.now();
     if (!last || (now - Number(last)) > 24*60*60*1000){
-      // TODO: connect to backend if desired
+      // hook for backend sync if needed
       localStorage.setItem(HS_SYNC_KEY, String(now));
     }
   }
@@ -1108,9 +1100,27 @@
   // ====== STARTUP ======
   (async function start(){
     await loadEnemyImages();
-    spawnWave(state.wave);
     setupSC();
-    requestAnimationFrame(loop);
+
+    // Start Menu actions
+    const begin = () => {
+      state.shipName = ($shipInput.value || "Anonymous").trim().slice(0,20);
+      startOverlay.style.display = "none";
+
+      // Prime HUD
+      $score.textContent = "Score: 0";
+      $lives.textContent = "Lives: 3";
+      $wave.textContent  = "Wave: 1";
+
+      // Begin game
+      state.playing = true;
+      spawnWave(state.wave);
+      if (isTouch) startAutoFire();
+      requestAnimationFrame(loop);
+    };
+    $startBtn.addEventListener('click', begin);
+    $shipInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') begin(); });
+    $shipInput.focus({ preventScroll:true });
   })();
 
 })();
