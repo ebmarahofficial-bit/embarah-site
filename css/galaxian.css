@@ -5,13 +5,13 @@
   --panel: rgba(0,0,0,0.55);
   --panel-strong: rgba(0,0,0,0.75);
   --text: #e9ffee;
-  --desktop-offset: 19.6vh; /* moved down just a little */
-  --app-h: 100dvh;          /* dynamic viewport height for mobile */
+  --desktop-offset: 19.6vh; /* desktop vertical position */
+  --app-h: 100dvh;          /* dynamic viewport height for mobile; set early by inline script */
 }
 
 * { box-sizing: border-box; }
 html, body { height: 100%; }
-html, body { overscroll-behavior-y: none; }
+html, body { overscroll-behavior-y: none; touch-action: manipulation; }
 body {
   margin: 0;
   color: var(--text);
@@ -34,6 +34,11 @@ body {
     radial-gradient(60% 60% at 50% 30%, rgba(0,255,170,0.10), transparent 60%),
     linear-gradient(to bottom, rgba(0,0,0,0.35), rgba(0,0,0,0.65));
   z-index: -1;
+}
+
+/* Hide background video & overlay on phones only */
+@media (max-width: 900px){
+  .bg-video, .bg-overlay { display: none !important; }
 }
 
 /* Center wrapper */
@@ -70,12 +75,10 @@ body {
   border-radius: 16px;
   box-shadow: 0 10px 40px rgba(0,0,0,0.45), inset 0 0 80px rgba(53,255,160,0.10);
 }
-/* Desktop: keep same height factor, stretch width slightly */
+/* Desktop: width/height transforms (leave as you tuned earlier) */
 @media (min-width: 901px){
   .game-shell{
-    /* Previously: scale(.9) scaleY(.94)
-       Now: add scaleX(1.035) to widen ~3.5% while keeping height unchanged. */
-    transform: scale(.9) scaleY(.94) scaleX(1.035);
+    transform: scale(.9) scaleY(.94) scaleX(1.095);
     transform-origin: top center;
   }
 }
@@ -84,7 +87,7 @@ body {
 @media (max-width: 900px) {
   .game-shell{
     width: 100vw;
-    height: var(--app-h);
+    height: var(--app-h); /* robust vs. browser UI bars */
     border-radius: 0;
     border: none;
     background: var(--panel-strong);
@@ -149,11 +152,14 @@ body {
   border-radius: 10px;
   box-shadow: 0 10px 40px rgba(0,0,0,0.45), inset 0 0 40px rgba(53,255,160,0.08);
   background: transparent;
-  touch-action: none;
+  touch-action: none; /* allows smooth drag without scrolling */
 }
-/* Mobile: fill vertical space */
+/* Mobile: consume every pixel of the stage */
 @media (max-width: 900px){
-  #game{ height: 100%; }
+  #game{
+    width: 100%;
+    height: 100%;   /* fill vertical space */
+  }
 }
 
 /* Touch controls (fallback only; hidden if drag-mode enabled) */
