@@ -31,6 +31,12 @@
     "assets/logos/barelyalive.png",
     "assets/logos/truth.png",
     "assets/logos/cyclops.png",
+    "assets/logos/diretybeats.png",
+    "assets/logos/espioth.png",
+    "assets/logos/fermilat.png",
+    "assets/logos/metallik.png",
+    "assets/logos/metvtrnx.png",
+    "assets/logos/hvted.png",
   ];
 
   // Player ship sprite
