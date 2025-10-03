@@ -186,6 +186,11 @@
     </nav>
   </aside>
 
+<!-- ✅ Wrapped page-specific content -->
+  <main id="app-content">
+    <div class="spacer"></div>
+
+  
   <!-- Clickable hotspots -->
   <div class="hotspots" aria-label="Choose your character">
     <a class="spot d00d"     href="d00d.html"     aria-label="D00D"></a>
@@ -287,5 +292,8 @@
     // Debug helper (?debug=1)
     if(new URLSearchParams(location.search).get('debug')==='1'){ document.body.classList.add('debug'); }
   </script>
+
+<script src="js/keep-root-url.js" defer></script>
+    
 </body>
 </html>
