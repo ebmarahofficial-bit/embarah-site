@@ -1,6 +1,6 @@
 /* Ebmarah Galaxian — bosses every 10 waves starting at 10
    - Start menu overlay uses site bg video (#bgVideo) behind it
-   - Title image (assets/ebmarahgamestart1.png) fills the 9:16 card with object-fit: cover; UI centered on top
+   - Title image (assets/ebmarahgamestart.png) fills a 9:16 card; UI is centered on top
    - Ship name persisted to localStorage and rendered under the ship
    - Title-screen BGM (assets/hommies.mp3) w/ play/pause, mute, volume; stops on game start
    - SoundCloud music stays paused until game starts, then plays
@@ -68,14 +68,14 @@
 
   const savedName = (localStorage.getItem(SHIP_NAME_KEY) || "").slice(0,20);
 
-  // Card size math: largest 9:16 that fits (slightly roomy)
-  // width = min(94vw, 9/16 of 94vh), height derived to keep 9:16.
+  // Card size math: choose the largest 9:16 that fits inside the viewport (90% of each axis)
+  // width = min(90vw, 9/16 of 90vh). height derives from width to keep 9:16.
   startOverlay.innerHTML = `
     <div style="position:relative;width:100%;height:auto;padding:16px;">
       <div
         id="startCard"
         style="
-          --cardW: min(94vw, calc(94vh * 9/16));
+          --cardW: min(90vw, calc(90vh * 9/16));
           --cardH: calc(var(--cardW) * 16 / 9);
           width: var(--cardW);
           height: var(--cardH);
@@ -85,18 +85,16 @@
           border:1px solid rgba(0,255,200,.35);
           box-shadow:0 0 28px rgba(0,255,180,.28), inset 0 0 0 1px rgba(0,255,200,.06);
           overflow: hidden;
-          background: transparent; /* no black bars behind */
+          background-image: url('assets/ebmarahgamestart1.png');
+          background-size: cover;
+          background-position: center;
+          background-repeat: no-repeat;
         "
       >
-        <!-- Poster (fills card; no letterbox) -->
-        <img src="assets/ebmarahgamestart1.png" alt="Ebmarah Game"
-             style="position:absolute; inset:0; width:100%; height:100%;
-                    object-fit:cover; object-position:center; pointer-events:none; z-index:0;" />
-
-        <!-- readable overlay + UI on top -->
+        <!-- subtle readable overlay on top of poster -->
         <div style="
-          position:absolute; inset:0; z-index:1;
-          background: radial-gradient(ellipse at center, rgba(0,0,0,.22), rgba(0,0,0,.45) 55%, rgba(0,0,0,.62));
+          position:absolute; inset:0;
+          background: radial-gradient(ellipse at center, rgba(0,0,0,.28), rgba(0,0,0,.45) 55%, rgba(0,0,0,.60));
           display:flex; align-items:center; justify-content:center;
           padding: clamp(10px, 2.5vmin, 24px);
         ">
@@ -1130,7 +1128,7 @@
     const last = localStorage.getItem(HS_SYNC_KEY);
     const now = Date.now();
     if (!last || (now - Number(last)) > 24*60*60*1000){
-    localStorage.setItem(HS_SYNC_KEY, String(now));
+      localStorage.setItem(HS_SYNC_KEY, String(now));
     }
   }
 
