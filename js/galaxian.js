@@ -1,6 +1,6 @@
 /* Ebmarah Galaxian — bosses every 10 waves starting at 10
    - Start menu overlay uses site bg video (#bgVideo) behind it
-   - Title image (assets/ebmarahgamestart1.png) fills a 9:16 card via object-fit:contain; UI centered on top
+   - Title image (assets/ebmarahgamestart1.png) fills the 9:16 card with object-fit: cover; UI centered on top
    - Ship name persisted to localStorage and rendered under the ship
    - Title-screen BGM (assets/hommies.mp3) w/ play/pause, mute, volume; stops on game start
    - SoundCloud music stays paused until game starts, then plays
@@ -68,8 +68,8 @@
 
   const savedName = (localStorage.getItem(SHIP_NAME_KEY) || "").slice(0,20);
 
-  // Card size math: choose the largest 9:16 that fits inside the viewport (slightly wider than before)
-  // width = min(94vw, 9/16 of 94vh). height derives from width to keep 9:16.
+  // Card size math: largest 9:16 that fits (slightly roomy)
+  // width = min(94vw, 9/16 of 94vh), height derived to keep 9:16.
   startOverlay.innerHTML = `
     <div style="position:relative;width:100%;height:auto;padding:16px;">
       <div
@@ -85,13 +85,13 @@
           border:1px solid rgba(0,255,200,.35);
           box-shadow:0 0 28px rgba(0,255,180,.28), inset 0 0 0 1px rgba(0,255,200,.06);
           overflow: hidden;
-          background:#000; /* fallback */
+          background: transparent; /* no black bars behind */
         "
       >
-        <!-- Poster as an IMG so the full artwork shows (no crop) -->
+        <!-- Poster (fills card; no letterbox) -->
         <img src="assets/ebmarahgamestart1.png" alt="Ebmarah Game"
              style="position:absolute; inset:0; width:100%; height:100%;
-                    object-fit:contain; object-position:center; pointer-events:none; z-index:0;" />
+                    object-fit:cover; object-position:center; pointer-events:none; z-index:0;" />
 
         <!-- readable overlay + UI on top -->
         <div style="
@@ -1130,7 +1130,7 @@
     const last = localStorage.getItem(HS_SYNC_KEY);
     const now = Date.now();
     if (!last || (now - Number(last)) > 24*60*60*1000){
-      localStorage.setItem(HS_SYNC_KEY, String(now));
+    localStorage.setItem(HS_SYNC_KEY, String(now));
     }
   }
 
