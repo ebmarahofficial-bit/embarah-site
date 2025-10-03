@@ -1,6 +1,6 @@
 /* Ebmarah Galaxian — bosses every 10 waves starting at 10
    - Start menu overlay uses site bg video (#bgVideo) behind it
-   - Title image (assets/ebmarahgamestart.png) shown instead of text
+   - Title image (assets/ebmarahgamestart.png) shown and sized responsively
    - Ship name persisted to localStorage and rendered under the ship
    - Title-screen BGM (assets/hommies.mp3) w/ play/pause, mute, volume; stops on game start
    - SoundCloud music stays paused until game starts, then plays
@@ -69,21 +69,31 @@
   const savedName = (localStorage.getItem(SHIP_NAME_KEY) || "").slice(0,20);
 
   startOverlay.innerHTML = `
-    <div style="position:relative;width:min(100%,1000px);height:auto;padding:16px;">
+    <div style="position:relative;width:100%;height:auto;padding:16px;">
       <div style="
         position:relative;left:50%;transform:translateX(-50%);
         background:rgba(0,0,0,.65);padding:16px 18px;border-radius:12px;
         border:1px solid rgba(0,255,200,.35);
         display:flex;flex-direction:column;gap:12px;align-items:center;
-        box-shadow:0 0 24px rgba(0,255,180,.25); max-width:620px;">
+        box-shadow:0 0 24px rgba(0,255,180,.25);
+        width:clamp(340px, 80vw, 920px); max-width:92vw;">
         
         <!-- TITLE IMAGE (replaces text) -->
-        <img src="assets/ebmarahgamestart1.png" alt="Ebmarah Game" draggable="false"
-             style="display:block;max-width:540px;width:100%;height:auto;border-radius:10px;box-shadow:0 0 20px rgba(0,255,160,.25)" />
+        <img src="assets/ebmarahgamestart.png" alt="Ebmarah Game" draggable="false"
+             style="
+               display:block;
+               width:100%;
+               height:auto;
+               max-height:clamp(180px, 40vh, 480px);
+               object-fit:contain;
+               object-position:center;
+               border-radius:10px;
+               box-shadow:0 0 20px rgba(0,255,160,.25)
+             " />
 
         <label for="shipNameInput" style="color:#b9fff0;font-size:14px;margin-top:2px">Name your ship</label>
         <input id="shipNameInput" type="text" maxlength="20" placeholder="My Ship"
-          style="width:260px;padding:10px 12px;border-radius:8px;border:1px solid #39fbd1;background:#061a17;color:#eafffb;outline:none;"
+          style="width:min(360px, 70%);padding:10px 12px;border-radius:8px;border:1px solid #39fbd1;background:#061a17;color:#eafffb;outline:none;"
           value="${savedName.replace(/"/g,'&quot;')}"/>
 
         <!-- Title-screen BGM (only plays on this screen) -->
@@ -94,7 +104,7 @@
           <button id="bgmMute"  style="padding:8px 12px;border-radius:10px;border:1px solid #39fbd1;background:#0b2e28;color:#cafff4;cursor:pointer;font-weight:700;">Mute</button>
           <label style="color:#b9fff0;font-size:13px;display:flex;align-items:center;gap:8px">
             Vol
-            <input id="bgmVol" type="range" min="0" max="1" step="0.01" value="0.7" style="width:160px">
+            <input id="bgmVol" type="range" min="0" max="1" step="0.01" value="0.7" style="width:min(260px, 50vw)">
           </label>
         </div>
 
@@ -590,7 +600,7 @@
       boss.x = boss.baseX + Math.sin(boss.t * boss.freq) * boss.amp - boss.w/2;
       boss.y = 90 + Math.sin(boss.t * 0.7) * 10;
 
-      if (Math.random() < 0.9 * dt * fz){ spawnBossShots(); }
+    if (Math.random() < 0.9 * dt * fz){ spawnBossShots(); }
       return;
     }
 
