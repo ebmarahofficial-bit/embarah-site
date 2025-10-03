@@ -75,7 +75,7 @@
       <div
         id="startCard"
         style="
-          --cardW: min(104vw, calc(104vh * 9/16));
+          --cardW: min(90vw, calc(90vh * 9/16));
           --cardH: calc(var(--cardW) * 16 / 9);
           width: var(--cardW);
           height: var(--cardH);
