@@ -4,6 +4,10 @@
    - Ship name persisted to localStorage and rendered under the ship
    - Title-screen BGM (assets/hommies.mp3) w/ play/pause, mute, volume; stops on game start
    - SoundCloud music stays paused until game starts, then plays
+
+   Update: Power-up icons
+   - Loads PNG icons from assets/powerups/<lowercase>.png (e.g., multi.png)
+   - Draws PNGs with glow; falls back to vector circle if missing
 */
 (() => {
   // ---- Mobile height helper ----
@@ -24,7 +28,7 @@
     "assets/logos/barelyalive.png",
     "assets/logos/truth.png",
     "assets/logos/cyclops.png",
-    "assets/logos/dirtybeats.png",
+    "assets/logos/diretybeats.png",
     "assets/logos/espioth.png",
     "assets/logos/fermilat.png",
     "assets/logos/metallik.png",
@@ -292,8 +296,47 @@
 
   function spawnPowerUp(x,y,forcedType){
     const t = forcedType || weightedChoice(POWER_WEIGHTS);
-    powerUps.push({ x,y,w:26,h:26, vy:120+Math.random()*80, type:t, spin:Math.random()*Math.PI*2 });
+    powerUps.push({
+      x, y,
+      w: 28, h: 28,
+      vy: 120+Math.random()*80,
+      type: t,
+      spin: Math.random()*Math.PI*2
+    });
   }
+
+  // ====== POWER-UP ICONS (PNG) ======
+  const POWER_ICON_SRC = (() => {
+    // filenames are lowercased keys (life -> life.png, shield2 -> shield2.png, etc.)
+    const map = {};
+    Object.keys(POWER_TYPES).forEach(k => {
+      map[k] = `assets/powerups/${k.toLowerCase()}.png`;
+    });
+    return map;
+  })();
+
+  const powerIcons = {}; // { RAPID: HTMLImageElement|null, ... }
+
+  function loadImage(src){
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => resolve(img);
+      img.onerror = () => resolve(null);
+      img.src = src;
+    });
+  }
+
+  async function loadPowerupIcons(){
+    const entries = await Promise.all(
+      Object.entries(POWER_ICON_SRC).map(async ([key, src]) => {
+        const img = await loadImage(src);
+        return [key, img];
+      })
+    );
+    entries.forEach(([k, img]) => { powerIcons[k] = img; });
+  }
+
   function updatePowerUps(dt){
     powerupTimer -= dt;
     if (powerupTimer <= 0){
@@ -328,29 +371,49 @@
       }
     }
   }
+
   function drawPowerUps(){
     powerUps.forEach(p=>{
+      const img = powerIcons[p.type.key];
       ctx.save();
       ctx.translate(p.x+p.w/2,p.y+p.h/2);
-      ctx.rotate(Math.sin(p.spin)*0.3);
-      ctx.shadowBlur = 10;
-      ctx.shadowColor = p.type.color;
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = p.type.color;
-      ctx.fillStyle = 'rgba(0,0,0,0.5)';
-      ctx.beginPath();
-      ctx.arc(0,0,p.w/2,0,Math.PI*2);
-      ctx.fill();
-      ctx.stroke();
+      ctx.rotate(Math.sin(p.spin)*0.25);
 
-      ctx.fillStyle = p.type.color;
-      ctx.font = 'bold 14px system-ui';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(p.type.label,0,1);
+      // Outer glow
+      ctx.shadowBlur = 14;
+      ctx.shadowColor = p.type.color;
+
+      if (img){
+        // PNG icon draw (centered)
+        // optional subtle backdrop circle to help contrast
+        ctx.globalAlpha = 0.85;
+        ctx.fillStyle = 'rgba(0,0,0,0.28)';
+        ctx.beginPath();
+        ctx.arc(0,0,(p.w/2)+2,0,Math.PI*2);
+        ctx.fill();
+
+        ctx.globalAlpha = 1;
+        ctx.drawImage(img, -p.w/2, -p.h/2, p.w, p.h);
+      } else {
+        // Fallback: vector circle + label
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = p.type.color;
+        ctx.fillStyle = 'rgba(0,0,0,0.5)';
+        ctx.beginPath();
+        ctx.arc(0,0,p.w/2,0,Math.PI*2);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = p.type.color;
+        ctx.font = 'bold 14px system-ui';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(p.type.label,0,1);
+      }
       ctx.restore();
     });
   }
+
   function applyPowerUp(t){
     const now = performance.now();
     switch(t.key){
@@ -370,16 +433,7 @@
     }
   }
 
-  // ====== IMAGE LOADING ======
-  function loadImage(src){
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.crossOrigin = "anonymous";
-      img.onload = () => resolve(img);
-      img.onerror = () => resolve(null);
-      img.src = src;
-    });
-  }
+  // ====== IMAGE LOADING (enemies/ship) ======
   async function loadEnemyImages(){
     const results = await Promise.all(LOGO_URLS.map(loadImage));
     enemyImages = results;
@@ -1151,6 +1205,7 @@
   // ====== STARTUP ======
   (async function start(){
     await loadEnemyImages();
+    await loadPowerupIcons(); // NEW: preload power-up PNGs
     setupSC();
 
     const endTitleScreen = () => {
