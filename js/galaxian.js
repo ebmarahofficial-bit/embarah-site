@@ -116,7 +116,7 @@
               value="${savedName.replace(/"/g,'&quot;')}"/>
 
             <!-- Title-screen BGM (only plays on this screen) -->
-            <audio id="bgm" src="assets/hommies.mp3" preload="auto" loop playsinline></audio>
+            <audio id="bgm" src="assets/galaxian.mp3" preload="auto" loop playsinline></audio>
 
             <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:center;margin-top:2px">
               <button id="bgmPlay"  style="padding:8px 12px;border-radius:10px;border:1px solid #39fbd1;background:#0b2e28;color:#cafff4;cursor:pointer;font-weight:700;">Play</button>
