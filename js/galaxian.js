@@ -79,7 +79,7 @@
         width:clamp(340px, 80vw, 920px); max-width:92vw;">
         
         <!-- TITLE IMAGE (replaces text) -->
-        <img src="assets/ebmarahgamestart.png" alt="Ebmarah Game" draggable="false"
+        <img src="assets/ebmarahgamestart1.png" alt="Ebmarah Game" draggable="false"
              style="
                display:block;
                width:100%;
