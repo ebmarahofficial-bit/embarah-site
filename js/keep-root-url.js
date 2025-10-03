@@ -6,7 +6,7 @@
    - Stores a "virtual path" in history state (for back/forward)
    WARNING: This is cosmetic routing. Deep links will always show "/", which affects SEO and sharing.
 */
- (() => {
+ /* (() => {
   const CONTAINER_SEL = '#app-content';
   const container = () => document.querySelector(CONTAINER_SEL);
   const sameOrigin = (url) => url.origin === location.origin;
