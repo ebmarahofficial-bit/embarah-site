@@ -85,7 +85,7 @@
           border:1px solid rgba(0,255,200,.35);
           box-shadow:0 0 28px rgba(0,255,180,.28), inset 0 0 0 1px rgba(0,255,200,.06);
           overflow: hidden;
-          background-image: url('assets/ebmarahgamestart.png');
+          background-image: url('assets/ebmarahgamestart1.png');
           background-size: cover;
           background-position: center;
           background-repeat: no-repeat;
