@@ -128,11 +128,8 @@
       .menu-btn{ display:inline-flex }
     }
   </style>
-<style id="appcontent-nobox-style">#app-content{display:contents}</style>
 </head>
-<body><!-- ✅ Wrapped page-specific content -->
-<main id="app-content">
-
+<body>
 
   <!-- Background video (auto-resizes) -->
   <div class="video-bg" aria-hidden="true">
@@ -210,9 +207,7 @@
   </main>
 
   <!-- Mascot -->
-  
-</main>
-<script src="js/ebmarah-mascot.js"></script>
+  <script src="js/ebmarah-mascot.js"></script>
   <script>
     if (window.EbmarahMascot?.init) {
       EbmarahMascot.init({
@@ -268,10 +263,6 @@
       window.addEventListener('keydown', e => { if(e.key === 'Escape') closeDrawer(); });
     })();
   </script>
-
-<script src="js/keep-root-url.js" defer></script>
-</body>
-</html>
 
 </body>
 </html>
