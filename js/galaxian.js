@@ -33,6 +33,7 @@
     "assets/logos/fermilat.png",
     "assets/logos/metallik.png",
     "assets/logos/hvted.png",
+    "assets/logos/ikki.png",
   ];
 
   const SHIP_IMG = "assets/ship.png";
