@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Ebmarah – Contact</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" type="image/png" href="assets/favicon.png" />
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&display=swap');
+    :root { --neon:#00ff99; --bg:#020d07; --ink:#e0ffe8; --glass:rgba(2,13,7,.75); }
+
+    * { box-sizing: border-box; }
+    html, body { height:100%; }
+    body {
+      margin:0; font-family:'Orbitron', sans-serif; color:var(--ink);
+      background:var(--bg); overflow-x:hidden;
+    }
+
+    /* ===== Video Background (fills any screen) ===== */
+    .video-bg{ position:fixed; inset:0; z-index:-3; overflow:hidden }
+    .video-bg video{
+      width:100%; height:100%; object-fit:cover; object-position:center;
+    }
+
+    /* ===== Header (same pattern as index) ===== */
+    header{
+      position:fixed; inset:0 0 auto 0;
+      display:flex; align-items:center; justify-content:space-between;
+      padding:12px 18px; background:var(--glass);
+      border-bottom:1px solid rgba(0,255,128,.2);
+      box-shadow:0 6px 24px rgba(0,0,0,.35); z-index:1000;
+      backdrop-filter: blur(10px);
+    }
+    .brand{display:flex; align-items:center; gap:10px; font-weight:800; letter-spacing:.02em}
+    .brand img{height:40px; width:auto}
+    .brand span{font-size:clamp(16px,2.6vw,22px)}
+
+    /* Desktop nav */
+    nav.site-nav{display:flex; align-items:center; gap:22px}
+    nav.site-nav a{
+      color:#76ffb2; text-decoration:none; font-weight:700; font-size:clamp(13px,1.6vw,14px)
+    }
+    nav.site-nav a:hover{ color:#00ffea }
+
+    /* Mobile trigger */
+    .menu-btn{
+      display:none; background:none; border:1px solid rgba(0,255,128,.35);
+      color:#b9ffdf; font-size:16px; font-weight:700; padding:8px 12px; border-radius:10px
+    }
+
+    /* ===== Offcanvas (Mobile) ===== */
+    .drawer-overlay{
+      position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:999; opacity:0; pointer-events:none; transition:.25s;
+    }
+    .drawer{
+      position:fixed; top:0; right:-320px; width:min(80vw,320px); height:100%;
+      background:#03140c; border-left:1px solid rgba(0,255,128,.25);
+      box-shadow:-12px 0 40px rgba(0,0,0,.45); z-index:1000; transition:right .25s ease;
+      display:flex; flex-direction:column; padding:18px;
+    }
+    .drawer header{ all:unset; display:flex; align-items:center; justify-content:space-between; margin-bottom:8px }
+    .drawer h2{ margin:0; font-size:18px; color:#9dffd2 }
+    .drawer .close{
+      background:none; border:1px solid rgba(0,255,128,.35); color:#b9ffdf; padding:6px 10px; border-radius:10px
+    }
+    .drawer nav{ display:flex; flex-direction:column; margin-top:12px }
+    .drawer nav a{
+      padding:14px 10px; border-bottom:1px solid rgba(0,255,128,.15);
+      color:#b9ffdf; text-decoration:none; font-weight:800; letter-spacing:.02em; font-size:16px;
+    }
+    .drawer nav a:last-child{ border-bottom:0 }
+    .drawer nav a:active{ background:rgba(0,255,128,.08) }
+
+    .drawer-open .drawer{ right:0 }
+    .drawer-open .drawer-overlay{ opacity:1; pointer-events:auto }
+
+    /* ===== Page content ===== */
+    .spacer{ height:70px }
+
+    main{
+      position:relative; z-index:1;
+      max-width:1100px; margin:0 auto; padding:22px;
+      display:flex; flex-direction:column; justify-content:flex-start;
+      min-height:calc(100vh - 70px);
+    }
+    /* Center card vertically on desktop for a nice balance */
+    @media (min-width: 961px){
+      main{ justify-content:center; }
+    }
+
+    .card{
+      background:rgba(0,0,0,0.6);
+      border:2px solid rgba(0,255,128,0.25);
+      border-radius:12px;
+      box-shadow:0 0 30px rgba(0,255,128,0.2);
+      padding: clamp(18px, 3vw, 28px);
+      margin:0 auto 22px;
+      width:min(100%, 960px);
+      text-align:center;
+    }
+    h1{
+      font-size:clamp(24px, 4.5vw, 40px);
+      margin:0 0 12px 0;
+      color:var(--neon); text-shadow:0 0 18px var(--neon);
+    }
+    p{
+      font-size:clamp(14px, 2.2vw, 16px);
+      margin:0 0 12px 0;
+      color:#c8fadc;
+    }
+    .email a{
+      color:#e0ffe8; text-decoration:none; border-bottom:1px dashed rgba(0,255,153,.4);
+    }
+    .email a:hover{ color:#00ffea; }
+
+    /* Responsive form frame */
+    .frame{
+      width:100%;
+      height: clamp(640px, 70vh, 1100px);
+      min-height: 520px;
+      border:0; border-radius:10px; overflow:hidden;
+      background:#0b120f; display:block;
+    }
+
+    /* ===== Responsive tweaks ===== */
+    @media (max-width: 960px){
+      nav.site-nav{ display:none }
+      .menu-btn{ display:inline-flex }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Background video (auto-resizes) -->
+  <div class="video-bg" aria-hidden="true">
+    <video id="bgVideo" autoplay loop muted playsinline preload="auto">
+      <source src="video/bg2.mp4" type="video/mp4" />
+    </video>
+  </div>
+
+  <!-- Top bar -->
+  <header>
+    <div class="brand">
+      <img src="assets/favicon.png" alt="Ebmarah" />
+      <span>Ebmarah</span>
+    </div>
+
+    <!-- Desktop nav -->
+    <nav class="site-nav" aria-label="Primary">
+      <a href="index.html">Home</a>
+       <!-- <a href="music.html">Music</a> -->
+      <a class="nav-link" href="live.html">Live</a>
+      <a href="sample-packs.html">Sample Packs</a>
+      <a href="about.html">About</a>
+      <a href="virtual-rave-room.html">Virtual Rave Room</a>
+      <!-- <a href="game.html">Game</a> -->
+      <a href="drum-pad.html">BeEbmarah</a>
+      <a href="hommies.html">Hommies</a>
+      <a href="ebmarahgame.html">Game</a>
+      <a href="samples.html">Fan Vocal Booth</a>
+      <a href="samples-library.html">Vocal Library</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+
+    <!-- Mobile trigger -->
+    <button class="menu-btn" id="menuBtn" aria-haspopup="true" aria-expanded="false" aria-controls="drawer">Menu</button>
+  </header>
+
+  <!-- Offcanvas drawer (mobile) -->
+  <div class="drawer-overlay" id="drawerOverlay"></div>
+  <aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-label="Site menu">
+    <header>
+      <h2>Menu</h2>
+      <button class="close" id="drawerClose" aria-label="Close menu">Close</button>
+    </header>
+    <nav aria-label="Mobile">
+      <a href="index.html">Home</a>
+       <!-- <a href="music.html">Music</a> -->
+      <a class="nav-link" href="live.html">Live</a>
+      <a href="sample-packs.html">Sample Packs</a>
+      <a href="about.html">About</a>
+      <!-- <a href="game.html">Game</a> -->
+      <a href="drum-pad.html">BeEbmarah</a>
+      <a href="hommies.html">Hommies</a>
+      <!-- <a href="ebmarahgame.html">Game</a> -->
+      <a href="samples.html">Fan Vocal Booth</a>
+      <a href="samples-library.html">Vocal Library</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+  </aside>
+  
+  <div class="spacer"></div>
+
+  <main>
+    <div class="card">
+      <h1>Contact</h1>
+      <p class="email">
+        Email me at <a href="mailto:info@ebmarah.com">info@ebmarah.com</a>
+      </p>
+      <iframe
+        class="frame"
+        title="Contact Ebmarah – Google Form"
+        src="https://docs.google.com/forms/d/e/1FAIpQLScjRy6XBEqPxuIvdpR86aGOaK6hdPpC4jjHRu3H_u21l257IQ/viewform?embedded=true">
+        Loading…
+      </iframe>
+    </div>
+  </main>
+
+  <!-- Mascot -->
+  <script src="js/ebmarah-mascot.js"></script>
+  <script>
+    if (window.EbmarahMascot?.init) {
+      EbmarahMascot.init({
+        mode:'passive',
+        position:'bottom-right',
+        funnyLines:['welcome to the jungle 🌴','bananas > drama','bass life forever','gorilla certified 🔊']
+      });
+    }
+  </script>
+
+  <!-- 
+  eb-dropdown.js: Replaces your desktop navigation (nav.site-nav) with a compact 
+  "MENU" dropdown on screens >=1024px. Keeps your mobile nav intact on smaller 
+  screens. The MENU button is pinned top-right and automatically lists your nav links. 
+-->
+<script src="js/eb-dropdown.js" defer></script>
+
+ <!-- 
+  weekly-locker.js: Alternates locking between ebmarahgame.html and drum-pad.html 
+  each week. One link is locked (unclickable, dimmed, 🔒 added) while the other is 
+  available. The lock/unlock switches automatically every Sunday at midnight (local time). 
+-->
+<script src="js/weekly-locker.js" defer></script>
+ 
+  
+  <!-- easter egg -->
+
+  <script src="js/shutupjustin.js"></script>
+
+  <!-- Drawer logic -->
+  <script>
+    (function(){
+      const root = document.documentElement;
+      const btn = document.getElementById('menuBtn');
+      const drawer = document.getElementById('drawer');
+      const overlay = document.getElementById('drawerOverlay');
+      const closeBtn = document.getElementById('drawerClose');
+
+      const openDrawer = () => {
+        root.classList.add('drawer-open');
+        btn.setAttribute('aria-expanded','true');
+        drawer.querySelector('a')?.focus();
+      };
+      const closeDrawer = () => {
+        root.classList.remove('drawer-open');
+        btn.setAttribute('aria-expanded','false');
+        btn.focus();
+      };
+
+      btn.addEventListener('click', openDrawer);
+      closeBtn.addEventListener('click', closeDrawer);
+      overlay.addEventListener('click', closeDrawer);
+      window.addEventListener('keydown', e => { if(e.key === 'Escape') closeDrawer(); });
+    })();
+  </script>
+
+</body>
+</html>
