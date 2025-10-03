@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Ebmarah – Fan Vocal Library</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" type="image/png" href="assets/favicon.png" />
+  <style>
+    /* ===== Base (from game.html) ===== */
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&display=swap');
+    :root { --neon:#00ff99; --ink:#e0ffe8; --bg:#020d07; --glass:rgba(2,13,7,.75); }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:'Orbitron',sans-serif;color:var(--ink);background:var(--bg);overflow-x:hidden}
+
+    /* Fullscreen background video */
+    .bg{position:fixed; inset:0; z-index:-1; overflow:hidden}
+    .bg video{width:100%; height:100%; object-fit:cover; filter:saturate(1.05) contrast(1.05)}
+
+    /* Header + Nav (matches game.html) */
+    header{
+      position:fixed; inset:0 0 auto 0;
+      display:flex; align-items:center; justify-content:space-between;
+      padding:12px 18px; background:var(--glass);
+      border-bottom:1px solid rgba(0,255,128,.2);
+      box-shadow:0 6px 24px rgba(0,0,0,.35); z-index:1000;
+      backdrop-filter: blur(10px);
+    }
+    .brand{display:flex; align-items:center; gap:10px; font-weight:800; letter-spacing:.02em}
+    .brand img{height:40px; width:auto}
+    .brand span{font-size:clamp(16px,2.6vw,22px)}
+    nav.site-nav{display:flex; align-items:center; gap:22px}
+    nav.site-nav a{ color:#76ffb2; text-decoration:none; font-weight:700; font-size:clamp(13px,1.6vw,14px) }
+    nav.site-nav a:hover{ color:#00ffea }
+    .menu-btn{
+      display:none; background:none; border:1px solid rgba(0,255,128,.35);
+      color:#b9ffdf; font-size:16px; font-weight:700; padding:8px 12px; border-radius:10px
+    }
+    .drawer-overlay{
+      position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:999; opacity:0; pointer-events:none; transition:.25s;
+    }
+    .drawer{
+      position:fixed; top:0; right:-320px; width:min(80vw,320px); height:100%;
+      background:#03140c; border-left:1px solid rgba(0,255,128,.25);
+      box-shadow:-12px 0 40px rgba(0,0,0,.45); z-index:1000; transition: right .25s ease;
+      display:flex; flex-direction:column; padding:18px;
+    }
+    .drawer header{ all:unset; display:flex; align-items:center; justify-content:space-between; margin-bottom:8px }
+    .drawer h2{ margin:0; font-size:18px; color:#9dffd2 }
+    .drawer .close{
+      background:none; border:1px solid rgba(0,255,128,.35); color:#b9ffdf; padding:6px 10px; border-radius:10px
+    }
+    .drawer nav{ display:flex; flex-direction:column; margin-top:12px }
+    .drawer nav a{
+      padding:14px 10px; border-bottom:1px solid rgba(0,255,128,.15);
+      color:#b9ffdf; text-decoration:none; font-weight:800; letter-spacing:.02em;
+      font-size:16px;
+    }
+    .drawer nav a:last-child{ border-bottom:0 }
+    .drawer nav a:active{ background:rgba(0,255,128,.08) }
+    .drawer-open .drawer{ right:0 }
+    .drawer-open .drawer-overlay{ opacity:1; pointer-events:auto }
+    @media (max-width: 960px){ nav.site-nav{ display:none } .menu-btn{ display:inline-flex } }
+
+    /* Page content spacing */
+    .spacer{height:72px}
+    .wrap{width:min(1100px,94vw);margin:0 auto 40px}
+
+    /* ===== Original page styles kept ===== */
+    h1{margin:16px 18px;text-shadow:0 0 14px var(--neon); text-align:center}
+    .controls{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0;align-items:center}
+    input,button,label{padding:9px;border-radius:8px;border:1px solid rgba(0,255,128,.35);background:rgba(0,0,0,.4);color:var(--ink)}
+    input[type="checkbox"]{width:auto;accent-color:#00ff99}
+    label.cb{border:none;background:transparent;padding:0;display:flex;align-items:center;gap:8px}
+    button{cursor:pointer;font-weight:700}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+    .card{background:rgba(0,0,0,.45);border:1px solid rgba(0,255,128,.25);border-radius:14px;padding:10px}
+    .meta{font-size:12px;opacity:.9;margin-top:6px;word-break:break-word}
+    .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+    .tiny{font-size:12px;opacity:.85}
+    .empty{padding:16px;text-align:center;opacity:.8}
+    .group{grid-column:1 / -1;border:1px dashed rgba(0,255,128,.3);border-radius:16px;padding:8px 10px}
+    .group h3{margin:4px 6px 10px;font-size:16px;color:#76ffb2}
+    .group .grid{margin:0}
+    .note{margin-top:8px;opacity:.75}
+  </style>
+</head>
+<body>
+  <!-- Background video -->
+  <div class="bg" aria-hidden="true">
+    <video src="video/bg2.mp4" autoplay muted loop playsinline></video>
+  </div>
+
+  <!-- Header / Nav (from game.html) -->
+  <header>
+    <div class="brand">
+      <img src="assets/favicon.png" alt="Ebmarah" />
+      <span>Ebmarah</span>
+    </div>
+
+    <!-- Desktop nav -->
+    <nav class="site-nav" aria-label="Primary">
+      <a href="index.html">Home</a>
+       <!-- <a href="music.html">Music</a> -->
+      <a href="live.html">Live</a>
+      <a href="sample-packs.html">Sample Packs</a>
+      <a href="about.html">About</a>
+      <a href="virtual-rave-room.html">Virtual Rave Room</a>
+      <!-- <a href="game.html">Game</a> -->
+      <a href="drum-pad.html">BeEbmarah</a>
+      <a href="hommies.html">Hommies</a>
+      <a href="ebmarahgame.html">Game</a>
+      <a href="samples.html">Fan Vocal Booth</a>
+      <a href="samples-library.html">Vocal Library</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+
+    <!-- Mobile trigger -->
+    <button class="menu-btn" id="menuBtn" aria-haspopup="true" aria-expanded="false" aria-controls="drawer">Menu</button>
+  </header>
+
+  <!-- Offcanvas drawer (mobile) -->
+  <div class="drawer-overlay" id="drawerOverlay"></div>
+  <aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-label="Site menu">
+    <header>
+      <h2>Menu</h2>
+      <button class="close" id="drawerClose" aria-label="Close menu">Close</button>
+    </header>
+    <nav aria-label="Mobile">
+      <a href="index.html">Home</a>
+       <!-- <a href="music.html">Music</a> -->
+      <a href="live.html">Live</a>
+      <a href="sample-packs.html">Sample Packs</a>
+      <a href="about.html">About</a>
+      <!-- <a href="game.html">Game</a> -->
+      <a href="drum-pad.html">BeEbmarah</a>
+      <a href="hommies.html">Hommies</a>
+      <!-- <a href="ebmarahgame.html">Game</a> -->
+      <a href="samples.html">Fan Vocal Booth</a>
+      <a href="samples-library.html">Vocal Library</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+  </aside>
+  
+  <div class="spacer"></div>
+
+  <!-- ===== Page content (kept intact) ===== -->
+  <h1>Fan Vocal Library</h1>
+  <div class="wrap">
+    <div class="controls">
+      <input id="q" placeholder="Search title or credit">
+      <input id="day" type="date">
+      <input id="sub" placeholder="Artist subfolder (e.g., Ebmarah)">
+      <label class="cb"><input id="autoDiscover" type="checkbox"> Auto-discover subfolders</label>
+      <button id="btnSearch">Search</button>
+      <button id="btnClear">Clear</button>
+    </div>
+
+    <div id="list" class="grid"></div>
+
+    <div style="display:grid;place-items:center;margin-top:14px">
+      <button id="more">Load more</button>
+      <div class="note tiny" id="pagingNote" style="display:none">
+        Note: Auto-discover shows grouped results and disables paging.
+      </div>
+    </div>
+
+    <p class="tiny" style="margin-top:10px">See something that breaks the rules? Click “Report” on the card to email the link for removal review.</p>
+  </div>
+
+  <!-- Supabase project keys -->
+  <script>
+    window.SUPABASE_URL = "https://dcijcrwlxkxaexqmbtxu.supabase.co";
+    window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRjaWpjcndseGt4YWV4cW1idHh1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkwOTA0MjAsImV4cCI6MjA3NDY2NjQyMH0.UmcHKU56ezlDpDs5emLgR0UkyWaa-VzdYr01bbeQ1cc";
+  </script>
+
+  <!-- Mobile drawer JS (from game.html) -->
+  <script>
+    (function(){
+      const root = document.documentElement;
+      const btn = document.getElementById('menuBtn');
+      const drawer = document.getElementById('drawer');
+      const overlay = document.getElementById('drawerOverlay');
+      const closeBtn = document.getElementById('drawerClose');
+
+      const openDrawer = () => { root.classList.add('drawer-open'); btn.setAttribute('aria-expanded','true'); drawer.querySelector('a')?.focus(); };
+      const closeDrawer = () => { root.classList.remove('drawer-open'); btn.setAttribute('aria-expanded','false'); btn.focus(); };
+
+      btn.addEventListener('click', openDrawer);
+      closeBtn.addEventListener('click', closeDrawer);
+      overlay.addEventListener('click', closeDrawer);
+      window.addEventListener('keydown', e => { if(e.key === 'Escape') closeDrawer(); });
+    })();
+  </script>
+
+  <!-- ===== Page logic (unchanged) ===== -->
+  <script>
+  (function(){
+    const listEl = document.getElementById('list');
+    const qEl = document.getElementById('q');
+    const dayEl = document.getElementById('day');
+    const subEl = document.getElementById('sub');
+    const autoEl = document.getElementById('autoDiscover');
+    const moreBtn = document.getElementById('more');
+    const pagingNote = document.getElementById('pagingNote');
+    const btnSearch = document.getElementById('btnSearch');
+    const btnClear = document.getElementById('btnClear');
+
+    const BUCKET='fan-vocals';
+    const prefixRoot='public/';  // Your files are under "public/YYYY/MM/DD/Artist/"
+
+    let offset=0, currentPrefix=prefixRoot, lastBatchCount=0;
+    const audioRe = /\.(webm|mp3|m4a|wav)$/i;
+
+    function toPublicUrl(path){
+      const safePath = path.split('/').map(encodeURIComponent).join('/');
+      return `${window.SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${safePath}`;
+    }
+
+    async function list(prefix, limit=24, off=0){
+      const res = await fetch(`${window.SUPABASE_URL}/storage/v1/object/list/${BUCKET}`, {
+        method:'POST',
+        headers:{
+          'Authorization': `Bearer ${window.SUPABASE_ANON_KEY}`,
+          'apikey': window.SUPABASE_ANON_KEY,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          prefix,
+          limit,
+          offset: off,
+          sortBy: { column:'created_at', order:'desc' }
+        })
+      });
+      if (!res.ok){
+        const msg = await res.text().catch(()=>res.statusText);
+        throw new Error(msg || `HTTP ${res.status}`);
+      }
+      return res.json();
+    }
+
+    async function listAll(prefix, pageSize=200, cap=5000){
+      let off=0, all=[];
+      while(true){
+        const batch = await list(prefix, pageSize, off);
+        all.push(...batch);
+        if (batch.length < pageSize) break;
+        off += batch.length;
+        if (all.length >= cap) break;
+      }
+      return all;
+    }
+
+    async function fetchMeta(audioPath){
+      const jsonPath = audioPath.replace(/\.(webm|mp3|m4a|wav)$/i, '.json');
+      const url = toPublicUrl(jsonPath);
+      try{
+        const r = await fetch(url, {cache:'no-store'});
+        if (!r.ok) throw 0;
+        return await r.json();
+      }catch{ return null; }
+    }
+
+    function esc(s){ return (s||'').replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m])); }
+    function mailtoReport(url){
+      const subject = encodeURIComponent('Report submission');
+      const body = encodeURIComponent(`Please review this clip for removal:\n\n${url}\n\nReason: `);
+      return `mailto:info@ebmarah.com?subject=${subject}&body=${body}`;
+    }
+
+    function card({audioUrl, name, meta}){
+      const title = esc(meta?.title || name);
+      const credit = meta?.credit ? ` • by ${esc(meta.credit)}` : '';
+      const badge = meta?.license === 'cc0' ? 'CC0' : 'Creator';
+      const info = meta?.bpm ? ` • ${meta.bpm} BPM` : '';
+      const report = mailtoReport(audioUrl);
+      const copyId = 'copy_' + Math.random().toString(36).slice(2,9);
+      return `
+        <div class="card">
+          <audio controls src="${audioUrl}"></audio>
+          <div class="meta"><strong>${title}</strong>${credit}${info} • <span>${badge}</span></div>
+          <div class="row">
+            <a href="${audioUrl}" download>Download</a>
+            <a href="${audioUrl}" target="_blank" rel="noopener">Open</a>
+            <a href="${report}">Report</a>
+            <button type="button" class="copy-btn" id="${copyId}" data-url="${audioUrl}">Copy URL</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function wireCopyButtons(scope=document){
+      scope.querySelectorAll('.copy-btn').forEach(btn=>{
+        btn.onclick = async () => {
+          try { await navigator.clipboard.writeText(btn.dataset.url);
+                btn.textContent='Copied!'; setTimeout(()=>btn.textContent='Copy URL',1200); }
+          catch { btn.textContent='Failed'; setTimeout(()=>btn.textContent='Copy URL',1200); }
+        };
+      });
+    }
+
+    function renderGroup(title, cardsHtml){
+      return `
+        <div class="group">
+          <h3>${esc(title)}</h3>
+          <div class="grid">
+            ${cardsHtml}
+          </div>
+        </div>
+      `;
+    }
+
+    async function load(reset=false){
+      if (reset){ offset=0; lastBatchCount=0; listEl.innerHTML=''; }
+
+      const dateFilter = dayEl.value ? new Date(dayEl.value + 'T00:00:00Z') : null;
+      const artist = (subEl.value || '').trim().replace(/^\/+|\/+$/g, '');
+      const auto = !!autoEl.checked;
+
+      // Auto mode: date REQUIRED; scan all artists under public/YYYY/MM/DD/
+      moreBtn.style.display = auto ? 'none' : '';
+      pagingNote.style.display = auto ? '' : 'none';
+
+      if (auto){
+        if (!dateFilter){
+          listEl.insertAdjacentHTML('beforeend', `<div class="empty card">Pick a date, then enable Auto-discover to scan all artists for that day.</div>`);
+          return;
+        }
+        const y=dateFilter.getUTCFullYear();
+        const m=String(dateFilter.getUTCMonth()+1).padStart(2,'0');
+        const d=String(dateFilter.getUTCDate()).padStart(2,'0');
+
+        const dayPrefix = `${prefixRoot}${y}/${m}/${d}/`; // public/YYYY/MM/DD/
+        const firstLevel = await listAll(dayPrefix, 400, 8000); // returns artist folders + any files
+
+        const groups = new Map();
+
+        // Artist folders at this level end with '/'
+        const artistFolders = firstLevel.filter(it => it.name.endsWith('/')).map(it => it.name.replace(/\/$/, ''));
+
+        // 1) files directly in the date folder
+        const rootFiles = firstLevel.filter(it => !it.name.endsWith('/') && audioRe.test(it.name))
+                                    .map(it => ({ file: it.name, full: dayPrefix + it.name }));
+        if (rootFiles.length) groups.set('(root)', rootFiles);
+
+        // 2) drill each artist folder and collect files
+        for (const a of artistFolders){
+          const aPrefix = `${dayPrefix}${a}/`; // public/YYYY/MM/DD/Artist/
+          const aItems = await listAll(aPrefix, 400, 8000);
+          const aFiles = aItems.filter(f => !f.name.endsWith('/') && audioRe.test(f.name))
+                               .map(f => ({ file: f.name, full: aPrefix + f.name }));
+          if (aFiles.length) groups.set(a, aFiles);
+        }
+
+        if (groups.size === 0){
+          listEl.insertAdjacentHTML('beforeend', `<div class="empty card">No recordings found for <code>${esc(m)}/${esc(d)}/${esc(y)}</code> across artists.</div>`);
+        } else {
+          const ordered = [];
+          if (groups.has('(root)')) ordered.push(['(root)', groups.get('(root)')]);
+          for (const k of Array.from(groups.keys()).filter(k!=='(root)').sort((a,b)=>a.localeCompare(b))){
+            ordered.push([k, groups.get(k)]);
+          }
+          for (const [gName, files] of ordered){
+            let cards = '';
+            for (const it of files){
+              const audioUrl = toPublicUrl(it.full);
+              const meta = await fetchMeta(it.full);
+              const namePretty = it.file.split('/').pop().replace(/_/g,' ');
+              cards += card({audioUrl, name:namePretty, meta});
+            }
+            listEl.insertAdjacentHTML('beforeend', renderGroup(gName, cards));
+          }
+          wireCopyButtons(listEl);
+        }
+        return;
+      }
+
+      // Manual mode: artist optional; date optional
+      currentPrefix = prefixRoot;                    // public/
+      if (dateFilter){
+        const y=dateFilter.getUTCFullYear();
+        const m=String(dateFilter.getUTCMonth()+1).padStart(2,'0');
+        const d=String(dateFilter.getUTCDate()).padStart(2,'0');
+        currentPrefix += `${y}/${m}/${d}/`;          // public/YYYY/MM/DD/
+      }
+      if (artist) currentPrefix += `${artist}/`;     // public/YYYY/MM/DD/Artist/
+
+      const items = await list(currentPrefix, 24, offset);
+      lastBatchCount = items.length;
+
+      const audioItems = items.filter(it => !it.name.endsWith('/') && audioRe.test(it.name));
+      if (reset && audioItems.length === 0){
+        listEl.insertAdjacentHTML('beforeend', `<div class="empty card">No recordings found for this filter.</div>`);
+      }
+
+      for (const it of audioItems){
+        const audioPath = `${currentPrefix}${it.name}`;
+        const audioUrl = toPublicUrl(audioPath);
+        const meta = await fetchMeta(audioPath);
+        const namePretty = it.name.split('/').pop().replace(/_/g,' ');
+        listEl.insertAdjacentHTML('beforeend', card({audioUrl, name:namePretty, meta}));
+      }
+
+      offset += items.length;
+      moreBtn.disabled = lastBatchCount === 0;
+      wireCopyButtons(listEl);
+    }
+
+    // UI hooks
+    btnSearch.addEventListener('click', async ()=>{
+      await load(true);
+      const q = (qEl.value||'').toLowerCase();
+      if (!q) return;
+      Array.from(listEl.querySelectorAll('.card, .group')).forEach(node=>{
+        const t = node.textContent.toLowerCase();
+        node.style.display = t.includes(q) ? '' : 'none';
+      });
+    });
+
+    btnClear.addEventListener('click', ()=>{ qEl.value=''; dayEl.value=''; subEl.value=''; autoEl.checked=false; load(true); });
+    moreBtn.addEventListener('click', ()=>load(false));
+    autoEl.addEventListener('change', ()=>load(true));
+
+    // initial
+    load(true).catch(err=>{
+      listEl.innerHTML = `<div class="card">Error loading library:<br><code>${(err?.message || String(err)).replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m]))}</code></div>`;
+    });
+  })();
+  </script>
+
+<!-- 
+  eb-dropdown.js: Replaces your desktop navigation (nav.site-nav) with a compact 
+  "MENU" dropdown on screens >=1024px. Keeps your mobile nav intact on smaller 
+  screens. The MENU button is pinned top-right and automatically lists your nav links. 
+-->
+<script src="js/eb-dropdown.js" defer></script>
+
+<!-- 
+  weekly-locker.js: Alternates locking between ebmarahgame.html and drum-pad.html 
+  each week. One link is locked (unclickable, dimmed, 🔒 added) while the other is 
+  available. The lock/unlock switches automatically every Sunday at midnight (local time). 
+-->
+<script src="js/weekly-locker.js" defer></script>
+  
+</body>
+</html>
