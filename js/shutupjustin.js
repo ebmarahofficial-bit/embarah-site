@@ -1,7 +1,7 @@
 // shutupjustin.js
 // Easter egg: tap/click screen 5 times to play shutupjustin.mp3 (repeatable)
 
-(function () {
+/* (function () {
   let clickCount = 0;
   let timeout;
   const audio = new Audio("assets/shutupjustin.mp3");
