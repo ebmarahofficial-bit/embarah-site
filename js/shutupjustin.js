@@ -5,6 +5,7 @@
   let clickCount = 0;
   let timeout;
   const audio = new Audio("assets/shutupjustin.mp3");
+  audio.volume = 0.25; // play at 25% volume
 
   function handleClick() {
     clickCount++;
