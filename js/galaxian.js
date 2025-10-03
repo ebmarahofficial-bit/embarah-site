@@ -1,11 +1,11 @@
-/* Ebmarah Galaxian — bosses every 10 waves starting at 10
+/* Ebmarah Galaxian — Datsik-only boss every 10 waves (10,20,30,...) with scaling difficulty
    - Start menu overlay uses site bg video (#bgVideo) behind it
-   - Title image (assets/ebmarahgamestart.png) fills a 9:16 card; UI is centered on top
+   - Title image (assets/ebmarahgamestart2.png) fills a 9:16 card; UI is centered on top
    - Ship name persisted to localStorage and rendered under the ship
-   - Title-screen BGM (assets/hommies.mp3) w/ play/pause, mute, volume; stops on game start
+   - Title-screen BGM (assets/galaxian.mp3) w/ play/pause, mute, volume; stops on game start
    - SoundCloud music stays paused until game starts, then plays
 
-   Update: Power-up icons
+   Power-ups:
    - Loads PNG icons from assets/powerups/<lowercase>.png (e.g., multi.png)
    - Draws PNGs with glow; falls back to vector circle if missing
 */
@@ -34,8 +34,14 @@
     "assets/logos/metallik.png",
     "assets/logos/hvted.png",
     "assets/logos/ikki1.png",
-    "assets/logos/datsik.png",
+    "assets/logos/datsik.png", // <- Datsik exists here
   ];
+
+  // Always use this one for the boss
+  const DATSIK_INDEX = Math.max(
+    0,
+    LOGO_URLS.findIndex(u => /\/datsik\.png$/i.test(u))
+  );
 
   const SHIP_IMG = "assets/ship.png";
   const SHIP_NAME_KEY = 'ebmarah_ship_name';
@@ -74,8 +80,6 @@
 
   const savedName = (localStorage.getItem(SHIP_NAME_KEY) || "").slice(0,20);
 
-  // Card size math: choose the largest 9:16 that fits inside the viewport (90% of each axis)
-  // width = min(90vw, 9/16 of 90vh). height derives from width to keep 9:16.
   startOverlay.innerHTML = `
     <div style="position:relative;width:100%;height:auto;padding:16px;">
       <div
@@ -97,14 +101,12 @@
           background-repeat: no-repeat;
         "
       >
-        <!-- subtle readable overlay on top of poster -->
         <div style="
           position:absolute; inset:0;
           background: radial-gradient(ellipse at center, rgba(0,0,0,.28), rgba(0,0,0,.45) 55%, rgba(0,0,0,.60));
           display:flex; align-items:center; justify-content:center;
           padding: clamp(10px, 2.5vmin, 24px);
         ">
-          <!-- UI block -->
           <div style="
             background: rgba(0,0,0,.55);
             border: 1px solid rgba(57,251,209,.45);
@@ -119,7 +121,6 @@
               style="width:min(360px, 70%);padding:10px 12px;border-radius:8px;border:1px solid #39fbd1;background:#061a17;color:#eafffb;outline:none;"
               value="${savedName.replace(/"/g,'&quot;')}"/>
 
-            <!-- Title-screen BGM (only plays on this screen) -->
             <audio id="bgm" src="assets/galaxian.mp3" preload="auto" loop playsinline></audio>
 
             <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:center;margin-top:2px">
@@ -225,10 +226,21 @@
   let enemySpeed = state.enemyBaseSpeed;
   let enemyImages = [];
 
-  // Boss
+  // ===== Boss (Datsik only) difficulty scaling every 10 waves =====
+  // Boss appears on waves 10,20,30,...; "level" increments each time (1,2,3,...)
+  // Difficulty scales with level.
   let boss = null;
-  const BOSS_HP_BASE = 42;
-  const BOSS_HP_STEP = 8;
+
+  const BOSS_HP_BASE        = 80;  // base HP at level 1 (wave 10)
+  const BOSS_HP_PER_LEVEL   = 40;  // extra HP per boss level
+  const BOSS_FIRE_BASE      = 0.85; // base shot chance factor per second
+  const BOSS_FIRE_PER_LEVEL = 0.15; // additional fire factor per level
+  const BOSS_BULLET_BASE    = 300;  // base bullet speed
+  const BOSS_BULLET_PER_LVL = 20;   // bullet speed per level
+  const BOSS_AMP_BASE       = 120;  // movement amplitude base
+  const BOSS_AMP_PER_LVL    = 10;   // amplitude increment per level
+  const BOSS_FREQ_BASE      = 1.2;  // movement freq base
+  const BOSS_FREQ_PER_LVL   = 0.10; // freq increment per level
 
   // Swoopers
   const swoopers = [];
@@ -264,7 +276,7 @@
     [POWER_TYPES.SHIELD,  0.7],
     [POWER_TYPES.SHIELD2, 0.6],
     [POWER_TYPES.LIFE,    0.35],
-    [POWER_TYPES.BEAM,    0.10],
+    [POWER_TYPES.BEAM,    0.10], // rarest
   ];
   function weightedChoice(weighted){
     const total = weighted.reduce((s,[,w])=>s+w,0);
@@ -309,7 +321,6 @@
 
   // ====== POWER-UP ICONS (PNG) ======
   const POWER_ICON_SRC = (() => {
-    // filenames are lowercased keys (life -> life.png, shield2 -> shield2.png, etc.)
     const map = {};
     Object.keys(POWER_TYPES).forEach(k => {
       map[k] = `assets/powerups/${k.toLowerCase()}.png`;
@@ -386,8 +397,6 @@
       ctx.shadowColor = p.type.color;
 
       if (img){
-        // PNG icon draw (centered)
-        // optional subtle backdrop circle to help contrast
         ctx.globalAlpha = 0.85;
         ctx.fillStyle = 'rgba(0,0,0,0.28)';
         ctx.beginPath();
@@ -397,7 +406,6 @@
         ctx.globalAlpha = 1;
         ctx.drawImage(img, -p.w/2, -p.h/2, p.w, p.h);
       } else {
-        // Fallback: vector circle + label
         ctx.lineWidth = 2;
         ctx.strokeStyle = p.type.color;
         ctx.fillStyle = 'rgba(0,0,0,0.5)';
@@ -450,15 +458,37 @@
     boss = null;
     enemies.length = 0;
 
+    // Boss at 10, 20, 30, ... (every 10, starting at 10)
     const isBossWave = (wave % 10 === 0 && wave >= 10);
+    const bossLevel = isBossWave ? Math.floor((wave - 10)/10) + 1 : 0; // 1 at wave10, 2 at wave20, ...
+
     const idx = waveLogoIndex(wave);
 
     if (isBossWave){
       const w = Math.floor(canvas.width * 0.28);
       const h = Math.floor(canvas.height * 0.22);
       const baseX = canvas.width/2;
-      const hp = BOSS_HP_BASE + Math.floor(wave / 3) * BOSS_HP_STEP;
-      boss = { x: baseX - w/2, y: 90, w, h, imgIdx: idx, hp, maxHp: hp, baseX, amp: 120, freq: 1.2, t: 0, vy: 20, alive: true };
+
+      const hp     = BOSS_HP_BASE + BOSS_HP_PER_LEVEL * bossLevel;
+      const amp    = BOSS_AMP_BASE + BOSS_AMP_PER_LVL * bossLevel;
+      const freq   = BOSS_FREQ_BASE + BOSS_FREQ_PER_LVL * bossLevel;
+
+      boss = {
+        x: baseX - w/2,
+        y: 90,
+        w, h,
+        imgIdx: DATSIK_INDEX,   // <- ALWAYS Datsik
+        hp,
+        maxHp: hp,
+        baseX,
+        amp,
+        freq,
+        t: 0,
+        alive: true,
+        level: bossLevel
+      };
+
+      // Formation speed isn't used for boss, but keep global scaling consistent
       enemySpeed = state.enemyBaseSpeed + (wave-1)*12;
     } else {
       const cols = state.enemyCols;
@@ -640,25 +670,52 @@
     }
   }
 
+  // ====== Datsik Boss shots (scales with boss.level) ======
   function spawnBossShots(){
     if (!boss || !boss.alive) return;
+
+    const lvl = boss.level || 1;
+    const fireFactor = BOSS_FIRE_BASE + BOSS_FIRE_PER_LEVEL * (lvl - 1); // ≈ shots/second scale
+    const shotSpeed  = BOSS_BULLET_BASE + BOSS_BULLET_PER_LVL * (lvl - 1);
+
+    // Randomly choose a pattern; higher levels unlock heavier patterns
     const r = Math.random();
     const cx = boss.x + boss.w/2, y0 = boss.y + boss.h;
-    if (r < 0.55){
-      pushEnemyBullet({ x: cx-2, y: y0, w:4, h:10, vy: 280 + Math.random()*120, vx:0, type:'normal' });
+
+    const aimedBurst = (angles) => {
+      const {angle} = angleToPlayer(cx,y0);
+      angles.forEach(off=>{
+        pushEnemyBullet({
+          x: cx-2, y: y0, w:4, h:10,
+          vx: Math.cos(angle+off)*shotSpeed,
+          vy: Math.sin(angle+off)*shotSpeed,
+          type:'aimed'
+        });
+      });
+    };
+
+    if (lvl >= 4 && r < 0.25){
+      // 7-way aimed fan
+      aimedBurst([-0.52,-0.35,-0.18,0,0.18,0.35,0.52]);
+    } else if (lvl >= 3 && r < 0.55){
+      // 5-way aimed fan
+      aimedBurst([-0.35,-0.18,0,0.18,0.35]);
     } else if (r < 0.80){
-      const {angle} = angleToPlayer(cx,y0);
-      const speed = 300;
-      [-0.2, 0, 0.2].forEach(off=>{
-        pushEnemyBullet({ x: cx-2, y: y0, w:4, h:10, vx: Math.cos(angle+off)*speed, vy: Math.sin(angle+off)*speed, type:'aimed' });
-      });
+      // 3-way aimed
+      aimedBurst([-0.2, 0, 0.2]);
     } else {
-      const {angle} = angleToPlayer(cx,y0);
-      const speed = 320;
-      [-0.35,-0.18,0,0.18,0.35].forEach(off=>{
-        pushEnemyBullet({ x: cx-2, y: y0, w:4, h:10, vx: Math.cos(angle+off)*speed, vy: Math.sin(angle+off)*speed, type:'aimed' });
-      });
+      // Straight normal/fast
+      pushEnemyBullet({ x: cx-2, y: y0, w:4, h:10, vy: 260 + (lvl*20), vx:0, type:'normal' });
     }
+
+    // Additional random needle at high level
+    if (lvl >= 5 && Math.random() < 0.25){
+      pushEnemyBullet({ x: cx-1, y: y0, w:3, h:8, vy: 460 + lvl*20, vx:0, type:'needle' });
+    }
+
+    // Increase effective fire rate by calling multiple times per frame probabilistically
+    // (handled by update logic below via probability gate)
+    boss._fireChance = fireFactor; // store for updateEnemies to use per dt
   }
 
   // ====== COLLISION ======
@@ -675,7 +732,11 @@
       boss.x = boss.baseX + Math.sin(boss.t * boss.freq) * boss.amp - boss.w/2;
       boss.y = 90 + Math.sin(boss.t * 0.7) * 10;
 
-      if (Math.random() < 0.9 * dt * fz){ spawnBossShots(); }
+      // Fire rate scales with boss level (stored as _fireChance)
+      const chance = (boss._fireChance ?? (BOSS_FIRE_BASE + BOSS_FIRE_PER_LEVEL * ((boss.level||1)-1)));
+      if (Math.random() < chance * dt * fz){
+        spawnBossShots();
+      }
       return;
     }
 
@@ -702,7 +763,7 @@
     }
   }
 
-  // Swoopers
+  // Swoopers (random logos)
   function spawnSwooper(){
     const randIdx  = Math.floor(Math.random() * LOGO_URLS.length);
     const baseX = 60 + Math.random()*(canvas.width - 120);
@@ -1015,18 +1076,31 @@
 
     if (boss && boss.alive){
       drawEnemyRectLikeLogo(boss);
+      // HP bar
       ctx.fillStyle = 'rgba(0,0,0,.5)';
       ctx.fillRect(boss.x, boss.y - 12, boss.w, 6);
       ctx.fillStyle = '#35ffa0';
       const hpw = Math.max(0, (boss.hp / boss.maxHp) * boss.w);
       ctx.fillRect(boss.x, boss.y - 12, hpw, 6);
+
+      // Optional label
+      ctx.save();
+      ctx.font = 'bold 14px system-ui';
+      ctx.fillStyle = '#b7ffe6';
+      ctx.textAlign = 'center';
+      ctx.shadowColor = 'rgba(0,255,200,.45)';
+      ctx.shadowBlur = 10;
+      ctx.fillText('Datsik', boss.x + boss.w/2, boss.y - 18);
+      ctx.restore();
     } else {
       enemies.forEach(e => { if (e.alive) drawEnemyRectLikeLogo(e); });
     }
     swoopers.forEach(s => { if (s.alive) drawEnemyRectLikeLogo(s); });
 
+    // power-ups
     drawPowerUps();
 
+    // bullets (beam under)
     bullets.forEach(b => {
       if (b.type === 'beam'){
         ctx.save();
@@ -1136,7 +1210,6 @@
     widget.bind(SC.Widget.Events.PLAY,  () => { playing = true;  if (btnPlay) btnPlay.textContent = '⏸'; });
     widget.bind(SC.Widget.Events.PAUSE, () => { playing = false; if (btnPlay) btnPlay.textContent = '▶'; });
 
-    // IMPORTANT: Do NOT auto-play SoundCloud on click/page load; pause until game starts
     try { widget.pause(); } catch {}
   }
 
@@ -1207,50 +1280,41 @@
   // ====== STARTUP ======
   (async function start(){
     await loadEnemyImages();
-    await loadPowerupIcons(); // NEW: preload power-up PNGs
+    await loadPowerupIcons(); // preload power-up PNGs
     setupSC();
 
     const endTitleScreen = () => {
-      // Stop title BGM
       if (titleBgm){
         try { titleBgm.pause(); } catch {}
         try { titleBgm.currentTime = 0; } catch {}
       }
 
-      // Persist name
       const name = ($shipInput.value || "Anonymous").trim().slice(0,20);
       state.shipName = name;
       try { localStorage.setItem(SHIP_NAME_KEY, name); } catch {}
 
-      // Hide overlay, begin game
       startOverlay.style.display = "none";
 
-      // HUD
       $score.textContent = "Score: 0";
       $lives.textContent = "Lives: 3";
       $wave.textContent  = "Wave: 1";
 
-      // Start the game music (SoundCloud) only now
       if (typeof widget !== 'undefined' && widget && widget.play){
         try { widget.play(); } catch {}
       }
 
-      // Begin game
       state.playing = true;
       spawnWave(state.wave);
       if (isTouch) startAutoFire();
       requestAnimationFrame(loop);
     };
 
-    // Start on button or Enter key while overlay is visible
     $startBtn.addEventListener('click', endTitleScreen);
-    const $shipInput = document.getElementById('shipNameInput');
     $shipInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') endTitleScreen(); });
     document.addEventListener('keydown', (e) => {
       if (startOverlay.style.display !== "none" && e.key === 'Enter') endTitleScreen();
     });
 
-    // Focus name input
     $shipInput.focus({ preventScroll:true });
   })();
 
