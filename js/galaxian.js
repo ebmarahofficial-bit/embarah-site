@@ -34,6 +34,7 @@
     "assets/logos/metallik.png",
     "assets/logos/hvted.png",
     "assets/logos/ikki1.png",
+    "assets/logos/datsik.png",
   ];
 
   const SHIP_IMG = "assets/ship.png";
