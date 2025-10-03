@@ -78,7 +78,7 @@
         box-shadow:0 0 24px rgba(0,255,180,.25); max-width:620px;">
         
         <!-- TITLE IMAGE (replaces text) -->
-        <img src="assets/ebmarahgamestart.png" alt="Ebmarah Game" draggable="false"
+        <img src="assets/ebmarahgamestart1.png" alt="Ebmarah Game" draggable="false"
              style="display:block;max-width:540px;width:100%;height:auto;border-radius:10px;box-shadow:0 0 20px rgba(0,255,160,.25)" />
 
         <label for="shipNameInput" style="color:#b9fff0;font-size:14px;margin-top:2px">Name your ship</label>
