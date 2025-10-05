@@ -75,5 +75,10 @@
       }
     });
   </script>
+<script>
+  window.addEventListener('keydown', (e)=>{
+    if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)) e.preventDefault();
+  }, {passive:false});
+</script>  
 </body>
 </html>
