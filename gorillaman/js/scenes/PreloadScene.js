@@ -3,8 +3,8 @@ class PreloadScene extends Phaser.Scene{
   preload(){
     // tiles & sprites
     this.load.image('tiles', 'gorillaman/assets/tiles/maze.png');
-    this.load.image('usb', 'gorillaman/assets/sprites/usb1.png');
-    this.load.image('shower', 'gorillaman/assets/sprites/showerhead1.png');
+    this.load.image('usb', 'gorillaman/assets/sprites/usb2.png');
+    this.load.image('shower', 'gorillaman/assets/sprites/showerhead2.png');
     this.load.image('eyes', 'gorillaman/assets/sprites/eyes.png');
     this.load.spritesheet('gorilla','gorillaman/assets/sprites/gorilla.png',{ frameWidth:16, frameHeight:16 });
     this.load.spritesheet('wook','gorillaman/assets/sprites/wook.png',{ frameWidth:16, frameHeight:16 });
