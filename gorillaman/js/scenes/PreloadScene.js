@@ -6,7 +6,7 @@ class PreloadScene extends Phaser.Scene{
 
     // Use your 16x16 assets so they sit on the tile centers nicely
     this.load.image('usb',    'gorillaman/assets/sprites/usb2.png');
-    this.load.image('shower', 'gorillaman/assets/sprites/shower2.png');
+    this.load.image('shower', 'gorillaman/assets/sprites/showerhead2.png');
     this.load.image('eyes',   'gorillaman/assets/sprites/eyes.png');
 
     this.load.spritesheet('gorilla','gorillaman/assets/sprites/gorilla.png',{ frameWidth:16, frameHeight:16 });
