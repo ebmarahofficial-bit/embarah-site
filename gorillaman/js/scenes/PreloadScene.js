@@ -2,15 +2,15 @@ class PreloadScene extends Phaser.Scene{
   constructor(){ super('PreloadScene'); }
   preload(){
     // tiles & sprites
-    this.load.image('tiles', '../assets/tiles/maze.png');
-    this.load.image('usb', '../assets/sprites/usb.png');
-    this.load.image('shower', '../assets/sprites/showerhead.png');
-    this.load.image('eyes', '../assets/sprites/eyes.png');
-    this.load.spritesheet('gorilla','../assets/sprites/gorilla.png',{ frameWidth:16, frameHeight:16 });
-    this.load.spritesheet('wook','../assets/sprites/wook.png',{ frameWidth:16, frameHeight:16 });
-    this.load.spritesheet('wook_fright','../assets/sprites/wook_fright.png',{ frameWidth:16, frameHeight:16 });
+    this.load.image('tiles', 'gorillaman/assets/tiles/maze.png');
+    this.load.image('usb', 'gorillaman/assets/sprites/usb.png');
+    this.load.image('shower', 'gorillaman/assets/sprites/showerhead.png');
+    this.load.image('eyes', 'gorillaman/assets/sprites/eyes.png');
+    this.load.spritesheet('gorilla','gorillaman/assets/sprites/gorilla.png',{ frameWidth:16, frameHeight:16 });
+    this.load.spritesheet('wook','gorillaman/assets/sprites/wook.png',{ frameWidth:16, frameHeight:16 });
+    this.load.spritesheet('wook_fright','gorillaman/assets/sprites/wook_fright.png',{ frameWidth:16, frameHeight:16 });
     // map
-    this.load.json('level1','../assets/maps/level1.json');
+    this.load.json('level1','gorillaman/assets/maps/level1.json');
   }
   create(){
     // animations
