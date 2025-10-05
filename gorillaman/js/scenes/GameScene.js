@@ -1,214 +1,203 @@
 class GameScene extends Phaser.Scene{
   constructor(){ super('GameScene'); }
   init(){
-    this.tileSize = 16;
-    this.speed = 60;          // player speed
-    this.powerTime = 7;       // seconds
+    this.T = 16;                  // tile size
+    this.speed = 60;              // player speed
+    this.powerTime = 7;           // seconds
     this.score = 0;
     this.lives = 3;
     this.paused = false;
   }
 
+  // ---------- grid helpers ----------
+  tv(x, y){ return [Math.floor(x/this.T), Math.floor(y/this.T)]; }
+  center(tx, ty){ return [tx*this.T + 8, ty*this.T + 8]; }
+  dirVec(d){ return d==='left' ? [-1,0] : d==='right' ? [1,0] : d==='up' ? [0,-1] : [0,1]; }
+  atCenter(s){
+    const ex = Math.abs((s.x % this.T) - 8) <= 2;
+    const ey = Math.abs((s.y % this.T) - 8) <= 2;
+    return ex && ey;
+  }
+  passable(tx, ty){
+    if(ty<0||ty>=this.rows||tx<0||tx>=this.cols) return false;
+    return this.map.data[ty][tx] !== 1; // 1 = wall
+  }
+  canGo(tx, ty, dir){
+    const [dx,dy] = this.dirVec(dir);
+    return this.passable(tx+dx, ty+dy);
+  }
+
   create(){
-    // --- Map & layers ---
-    this.mapData = this.cache.json.get('level1');
-    const rows = this.mapData.data.length;
-    const cols = this.mapData.data[0].length;
+    // Capture arrows so the page doesn't steal them
+    this.input.keyboard.addCapture([
+      Phaser.Input.Keyboard.KeyCodes.LEFT,
+      Phaser.Input.Keyboard.KeyCodes.RIGHT,
+      Phaser.Input.Keyboard.KeyCodes.UP,
+      Phaser.Input.Keyboard.KeyCodes.DOWN
+    ]);
 
-    this.pathLayer = this.add.layer();
-    this.wallVisLayer = this.add.layer();
+    // Map + layers
+    this.map = this.cache.json.get('level1');
+    this.rows = this.map.data.length;
+    this.cols = this.map.data[0].length;
 
-    // Physics walls (invisible bodies)
-    this.walls = this.physics.add.staticGroup();
+    this.pathL = this.add.layer();
+    this.wallL = this.add.layer();
 
-    // Collectible groups
+    // Collectibles (physics so overlaps work)
     this.usbs = this.physics.add.staticGroup();
     this.powerups = this.physics.add.staticGroup();
 
-    // Enemy group
+    // Enemies
     this.wooks = this.physics.add.group();
 
     // Spawns
     let spawnG = {x:1,y:1};
-    let spawnW = [];
+    const spawnW = [];
 
-    for(let y=0;y<rows;y++){
-      for(let x=0;x<cols;x++){
-        const t = this.mapData.data[y][x];
-        const px = x*this.tileSize + this.tileSize/2;
-        const py = y*this.tileSize + this.tileSize/2;
+    // Build board (visual walls only; NO physics blockers)
+    for(let y=0;y<this.rows;y++){
+      for(let x=0;x<this.cols;x++){
+        const t = this.map.data[y][x];
+        const px = x*this.T + 8, py = y*this.T + 8;
 
-        if(t===1){ // wall
-          // draw a tile for looks
-          const r = this.add.rectangle(px,py,this.tileSize,this.tileSize,0x0c221b).setStrokeStyle(1,0x1e3a2f,1);
-          this.wallVisLayer.add(r);
-          // add an invisible static body for collision
-          const blocker = this.add.zone(px, py, this.tileSize, this.tileSize);
-          this.physics.add.existing(blocker, true);
-          this.walls.add(blocker);
+        if(t===1){
+          this.wallL.add(this.add.rectangle(px,py,16,16,0x0c221b).setStrokeStyle(1,0x1e3a2f,1));
         }else{
-          const r = this.add.rectangle(px,py,this.tileSize,this.tileSize,0x07120e,1).setStrokeStyle(1,0x0e1f19,0.6);
-          this.pathLayer.add(r);
-
-          if(t===2){ // USB (smaller than a tile)
-            const usb = this.add.image(px,py,'usb').setOrigin(0.5).setDisplaySize(8,8);
-            this.usbs.add(usb);
-          }else if(t===3){ // Shower head (power)
-            const sh = this.add.image(px,py,'shower').setOrigin(0.5).setDisplaySize(12,12);
-            this.powerups.add(sh);
-          }else if(t===8){ // Gorilla spawn
-            spawnG = {x, y};
-          }else if(t===9){ // Wook spawn(s)
-            spawnW.push({x,y});
-          }
+          this.pathL.add(this.add.rectangle(px,py,16,16,0x07120e,1).setStrokeStyle(1,0x0e1f19,0.6));
+          if(t===2){
+            this.usbs.add(this.add.image(px,py,'usb').setOrigin(0.5).setDisplaySize(8,8));
+          }else if(t===3){
+            this.powerups.add(this.add.image(px,py,'shower').setOrigin(0.5).setDisplaySize(12,12));
+          }else if(t===8){ spawnG = {x,y}; }
+          else if(t===9){ spawnW.push({x,y}); }
         }
       }
     }
 
-    // --- Player ---
-    this.player = this.physics.add.sprite(spawnG.x*this.tileSize + 8, spawnG.y*this.tileSize + 8, 'gorilla').play('g_walk');
-    this.player.setSize(12,12).setOffset(2,2).setCollideWorldBounds(true);
-    this.cursors = this.input.keyboard.createCursorKeys();
+    // Player
+    const [sx,sy] = this.center(spawnG.x, spawnG.y);
+    this.player = this.physics.add.sprite(sx, sy, 'gorilla').play('g_walk');
+    this.player.setSize(12,12).setOffset(2,2);
     this.currentDir = 'right';
     this.nextDir = 'right';
 
-    // --- Enemies (slower, axis-only movement) ---
-    spawnW.slice(0,2).forEach(s=>{
-      const w = this.physics.add.sprite(s.x*this.tileSize+8, s.y*this.tileSize+8, 'wook').play('w_walk');
-      w.setData('state','chase');
-      w.setData('baseSpeed', 45);
-      w.setMaxVelocity(60,60);
+    // Input
+    this.cursors = this.input.keyboard.createCursorKeys();
+    this.input.on('pointerup', p=>{
+      const dx = p.upX - p.downX, dy = p.upY - p.downY;
+      this.nextDir = Math.abs(dx)>Math.abs(dy) ? (dx>0?'right':'left') : (dy>0?'down':'up');
+    });
+
+    // Wooks
+    spawnW.slice(0,3).forEach(s=>{
+      const [wx,wy] = this.center(s.x,s.y);
+      const w = this.physics.add.sprite(wx,wy,'wook').play('w_walk');
+      w.setData({state:'chase', dir:'left', baseSpeed:44});
+      w.setMaxVelocity(56,56);
       this.wooks.add(w);
     });
 
-    // --- Colliders ---
-    this.physics.add.collider(this.player, this.walls);
-    this.physics.add.collider(this.wooks, this.walls);
-
-    this.physics.add.overlap(this.player, this.usbs, (pl,usb)=>{
-      usb.destroy(); this.score+=10; this.events.emit('score', this.score);
-    });
-
-    this.physics.add.overlap(this.player, this.powerups, (pl,p)=>{
-      p.destroy(); this.enterPower();
-    });
-
+    // Overlaps
+    this.physics.add.overlap(this.player, this.usbs, (pl,usb)=>{ usb.destroy(); this.addScore(10); });
+    this.physics.add.overlap(this.player, this.powerups, (pl,p)=>{ p.destroy(); this.enterPower(); });
     this.physics.add.overlap(this.player, this.wooks, (pl,w)=>{
       if(w.getData('state')==='fright'){
-        w.setTexture('eyes').setData('state','eyes');
-        w.setVelocity(0,0);
-        const s = spawnW[0] || {x:1,y:1};
-        this.tweens.add({
-          targets:w,
-          x:s.x*this.tileSize+8, y:s.y*this.tileSize+8, duration:500,
-          onComplete:()=>{ w.setTexture('wook').play('w_walk').setData('state','chase'); }
-        });
-        this.score += 200; this.events.emit('score', this.score);
-      }else if(w.getData('state')!=='eyes'){
-        this.loseLife();
-      }
+        w.setTexture('eyes').setData('state','eyes'); w.setVelocity(0,0);
+        const s = spawnW[0]||{x:1,y:1}; const [rx,ry]=this.center(s.x,s.y);
+        this.tweens.add({targets:w,x:rx,y:ry,duration:500,onComplete:()=>{ w.setTexture('wook').play('w_walk').setData({state:'chase',dir:'left'}); }});
+        this.addScore(200);
+      }else if(w.getData('state')!=='eyes'){ this.loseLife(); }
     });
 
-    // --- Input (mobile swipe) ---
-    this.input.on('pointerup', (p)=>{
-      const dx = p.upX - p.downX, dy = p.upY - p.downY;
-      if(Math.abs(dx)>Math.abs(dy)) this.nextDir = dx>0?'right':'left';
-      else this.nextDir = dy>0?'down':'up';
-    });
-
-    // Launch the UI overlay
-    this.scene.launch('UIScene');
-    this.scene.bringToTop('UIScene');
+    // HUD (DOM)
+    this.scoreEl = document.getElementById('scoreEl');
+    this.livesEl = document.getElementById('livesEl');
+    this.updateHUD();
   }
 
-  togglePause(){
-    this.paused = !this.paused;
-    this.physics.world.isPaused = this.paused;
-    this.scene.get('UIScene').events.emit('pause', this.paused);
-  }
-
+  // ----- HUD & flow -----
+  addScore(v){ this.score += v; this.updateHUD(); }
+  updateHUD(){ this.scoreEl && (this.scoreEl.textContent = `Score: ${this.score}`); this.livesEl && (this.livesEl.textContent = '♥'.repeat(this.lives)); }
+  togglePause(){ this.paused = !this.paused; this.physics.world.isPaused = this.paused; }
   loseLife(){
-    this.lives--;
-    this.events.emit('lives', this.lives);
-    if(this.lives<=0){
-      this.scene.restart();
-      this.score = 0; this.events.emit('score', this.score);
-      this.lives = 3; this.events.emit('lives', this.lives);
-      return;
-    }
-    this.player.setPosition(8+16,8+16);
+    this.lives--; this.updateHUD();
+    if(this.lives<=0){ this.scene.restart(); this.score=0; this.lives=3; this.updateHUD(); return; }
+    const [cx,cy]=this.center(2,2); this.player.setPosition(cx,cy); this.currentDir='left'; this.nextDir='left';
   }
-
   enterPower(){
     this.powerUntil = this.time.now + this.powerTime*1000;
-    this.wooks.children.iterate(w=>{
-      if(!w) return;
-      if(w.getData('state')!=='eyes'){
-        w.setData('state','fright');
-        w.setTexture('wook_fright').play('w_fright');
-      }
-    });
+    this.wooks.children.iterate(w=>{ if(w && w.getData('state')!=='eyes'){ w.setData('state','fright'); w.setTexture('wook_fright').play('w_fright'); } });
   }
 
-  // helpers
-  atTileCenter(sprite){
-    const eps = 2; // pixels
-    return Math.abs((sprite.x % this.tileSize) - 8) <= eps &&
-           Math.abs((sprite.y % this.tileSize) - 8) <= eps;
-  }
-  dirVec(dir){ return dir==='left' ? [-1,0] : dir==='right' ? [1,0] : dir==='up' ? [0,-1] : [0,1]; }
-
-  update(time, delta){
+  // ----- main update (pure grid navigation; no physics wall collisions) -----
+  update(){
     if(this.paused) return;
 
-    // read input
+    // read arrows
     if(this.cursors.left.isDown)  this.nextDir='left';
     if(this.cursors.right.isDown) this.nextDir='right';
     if(this.cursors.up.isDown)    this.nextDir='up';
     if(this.cursors.down.isDown)  this.nextDir='down';
 
-    // change direction only near tile centers
-    if(this.atTileCenter(this.player)){
-      this.currentDir = this.nextDir;
-      // snap to center on the perpendicular axis to avoid drift
-      this.player.x = Math.round(this.player.x / this.tileSize)*this.tileSize - 8 + 8;
-      this.player.y = Math.round(this.player.y / this.tileSize)*this.tileSize - 8 + 8;
+    // player movement
+    let [ptx,pty] = this.tv(this.player.x, this.player.y);
+
+    if(this.atCenter(this.player)){
+      // snap to perfect center
+      const [cx,cy]=this.center(ptx,pty);
+      this.player.setPosition(cx,cy);
+
+      // turn if allowed
+      if(this.canGo(ptx,pty,this.nextDir)) this.currentDir=this.nextDir;
+
+      // if blocked ahead, stop
+      if(!this.canGo(ptx,pty,this.currentDir)){
+        this.player.setVelocity(0,0);
+      }else{
+        const [vx,vy]=this.dirVec(this.currentDir);
+        this.player.setVelocity(vx*this.speed, vy*this.speed);
+      }
+    }else{
+      const [vx,vy]=this.dirVec(this.currentDir);
+      this.player.setVelocity(vx*this.speed, vy*this.speed);
     }
 
-    // move player along currentDir
-    const [vx, vy] = this.dirVec(this.currentDir);
-    this.player.setVelocity(vx*this.speed, vy*this.speed);
-
-    // end power?
-    if(this.powerUntil && time>this.powerUntil){
-      this.wooks.children.iterate(w=>{
-        if(!w) return;
-        if(w.getData('state')==='fright'){
-          w.setData('state','chase'); w.setTexture('wook').play('w_walk');
-        }
-      });
-      this.powerUntil = null;
+    // power timer
+    if(this.powerUntil && this.time.now>this.powerUntil){
+      this.wooks.children.iterate(w=>{ if(w && w.getData('state')==='fright'){ w.setData('state','chase'); w.setTexture('wook').play('w_walk'); } });
+      this.powerUntil=null;
     }
 
-    // Wook AI: axis-only chase (no diagonal speed boost)
+    // wook AI (axis-only, grid-locked)
     this.wooks.children.iterate(w=>{
       if(!w) return;
       const frightened = w.getData('state')==='fright';
-      const speed = frightened ? 35 : w.getData('baseSpeed');
-      const dx = this.player.x - w.x;
-      const dy = this.player.y - w.y;
-      if(w.getData('state')==='eyes'){
-        w.setVelocity(0,0);
-        return;
+      if(w.getData('state')==='eyes'){ w.setVelocity(0,0); return; }
+
+      let [tx,ty]=this.tv(w.x,w.y);
+      if(this.atCenter(w)){
+        const [cx,cy]=this.center(tx,ty);
+        w.setPosition(cx,cy);
+
+        // choose dir toward/far from player (passable only)
+        const dx=this.player.x-w.x, dy=this.player.y-w.y;
+        let wanted = Math.abs(dx)>Math.abs(dy) ? (dx>0?'right':'left') : (dy>0?'down':'up');
+        if(frightened){ wanted = wanted==='left'?'right':wanted==='right'?'left':wanted==='up'?'down':'up'; }
+
+        let dir = this.canGo(tx,ty,wanted) ? wanted : null;
+        if(!dir){
+          for(const d of ['up','right','down','left']){
+            if(this.canGo(tx,ty,d)){ dir=d; break; }
+          }
+        }
+        if(dir) w.setData('dir', dir);
       }
-      let ax = 0, ay = 0;
-      if(Math.abs(dx) > Math.abs(dy)){
-        ax = Math.sign(dx);
-      }else{
-        ay = Math.sign(dy);
-      }
-      if(frightened){ ax *= -1; ay *= -1; }
-      w.setVelocity(ax*speed, ay*speed);
+
+      const dir = w.getData('dir') || 'left';
+      const [vx,vy]=this.dirVec(dir);
+      const speed = frightened ? 34 : w.getData('baseSpeed');
+      w.setVelocity(vx*speed, vy*speed);
     });
   }
 }
