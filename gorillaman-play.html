@@ -76,20 +76,16 @@
     });
   </script>
 <script>
-  // Prevent page scroll on arrows and ensure the canvas has focus.
-  window.addEventListener('keydown', (e)=>{
-    if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key)) e.preventDefault();
-  }, {passive:false});
-
-  function focusCanvas() {
-    const cv = document.querySelector('#game canvas');
-    if (cv) { cv.setAttribute('tabindex','0'); cv.focus({preventScroll:true}); }
+  window.addEventListener('keydown',(e)=>{
+    if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key)) e.preventDefault();
+  },{passive:false});
+  function focusCanvas(){
+    const cv=document.querySelector('#game canvas');
+    if(cv){ cv.setAttribute('tabindex','0'); cv.focus({preventScroll:true}); }
   }
-  // Try now and again after layout changes/clicks
-  setTimeout(focusCanvas, 300);
-  window.addEventListener('click', focusCanvas, {passive:true});
-  window.addEventListener('resize', ()=> setTimeout(focusCanvas, 300));
+  setTimeout(focusCanvas,300);
+  window.addEventListener('click',focusCanvas,{passive:true});
+  window.addEventListener('resize',()=>setTimeout(focusCanvas,300));
 </script>
-
 </body>
 </html>
