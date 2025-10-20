@@ -6,22 +6,21 @@
 <title>Gorilla Man – Play</title>
 <style>
   :root { color-scheme: dark; }
-  body { margin: 0; background:#060907; color:#e6ffe6; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans", sans-serif; }
-  #game-root { display:grid; place-items:center; min-height:100dvh; padding: 12px; }
+  body { margin: 0; background:#060907; color:#e6ffe6; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Arial, "Noto Sans", sans-serif; }
+  #game-root { display:grid; place-items:center; min-height:100dvh; padding: 14px; }
   .frame {
-    width: min(92vw, 720px);        /* smaller so it doesn’t feel huge */
-    aspect-ratio: 4 / 5;            /* comfy portrait-ish frame */
-    background:#0d1714; border:1px solid #1d2b27; border-radius:16px; padding: 8px;
-    box-shadow:0 12px 28px rgba(0,0,0,0.45); display:grid; grid-template-rows: auto 1fr; gap:8px;
+    background:#0d1714; border:1px solid #1d2b27; border-radius:16px; padding: 10px;
+    box-shadow:0 12px 28px rgba(0,0,0,.45); display:grid; grid-template-rows:auto auto; gap:10px;
+    max-width: calc(100vw - 24px);
   }
   header { display:flex; align-items:center; justify-content:space-between; padding:6px 10px; border-bottom:1px solid #1d2b27; }
-  .title{ font-weight:700; letter-spacing:0.4px; display:flex; gap:10px; align-items:center; }
+  .title{ font-weight:700; letter-spacing:.4px; display:flex; gap:10px; align-items:center; }
   .hud{ font-weight:700; font-variant-numeric: tabular-nums; color:#bfffcf; display:flex; gap:14px; }
   .ctr { display:flex; gap:10px; }
-  .btn{ background:#173428; border:1px solid #264e40; color:#e1ffe1; padding:8px 12px; border-radius:8px; text-decoration:none; font-weight:600; user-select:none; }
+  .btn{ background:#173428; border:1px solid #264e40; color:#e1ffe1; padding:8px 12px; border-radius:8px; text-decoration:none; font-weight:600; user-select:none; cursor:pointer; }
   .btn:active{ transform: translateY(1px); }
-  #game { width: 100%; height: 100%; display:grid; place-items:center; }
-  canvas { image-rendering: pixelated; }
+  #game { overflow:auto; display:grid; place-items:center; }
+  canvas { image-rendering: pixelated; border:1px solid #cfe6dc33; border-radius:10px; }
 </style>
 </head>
 <body>
@@ -34,7 +33,7 @@
           <span id="livesEl">♥♥♥</span>
         </div>
         <div class="ctr">
-          <button id="pauseBtn" class="btn">Pause (P)</button>
+          <button id="pauseBtn" class="btn" type="button">Pause (P)</button>
           <a class="btn" href="gorillaman.html">Exit</a>
         </div>
       </header>
@@ -42,50 +41,63 @@
     </div>
   </div>
 
-  <!-- Phaser via CDN -->
+  <!-- Phaser -->
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.0/dist/phaser.min.js"></script>
 
-  <!-- Your scenes -->
-  <script src="/gorillaman/js/scenes/PreloadScene.js"></script>
-  <script src="/gorillaman/js/scenes/GameScene.js"></script>
+  <!-- Scenes -->
+  <script src="PreloadScene.js"></script>
+  <script src="GameScene.js"></script>
 
+  <!-- Create the game at EXACT map pixel size (no fractional scaling) -->
   <script>
-    // Fixed canvas size; the frame scales it down nicely
-    const config = {
-      type: Phaser.AUTO,
-      parent: 'game',
-      backgroundColor: '#030806',
-      scale: {
-        mode: Phaser.Scale.FIT,
-        autoCenter: Phaser.Scale.CENTER_BOTH,
-        width: 432,         // 27 tiles * 16
-        height: 432
-      },
-      physics: { default: 'arcade', arcade: { debug: false, gravity: { y: 0 } } },
-      scene: [ PreloadScene, GameScene ]
-    };
-    const game = new Phaser.Game(config);
+    // Build Phaser config only after we know the map's rows/cols
+    fetch('gorillaman/assets/maps/level1.json')
+      .then(r => r.json())
+      .then(map => {
+        const TILE = 16;
+        const WIDTH  = TILE * map.data[0].length;
+        const HEIGHT = TILE * map.data.length;
 
-    document.getElementById('pauseBtn').addEventListener('click', () => {
-      game.scene.getScene('GameScene')?.togglePause();
-    });
-    window.addEventListener('keydown', (e)=>{
-      if(e.key.toLowerCase()==='p'){
-        game.scene.getScene('GameScene')?.togglePause();
-      }
-    });
+        const config = {
+          type: Phaser.AUTO,
+          parent: 'game',
+          backgroundColor: '#030806',
+          scale: {
+            mode: Phaser.Scale.NONE,   // no auto scaling => pixel perfect
+            width: WIDTH,
+            height: HEIGHT
+          },
+          render: {
+            pixelArt: true,            // snap to pixels
+            antialias: false,
+            roundPixels: true
+          },
+          physics: { default: 'arcade', arcade: { debug: false, gravity: { y: 0 } } },
+          scene: [ PreloadScene, GameScene ]
+        };
+        const game = new Phaser.Game(config);
+
+        // Pause control
+        document.getElementById('pauseBtn').addEventListener('click', () => {
+          game.scene.getScene('GameScene')?.togglePause();
+        });
+        window.addEventListener('keydown', (e)=>{
+          if (e.key.toLowerCase()==='p') game.scene.getScene('GameScene')?.togglePause();
+        });
+
+        // Prevent page from hijacking arrows; focus the canvas for key input
+        window.addEventListener('keydown',(e)=>{
+          if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key)) e.preventDefault();
+        }, {passive:false});
+
+        function focusCanvas(){
+          const cv = document.querySelector('#game canvas');
+          if (cv) { cv.setAttribute('tabindex','0'); cv.focus({preventScroll:true}); }
+        }
+        setTimeout(focusCanvas, 300);
+        window.addEventListener('click', focusCanvas, {passive:true});
+        window.addEventListener('resize', () => setTimeout(focusCanvas, 300));
+      });
   </script>
-<script>
-  window.addEventListener('keydown',(e)=>{
-    if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key)) e.preventDefault();
-  },{passive:false});
-  function focusCanvas(){
-    const cv=document.querySelector('#game canvas');
-    if(cv){ cv.setAttribute('tabindex','0'); cv.focus({preventScroll:true}); }
-  }
-  setTimeout(focusCanvas,300);
-  window.addEventListener('click',focusCanvas,{passive:true});
-  window.addEventListener('resize',()=>setTimeout(focusCanvas,300));
-</script>
 </body>
 </html>
